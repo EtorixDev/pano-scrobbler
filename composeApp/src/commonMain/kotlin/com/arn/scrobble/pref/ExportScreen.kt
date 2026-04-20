@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -23,6 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.arn.scrobble.icons.Icons
+import com.arn.scrobble.icons.automirrored.ArrowRight
 import com.arn.scrobble.ui.ErrorText
 import com.arn.scrobble.ui.FilePicker
 import com.arn.scrobble.ui.FilePickerMode
@@ -35,7 +40,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.export_file_name
-import pano_scrobbler.composeapp.generated.resources.found
 import pano_scrobbler.composeapp.generated.resources.network_error
 import pano_scrobbler.composeapp.generated.resources.pref_imexport_network
 import pano_scrobbler.composeapp.generated.resources.pref_imexport_network_notice
@@ -150,7 +154,7 @@ fun ExportScreen(
 
                     is MdnsStatus.Discovered -> {
                         Text(
-                            text = stringResource(Res.string.found) + ":",
+                            text = stringResource(Res.string.scanning),
                             textAlign = TextAlign.Center
                         )
 
@@ -162,6 +166,12 @@ fun ExportScreen(
                                 },
                                 modifier = Modifier.align(Alignment.CenterHorizontally)
                             ) {
+                                Icon(
+                                    Icons.AutoMirrored.ArrowRight,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(ButtonDefaults.IconSize)
+                                )
+                                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                                 Text(text = it.name, textAlign = TextAlign.Center)
                             }
                         }

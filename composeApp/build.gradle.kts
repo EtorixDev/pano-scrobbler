@@ -292,6 +292,7 @@ compose.desktop {
             "-Dpano.native.components.path=$libraryPath",
             "--enable-native-access=ALL-UNNAMED",
             if (os.isLinux) "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED" else null,
+            "-Dfile.encoding=UTF-8",
 //            "-XX:NativeMemoryTracking=detail",
             "-XX:+UseSerialGC",
             "-XX:+UseAdaptiveSizePolicy",

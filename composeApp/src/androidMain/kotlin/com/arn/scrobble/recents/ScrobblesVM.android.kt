@@ -82,7 +82,8 @@ actual fun ScrobblesVM.shareTrack(track: Track, shareSig: String?) {
 
             if (shareAlbumArt != null) {
                 val albumArtFile = File(context.cacheDir, "share/album_art.jpg")
-                albumArtFile.parentFile!!.mkdirs()
+                albumArtFile.parentFile?.mkdirs()
+                albumArtFile.deleteOnExit()
                 FileOutputStream(albumArtFile).use { fos ->
                     shareAlbumArt.compress(Bitmap.CompressFormat.JPEG, 95, fos)
                 }

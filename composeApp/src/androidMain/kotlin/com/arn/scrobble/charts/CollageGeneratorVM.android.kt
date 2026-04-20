@@ -22,6 +22,8 @@ actual fun CollageGeneratorVM.shareCollage(
 ) {
     viewModelScope.launch {
         val collageFile = File(PlatformStuff.cacheDir, "share/collage.jpg")
+        collageFile.parentFile?.mkdirs()
+        collageFile.deleteOnExit()
 
 
         collageFile.parentFile!!.mkdirs()

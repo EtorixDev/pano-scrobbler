@@ -581,43 +581,41 @@ private fun PendingScrobbleDesc(
         }
     )
 
-    if (pendingScrobble.lastFailedTimestamp != null) {
-        DropdownMenuItem(
-            onClick = {},
-            enabled = false,
-            text = {
-                Text(
-                    (pendingScrobble.lastFailedReason ?: stringResource(Res.string.network_error))
-                )
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Error,
-                    contentDescription = null
-                )
-            }
-        )
+    DropdownMenuItem(
+        onClick = {},
+        enabled = false,
+        text = {
+            Text(
+                (pendingScrobble.lastFailedReason ?: stringResource(Res.string.network_error))
+            )
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Error,
+                contentDescription = null
+            )
+        }
+    )
 
-        DropdownMenuItem(
-            onClick = {},
-            enabled = false,
-            text = {
-                Text(
-                    PanoTimeFormatter.relative(
-                        pendingScrobble.lastFailedTimestamp,
-                        justNowString = stringResource(Res.string.time_just_now),
-                        withPreposition = true,
-                    )
+    DropdownMenuItem(
+        onClick = {},
+        enabled = false,
+        text = {
+            Text(
+                PanoTimeFormatter.relative(
+                    pendingScrobble.lastFailedTimestamp,
+                    justNowString = stringResource(Res.string.time_just_now),
+                    withPreposition = true,
                 )
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Schedule,
-                    contentDescription = null
-                )
-            }
-        )
-    }
+            )
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Schedule,
+                contentDescription = null
+            )
+        }
+    )
 }
 
 fun LazyListScope.scrobblesListItems(

@@ -17,9 +17,9 @@
     <string comment="%1= the word weekly or monthly" formatted="true" name="s_top_scrobbles">%1$s top scrobbleovi</string>
     <string name="appwidget_loading">Učitavanje…</string>
     <string name="show_persistent_noti">Prikaži trajnu obavijest</string>
-    <string name="persistent_noti_text">Dotaknite za sakrivanje</string>
     <string name="scrobbler_off">Scrobbler onemogućen</string>
     <string name="scrobbler_on">Scrobbler aktivan</string>
+    <string name="pref_noti">Obavijesti</string>
     <plurals name="num_weeks">
         <item quantity="one">%1$s tjedan</item>
         <item quantity="few">%1$s tjedna</item>

@@ -1,9 +1,10 @@
 package com.arn.scrobble.utils
 
 import android.app.ActivityManager
-import android.app.Application.getProcessName
+import android.app.Application
 import android.app.ApplicationExitInfo
 import android.app.PendingIntent
+import android.content.ContentResolver
 import android.content.Context
 import android.media.MediaMetadata
 import android.os.Build
@@ -14,12 +15,13 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
+import androidx.core.net.toUri
 import androidx.datastore.core.DataStoreFactory
 import co.touchlab.kermit.Logger
 import com.arn.scrobble.BuildKonfig
+import com.arn.scrobble.automation.Automation
 import com.arn.scrobble.pref.WidgetPrefs
 import com.arn.scrobble.pref.WidgetPrefsSerializer
-import com.arn.scrobble.utils.Stuff.SCROBBLER_PROCESS_NAME
 import java.io.File
 
 object AndroidStuff {
@@ -28,7 +30,7 @@ object AndroidStuff {
     val isMainProcess by lazy {
         val procName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             // For API 28+ we can use Application.getProcessName()
-            getProcessName()
+            Application.getProcessName()
         } else {
             Class
                 .forName("android.app.ActivityThread")
@@ -48,10 +50,7 @@ object AndroidStuff {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         else PendingIntent.FLAG_UPDATE_CURRENT
 
-    val canShowPersistentNotiIfEnabled
-        get() = !PlatformStuff.isTv &&
-                (Build.VERSION.SDK_INT in Build.VERSION_CODES.O..Build.VERSION_CODES.TIRAMISU ||
-                        VariantStuff.hasForegroundServiceSpecialUse)
+    const val canShowPersistentNotiIfEnabled = true
 
 //    @RequiresApi(Build.VERSION_CODES.Q)
 //    @Throws(IOException::class)
@@ -102,18 +101,6 @@ object AndroidStuff {
         )
     }
 
-
-//    val forcePersistentNoti by lazy {
-//        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-//                Build.VERSION.SDK_INT <= Build.VERSION_CODES.TIRAMISU &&
-//                Build.MANUFACTURER.lowercase(Locale.ENGLISH) in arrayOf(
-//            Stuff.MANUFACTURER_HUAWEI,
-//            Stuff.MANUFACTURER_XIAOMI,
-//            Stuff.MANUFACTURER_SAMSUNG,
-//        )
-//    }
-
-
     val widgetPrefs by lazy {
         DataStoreFactory.create(
             serializer = WidgetPrefsSerializer,
@@ -147,7 +134,7 @@ object AndroidStuff {
             val exitReasons = activityManager.getHistoricalProcessExitReasons(null, 0, 30)
 
             exitReasons.filter {
-                it.processName == "${applicationContext.packageName}:$SCROBBLER_PROCESS_NAME"
+                it.processName == "${applicationContext.packageName}:${Stuff.SCROBBLER_PROCESS_NAME}"
 //                        && it.reason == ApplicationExitInfo.REASON_OTHER
                         && it.timestamp > afterTime
             }
@@ -157,6 +144,21 @@ object AndroidStuff {
         // Caused by java.lang.IllegalArgumentException at getHistoricalProcessExitReasons
         // Comparison method violates its general contract!
         // probably a samsung bug
+    }
+
+    fun requestRebindFromContentProvider(cr: ContentResolver) {
+        try {
+            val requestRebindResult = cr.query(
+                "content://${Automation.PREFIX}/${Automation.ANDROID_REQUEST_REBIND}".toUri(),
+                null,
+                null,
+                null,
+                null,
+            )
+            requestRebindResult?.close()
+        } catch (e: Exception) {
+            Logger.w(e) { "requestRebindFromContentProvider failed" }
+        }
     }
 
     fun MediaMetadata.dump() {

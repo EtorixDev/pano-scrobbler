@@ -19,6 +19,7 @@
     <string name="show_persistent_noti">Aanhoudende notificaties weergeven</string>
     <string name="scrobbler_off">Scrobbler uitgeschakeld</string>
     <string name="scrobbler_on">Scrobbler actief</string>
+    <string name="pref_noti">Meldingen</string>
     <plurals name="num_weeks">
         <item quantity="one">%1$s week</item>
         <item quantity="other">%1$s weken</item>

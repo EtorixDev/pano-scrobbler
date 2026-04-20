@@ -9,6 +9,7 @@
     <string name="charts_overall">Tổng quan</string>
     <string name="charts_no_data">Không có dữ liệu trong giai đoạn này</string>
     <string name="appwidget_loading">Đang tải…</string>
+    <string name="pref_noti">Thông báo</string>
     <plurals name="num_weeks">
         <item quantity="other">%1$s tuần</item>
     </plurals>

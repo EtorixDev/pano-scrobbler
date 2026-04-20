@@ -32,6 +32,29 @@ class MusicEntryImageInterceptor : Interceptor {
 
 
     override suspend fun intercept(chain: Interceptor.Chain): ImageResult {
+
+        suspend fun customAlbumArtMapping(
+            artistName: String,
+            albumName: String
+        ): FetchedImageUrls? {
+            val customMapping = customSpotifyMappingsDao.searchAlbum(artistName, albumName)
+
+            return if (customMapping != null && customMapping.fileUri != null)
+                FetchedImageUrls(customMapping.fileUri)
+            else if (customMapping != null && useSpotify.first() && customMapping.spotifyId != null) {
+                semaphore.withPermit {
+                    delay(delayMs)
+                    Requesters.spotifyRequester.album(
+                        customMapping.spotifyId
+                    ).getOrNull()?.let {
+                        FetchedImageUrls(it.mediumImageUrl, it.largeImageUrl)
+                    } ?: FetchedImageUrls(null)
+                }
+            } else {
+                null
+            }
+        }
+
         val musicEntryImageReq =
             chain.request.data as? MusicEntryImageReq ?: return chain.proceed()
         val entry = musicEntryImageReq.musicEntry
@@ -104,40 +127,26 @@ class MusicEntryImageInterceptor : Interceptor {
                             is Track -> entry.album?.artist ?: entry.artist
                             is Album -> entry.artist
                         }
+                        var fetchedAlbumImageUrls = FetchedImageUrls(null)
 
-                        val customMapping = if (album != null && artist != null) {
-                            customSpotifyMappingsDao.searchAlbum(
-                                artist.name,
-                                album.name
-                            )
+                        val customMappingUrls = if (album != null && artist != null) {
+                            customAlbumArtMapping(artist.name, album.name)
                         } else {
                             null
                         }
 
-                        if (customMapping != null) {
-                            if (customMapping.spotifyId == null)
-                                FetchedImageUrls(customMapping.fileUri)
-                            else if (useSpotify.first()) {
-                                semaphore.withPermit {
-                                    delay(delayMs)
-                                    Requesters.spotifyRequester.album(
-                                        customMapping.spotifyId
-                                    ).getOrNull()?.let {
-                                        FetchedImageUrls(it.mediumImageUrl, it.largeImageUrl)
-                                    }
-                                }
-                            } else {
-                                FetchedImageUrls(null)
-                            }
+                        if (customMappingUrls != null) {
+                            fetchedAlbumImageUrls = customMappingUrls
                         } else {
-                            var webp300 = album?.webp300
-                            val needFetch = webp300 == null ||
-                                    StarMapper.STAR_PATTERN in webp300
+                            val needFetch = album?.webp300 == null ||
+                                    album.webp300?.contains(StarMapper.STAR_PATTERN) == true
 
-                            val dao = PanoDb.db.getSeenEntitiesDao()
-                            if (needFetch && musicEntryImageReq.fetchAlbumInfoIfMissing &&
+                            if (!needFetch) {
+                                fetchedAlbumImageUrls = FetchedImageUrls(album.webp300)
+                            } else if (musicEntryImageReq.fetchAlbumInfoIfMissing &&
                                 musicEntryImageReq.accountType == AccountType.LASTFM
                             ) {
+                                val dao = PanoDb.db.getSeenEntitiesDao()
                                 val seenAlbum = when (entry) {
                                     is Album -> {
                                         dao.getAlbumWithFetchedArt(
@@ -159,7 +168,7 @@ class MusicEntryImageInterceptor : Interceptor {
                                     }
                                 }
 
-                                webp300 = seenAlbum?.artUrl
+                                fetchedAlbumImageUrls = FetchedImageUrls(seenAlbum?.artUrl)
 
                                 // if the image from cache was still a placeholder, don't do a lookup
 
@@ -171,7 +180,8 @@ class MusicEntryImageInterceptor : Interceptor {
                                                 Requesters.lastfmUnauthedRequester.getAlbumInfo(
                                                     entry
                                                 ).onSuccess {
-                                                    webp300 = it.webp300
+                                                    fetchedAlbumImageUrls =
+                                                        FetchedImageUrls(it.webp300)
                                                 }
                                             }
                                         }
@@ -189,34 +199,41 @@ class MusicEntryImageInterceptor : Interceptor {
                                                     Requesters.lastfmUnauthedRequester.getTrackInfo(
                                                         entry
                                                     ).onSuccess {
-                                                        webp300 = it.album?.webp300
+                                                        fetchedAlbumImageUrls =
+                                                            FetchedImageUrls(it.album?.webp300)
                                                     }
                                                 }
                                             }
-                                        } else if (seenAlbum.artUpdatedAt == null) {
-                                            semaphore.withPermit {
-                                                delay(delayMs)
-                                                Requesters.lastfmUnauthedRequester.getAlbumInfo(
-                                                    Album(
-                                                        seenAlbum.album,
-                                                        Artist(entry.artist.name)
-                                                    )
-                                                ).onSuccess {
-                                                    webp300 = it.webp300
+                                        } else {
+                                            val customMapping = customAlbumArtMapping(
+                                                seenAlbum.artist,
+                                                seenAlbum.album
+                                            )
+
+                                            if (customMapping != null) {
+                                                fetchedAlbumImageUrls = customMapping
+                                            } else {
+                                                if (seenAlbum.artUpdatedAt == null) {
+                                                    semaphore.withPermit {
+                                                        delay(delayMs)
+                                                        Requesters.lastfmUnauthedRequester.getAlbumInfo(
+                                                            Album(
+                                                                seenAlbum.album,
+                                                                Artist(entry.artist.name)
+                                                            )
+                                                        ).onSuccess {
+                                                            fetchedAlbumImageUrls =
+                                                                FetchedImageUrls(it.webp300)
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
-
-                            FetchedImageUrls(
-                                webp300,
-                                webp300
-                                    ?.takeIf { it.startsWith("https://lastfm.freetls.fastly.net") }
-                                    ?.replace("300x300", "600x600")
-                            )
                         }
+                        fetchedAlbumImageUrls
                     }
                 }
                 musicEntryCache.put(key, fetchedImageUrls ?: FetchedImageUrls(null))
@@ -246,8 +263,24 @@ class MusicEntryImageInterceptor : Interceptor {
     }
 
     fun clearCacheForEntry(req: MusicEntryImageReq) {
-        musicEntryCache.remove(MusicEntryReqKeyer.genKey(req))
+        val key = MusicEntryReqKeyer.genKey(req)
+        musicEntryCache.remove(key)
+
+        if (req.musicEntry is Album) {
+            // remove all tracks of the album
+
+            musicEntryCache.snapshot().keys
+                .filter { it.startsWith(key) }
+                .forEach { musicEntryCache.remove(it) }
+        }
     }
 
-    private data class FetchedImageUrls(val mediumImage: String?, val largeImage: String? = null)
+    private data class FetchedImageUrls(val mediumImage: String?, val largeImage: String?) {
+        constructor(webp300: String?) : this(
+            webp300,
+            webp300
+                ?.takeIf { it.startsWith("https://lastfm.freetls.fastly.net") }
+                ?.replace("300x300", "600x600")
+        )
+    }
 }

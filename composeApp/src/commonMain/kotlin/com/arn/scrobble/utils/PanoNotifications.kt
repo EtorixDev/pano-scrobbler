@@ -6,6 +6,7 @@ import com.arn.scrobble.media.PlayingTrackNotifyEvent
 import com.arn.scrobble.updates.UpdateAction
 
 expect object PanoNotifications {
+    val forcePersistentNoti: Boolean
     suspend fun notifyScrobble(event: PlayingTrackNotifyEvent.TrackPlaying)
 
     suspend fun notifyError(event: PlayingTrackNotifyEvent.Error)

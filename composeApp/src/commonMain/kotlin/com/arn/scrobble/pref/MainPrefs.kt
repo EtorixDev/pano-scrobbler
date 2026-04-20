@@ -22,6 +22,7 @@ import com.arn.scrobble.themes.ThemeUtils
 import com.arn.scrobble.ui.GridMode
 import com.arn.scrobble.ui.SerializableWindowState
 import com.arn.scrobble.utils.LocaleUtils
+import com.arn.scrobble.utils.PanoNotifications
 import com.arn.scrobble.utils.PlatformStuff
 import com.arn.scrobble.utils.Stuff
 import com.arn.scrobble.utils.getSystemCountryCode
@@ -92,7 +93,7 @@ data class MainPrefs(
     val tagHistory: List<String> = emptyList(),
     val notiWeeklyDigests: Boolean = true,
     val notiMonthlyDigests: Boolean = true,
-    val notiPersistent: Boolean = false,
+    val notiPersistent: Boolean = PanoNotifications.forcePersistentNoti,
     val digestSeconds: Int? = null,
     val lastReviewPromptTime: Long? = null,
     val lastUpdateCheckTime: Long? = null,

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.arn.scrobble.utils.PlatformFile
+import com.arn.scrobble.utils.PlatformStuff
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
@@ -11,14 +12,17 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.isSuccess
+import io.ktor.util.cio.readChannel
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.security.KeyStore
 import java.security.SecureRandom
@@ -51,7 +55,8 @@ class ExportVM : ViewModel() {
     }
 
     fun discover() {
-        mdns.discover()
+        if (mdnsStatus.value !is MdnsStatus.Discovering)
+            mdns.discover()
     }
 
     fun exportToFile(platformFile: PlatformFile, privateData: Boolean) {
@@ -76,10 +81,21 @@ class ExportVM : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             mdns.stop()
 
-            val outputStream = ByteArrayOutputStream()
-            val exported = imExporter.export(outputStream)
+            val tmpFile = File(PlatformStuff.cacheDir, "share/export_data.json")
+            tmpFile.parentFile?.mkdirs()
+            tmpFile.deleteOnExit()
+
+            val exported = tmpFile.outputStream().use {
+                imExporter.export(it)
+            }
+
             if (exported) {
-                val jsonBody = outputStream.toString()
+                val content = object : OutgoingContent.ReadChannelContent() {
+                    override val contentType: ContentType = ContentType.Application.Json
+                    override val contentLength: Long = tmpFile.length()
+                    override fun readFrom() = tmpFile.readChannel()
+                }
+
                 _result.value = runCatching {
 //                    val (ip, port) = IpPortCode.decode(encodedAddress)
 
@@ -88,7 +104,7 @@ class ExportVM : ViewModel() {
                     val req = ktorClient.await()
                         .post("https://$ip:$port/import") {
                             parameter("id", idString)
-                            setBody(jsonBody)
+                            setBody(content)
                         }
 
                     if (req.status.isSuccess())

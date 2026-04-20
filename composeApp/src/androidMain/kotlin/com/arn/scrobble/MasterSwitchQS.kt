@@ -1,6 +1,7 @@
 package com.arn.scrobble
 
 import android.content.ComponentName
+import android.content.Context
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import co.touchlab.kermit.Logger
@@ -13,14 +14,13 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MasterSwitchQS : TileService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onTileAdded() {
         scope.launch {
-            requestListeningState()
+            requestListeningState(this@MasterSwitchQS)
         }
     }
 
@@ -31,8 +31,11 @@ class MasterSwitchQS : TileService() {
                 newState = !it.scrobblerEnabled
                 it.copy(scrobblerEnabled = !it.scrobblerEnabled)
             }
-
             newState?.let { setActive(it) }
+
+            if (newState == true) {
+                AndroidStuff.requestRebindFromContentProvider(contentResolver)
+            }
         }
     }
 
@@ -64,17 +67,12 @@ class MasterSwitchQS : TileService() {
     }
 
     companion object {
-        suspend fun requestListeningState() {
+        suspend fun requestListeningState(context: Context) {
             try {
-                withContext(Dispatchers.IO) {
-                    requestListeningState(
-                        AndroidStuff.applicationContext,
-                        ComponentName(
-                            AndroidStuff.applicationContext,
-                            MasterSwitchQS::class.java
-                        )
-                    )
-                }
+                requestListeningState(
+                    context,
+                    ComponentName(context, MasterSwitchQS::class.java)
+                )
             } catch (e: Exception) {
                 Logger.w(e) { "Failed to update QS tile state" }
             }

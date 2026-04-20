@@ -28,6 +28,7 @@ import com.arn.scrobble.ui.FileType
 import com.arn.scrobble.ui.SearchField
 import com.arn.scrobble.utils.BugReportUtils
 import com.arn.scrobble.utils.PlatformStuff
+import com.arn.scrobble.utils.Stuff
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -113,7 +114,7 @@ fun HelpScreen(
 
     FilePicker(
         show = filePickerShown,
-        mode = FilePickerMode.Save("pano_scrobbler_logs"),
+        mode = FilePickerMode.Save("pano_scrobbler_logs_" + Stuff.getFileNameDateSuffix()),
         type = FileType.LOG,
         onDismiss = { filePickerShown = false },
     ) { file ->

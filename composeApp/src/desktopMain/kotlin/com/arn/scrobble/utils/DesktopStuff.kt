@@ -134,9 +134,13 @@ object DesktopStuff {
         if (System.getProperty(prop) == null) {
             System.setProperty(prop, execDirPath)
 
-            prop = "sun.java2d.dpiaware"
-            if (System.getProperty(prop) == null)
-                System.setProperty(prop, "true")
+            if (os == Os.Windows) {
+                // cert for graalvm release builds only
+                System.setProperty("javax.net.ssl.trustStore", "NONE")
+                System.setProperty("javax.net.ssl.trustStoreType", "Windows-ROOT")
+
+                System.setProperty("sun.java2d.dpiaware", "true")
+            }
         }
 
         // proxies
@@ -162,12 +166,6 @@ object DesktopStuff {
         System.setProperty("skiko.rendering.useScreenMenuBar", false.toString())
         System.setProperty("skiko.linux.autodpi", true.toString())
         System.setProperty("compose.application.configure.swing.globals", true.toString())
-
-        // cert
-        if (os == Os.Windows) {
-            System.setProperty("javax.net.ssl.trustStore", "NONE")
-            System.setProperty("javax.net.ssl.trustStoreType", "Windows-ROOT")
-        }
     }
 
     fun getLibraryPath(name: String): String {

@@ -85,11 +85,11 @@ import pano_scrobbler.composeapp.generated.resources.edit_presets
 import pano_scrobbler.composeapp.generated.resources.edit_regex_test
 import pano_scrobbler.composeapp.generated.resources.enable
 import pano_scrobbler.composeapp.generated.resources.item_options
-import pano_scrobbler.composeapp.generated.resources.max_n
 import pano_scrobbler.composeapp.generated.resources.move_down
 import pano_scrobbler.composeapp.generated.resources.move_up
 import pano_scrobbler.composeapp.generated.resources.regex_rules
 import pano_scrobbler.composeapp.generated.resources.settings
+import pano_scrobbler.composeapp.generated.resources.upto_n
 
 @Composable
 fun RegexEditsScreen(
@@ -278,7 +278,7 @@ private fun RegexEditsList(
                 val maxPatternsText = if (regexEdits.size >= maxPatterns)
                     stringResource(Res.string.edit_max_patterns, maxPatterns)
                 else
-                    stringResource(Res.string.max_n, maxPatterns)
+                    stringResource(Res.string.upto_n, maxPatterns)
 
                 if (isLicenseValid)
                     Text(

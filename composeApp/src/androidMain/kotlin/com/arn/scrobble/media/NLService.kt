@@ -47,12 +47,18 @@ class NLService : NotificationListenerService() {
     // ListenBrainz app uses this, so it probably helps
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int) = START_STICKY
 
+    override fun onCreate() {
+        super.onCreate()
+        PanoNotifications.fgNotiShown = false
+    }
+
     override fun onListenerConnected() {
         //    This sometimes gets called twice without calling onListenerDisconnected or onDestroy
         //    onCreate seems to get called only once in those cases.
         //    also unreliable on lp and mm, which i am no longer supporting anyway
         // just gate them with an inited flag
 
+        // in fact MediaSessionManager does not even need the service to be running. It just needs the permission
 
         if (!inited) {
             inited = true
@@ -60,22 +66,20 @@ class NLService : NotificationListenerService() {
             job = SupervisorJob()
             coroutineScope = CoroutineScope(Dispatchers.Main.immediate + job!!)
 
-            if (BuildKonfig.DEBUG)
-                toast(R.string.scrobbler_on)
+//            if (BuildKonfig.DEBUG)
+            toast(R.string.scrobbler_on)
 
             coroutineScope.launch {
-                val prefs = Stuff.initializeMainPrefsCache()
+                Stuff.initializeMainPrefsCache()
 
-                if (prefs.notiPersistent && AndroidStuff.canShowPersistentNotiIfEnabled) {
-                    try {
-                        PersistentNotificationService.start(this@NLService)
-//                ForegroundServiceStartNotAllowedException extends IllegalStateException
-                    } catch (e: IllegalStateException) {
-                        Logger.e(e) { "Foreground service start not allowed" }
-                    }
+                val scrobblerEnabled = mainPrefs.data.map { it.scrobblerEnabled }.first()
+                if (!scrobblerEnabled) {
+                    requestUnbind()
+                    inited = false
                 }
             }.invokeOnCompletion {
-                init()
+                if (inited)
+                    init()
             }
         }
     }
@@ -90,13 +94,33 @@ class NLService : NotificationListenerService() {
             }
         }
 
+        coroutineScope.launch {
+            PlatformStuff.mainPrefs.data.map { it.scrobblerEnabled }.collect {
+                if (!it)
+                    requestUnbind()
+            }
+        }
+
+        if (PlatformStuff.isTv) {
+            // TVs are low RAM devices, always use FGS
+            PanoNotifications.startFgs(this)
+        } else {
+            coroutineScope.launch {
+                PlatformStuff.mainPrefs.data.map { it.notiPersistent }
+                    .collect { notiPersistent ->
+                        if (notiPersistent) {
+                            PanoNotifications.startFgs(this@NLService)
+                        } else {
+                            PanoNotifications.stopFgs(this@NLService)
+                        }
+                    }
+            }
+        }
+
         val sessManager = getSystemService(MediaSessionManager::class.java)!!
         scrobbleQueue = ScrobbleQueue(coroutineScope)
 
-        sessListener = SessListener(
-            coroutineScope,
-            scrobbleQueue,
-        )
+        sessListener = SessListener(coroutineScope, scrobbleQueue)
 
         try {
             sessManager.addOnActiveSessionsChangedListener(
@@ -155,11 +179,16 @@ class NLService : NotificationListenerService() {
         job?.cancel()
     }
 
-    override fun onListenerDisconnected() { //api 24+ only
-        if (BuildKonfig.DEBUG)
-            toast(R.string.scrobbler_off)
+    override fun onDestroy() {
+        if (AndroidStuff.canShowPersistentNotiIfEnabled)
+            PanoNotifications.stopFgs(this)
+//      todo undo
+//      if (BuildKonfig.DEBUG)
+        toast(R.string.scrobbler_off)
 
         destroy()
+
+        super.onDestroy()
     }
 
     private suspend fun shouldScrobbleFromNoti(pkgName: String): Boolean {

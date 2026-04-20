@@ -26,13 +26,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.arn.scrobble.db.SimpleEdit
+import com.arn.scrobble.icons.Album
 import com.arn.scrobble.icons.Icons
+import com.arn.scrobble.icons.Mic
+import com.arn.scrobble.icons.MusicNote
 import com.arn.scrobble.icons.Stop
 import com.arn.scrobble.icons.automirrored.ArrowRight
 import com.arn.scrobble.navigation.PanoRoute
+import com.arn.scrobble.panoicons.AlbumArtist
+import com.arn.scrobble.panoicons.PanoIcons
 import com.arn.scrobble.ui.EmptyTextWithImportButtonOnTv
 import com.arn.scrobble.ui.PanoLazyColumn
 import com.arn.scrobble.ui.SearchField
+import com.arn.scrobble.ui.TextWithIcon
 import com.arn.scrobble.ui.backgroundForShimmer
 import com.arn.scrobble.ui.panoContentPadding
 import com.arn.scrobble.ui.shimmerWindowBounds
@@ -159,24 +165,24 @@ private fun SimpleEditItem(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                Text(
+                TextWithIcon(
                     text = edit.origTrack.takeIf { edit.hasOrigTrack } ?: wildcardStr,
-                    maxLines = 1,
+                    icon = Icons.MusicNote,
                     style = MaterialTheme.typography.titleMediumEmphasized,
                 )
-                Text(
+                TextWithIcon(
                     text = edit.origArtist.takeIf { edit.hasOrigArtist } ?: wildcardStr,
-                    maxLines = 1,
+                    icon = Icons.Mic,
                     style = MaterialTheme.typography.bodyLargeEmphasized,
                 )
-                Text(
+                TextWithIcon(
                     text = edit.origAlbum.takeIf { edit.hasOrigAlbum } ?: wildcardStr,
-                    maxLines = 1,
+                    icon = Icons.Album,
                     style = MaterialTheme.typography.bodyMediumEmphasized,
                 )
-                Text(
+                TextWithIcon(
                     text = edit.origAlbumArtist.takeIf { edit.hasOrigAlbumArtist } ?: wildcardStr,
-                    maxLines = 1,
+                    icon = PanoIcons.AlbumArtist,
                     style = MaterialTheme.typography.bodyMediumEmphasized,
                 )
             }

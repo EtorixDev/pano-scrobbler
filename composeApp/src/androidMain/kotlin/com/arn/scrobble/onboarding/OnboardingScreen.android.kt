@@ -11,23 +11,31 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.arn.scrobble.BuildKonfig
 import com.arn.scrobble.icons.Icons
 import com.arn.scrobble.icons.Warning
 import com.arn.scrobble.main.MainViewModel
@@ -43,19 +51,22 @@ import com.arn.scrobble.utils.PlatformStuff
 import com.arn.scrobble.utils.Stuff
 import com.arn.scrobble.utils.Stuff.collectAsStateWithInitialValue
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.allow_background
-import pano_scrobbler.composeapp.generated.resources.check_nls
 import pano_scrobbler.composeapp.generated.resources.choose_apps
 import pano_scrobbler.composeapp.generated.resources.grant_notification_access
 import pano_scrobbler.composeapp.generated.resources.grant_notification_access_desc
 import pano_scrobbler.composeapp.generated.resources.notification_access_tv
+import pano_scrobbler.composeapp.generated.resources.persistent_noti_desc
+import pano_scrobbler.composeapp.generated.resources.persistent_noti_oems
 import pano_scrobbler.composeapp.generated.resources.pref_login
 import pano_scrobbler.composeapp.generated.resources.pref_scrobble_from
 import pano_scrobbler.composeapp.generated.resources.send_notifications
 import pano_scrobbler.composeapp.generated.resources.send_notifications_desc
+import pano_scrobbler.composeapp.generated.resources.show_persistent_noti
 import pano_scrobbler.composeapp.generated.resources.will_not_scrobble
 
 
@@ -108,11 +119,8 @@ private fun NotificationListenerStep(
     onSkip: () -> Unit
 ) {
     var warningShown by rememberSaveable { mutableStateOf(false) }
-
-    val toastText = stringResource(
-        Res.string.check_nls,
-        BuildKonfig.APP_NAME
-    )
+    val notiPersistent by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.notiPersistent }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(scrobblerState) {
         // on resume
@@ -151,6 +159,46 @@ private fun NotificationListenerStep(
         isDone = isDone,
         isExpanded = isExpanded,
         onSkip = { warningShown = true },
+        additionalContent = if (AndroidStuff.canShowPersistentNotiIfEnabled && !PlatformStuff.isTv) {
+            {
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .toggleable(
+                            value = notiPersistent,
+                            onValueChange = {
+                                scope.launch {
+                                    PlatformStuff.mainPrefs.updateData {
+                                        it.copy(notiPersistent = !it.notiPersistent)
+                                    }
+                                }
+                            },
+                            role = Role.Checkbox
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = notiPersistent,
+                        onCheckedChange = null // null recommended for accessibility with screenreaders
+                    )
+
+                    Column(
+                        modifier = Modifier.padding(start = 16.dp)
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.show_persistent_noti),
+                        )
+                        Text(
+                            text = stringResource(
+                                Res.string.persistent_noti_desc,
+                                stringResource(Res.string.persistent_noti_oems)
+                            ),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        } else null
     )
 
     if (warningShown) {
@@ -272,9 +320,10 @@ actual fun OnboardingScreen(
                         openAction = {},
                         isDone = isDone,
                         isExpanded = step == currentStep,
-                    ) {
-                        ButtonStepperForLogin(navigate = onNavigate)
-                    }
+                        buttonsContent = {
+                            ButtonStepperForLogin(navigate = onNavigate)
+                        }
+                    )
                 }
 
                 OnboardingStepType.NOTIFICATION_LISTENER -> {

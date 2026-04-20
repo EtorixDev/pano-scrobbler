@@ -53,6 +53,7 @@ import androidx.compose.material3.WideNavigationRailValue
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -62,6 +63,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -108,6 +110,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import org.jetbrains.compose.resources.getString
@@ -157,6 +160,8 @@ fun PanoAppContent(
     val currentAccountType by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.currentAccountType }
     val userSelf by PlatformStuff.mainPrefs.data
         .collectAsStateWithInitialValue { it.currentAccount?.user }
+    val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
 
     val backStack = rememberPanoNavBackStack(
         SavedStateConfiguration {
@@ -210,10 +215,15 @@ fun PanoAppContent(
     }
 
     fun navigate(route: PanoRoute) {
-        if (route !is PanoRoute.Modal)
-            removeAllModals()
+        if (route !is PanoRoute.Modal && backStack.any { it is PanoRoute.Modal }) {
+            scope.launch {
+                bottomSheetState.hide()
+                removeAllModals()
 
-        if (backStack.lastOrNull() != route)
+                if (backStack.lastOrNull() != route)
+                    backStack.add(route)
+            }
+        } else if (backStack.lastOrNull() != route)
             backStack.add(route)
     }
 
@@ -231,7 +241,7 @@ fun PanoAppContent(
     }
 
     val bottomSheetStrategy =
-        remember { BottomSheetSceneStrategy<PanoRoute>(::removeAllModals) }
+        remember { BottomSheetSceneStrategy<PanoRoute>(bottomSheetState, ::removeAllModals) }
     val singlePaneStrategy = remember { SinglePaneSceneStrategy<PanoRoute>() }
 
     // show onboarding again when logged out
@@ -309,7 +319,7 @@ fun PanoAppContent(
         Surface {
             key(locale) {
                 Row(Modifier.fillMaxSize()) {
-                    if (currentNavType != PanoNavigationType.BOTTOM_NAVIGATION && currentUser != null) {
+                    if (currentNavType != PanoNavigationType.BOTTOM_NAVIGATION) {
                         PanoNavigationRail(
                             tabs = tabData.orEmpty(),
                             selectedTabIdx = tabIdxMap.getOrDefault(currentPanoRoute, 0),
@@ -322,14 +332,16 @@ fun PanoAppContent(
                                 }
                             },
                             onProfileClicked = {
-                                navigate(
-                                    PanoRoute.Modal.NavPopup(
-                                        otherUser = currentUser.takeIf { currentUser != userSelf },
-                                        initialDrawerData = drawerDataMap.getOrElse(currentUser) {
-                                            DrawerData(0)
-                                        }
+                                if (currentUser != null) {
+                                    navigate(
+                                        PanoRoute.Modal.NavPopup(
+                                            otherUser = currentUser.takeIf { currentUser != userSelf },
+                                            initialDrawerData = drawerDataMap.getOrElse(currentUser) {
+                                                DrawerData(0)
+                                            }
+                                        )
                                     )
-                                )
+                                }
                             },
                             user = currentUser,
                         )
@@ -680,8 +692,8 @@ private fun PanoNavigationRail(
     onBack: () -> Unit,
     onNavigate: (PanoRoute) -> Unit,
     onTabClicked: (pos: Int) -> Unit,
-    onProfileClicked: (UserCached) -> Unit,
-    user: UserCached,
+    onProfileClicked: () -> Unit,
+    user: UserCached?,
     modifier: Modifier = Modifier,
 ) {
     val expandedByDefault = when (LocalNavigationType.current) {
@@ -742,51 +754,53 @@ private fun PanoNavigationRail(
                     )
                 }
 
-                WideNavigationRailItem(
-                    selected = index == selectedTabIdx,
-                    onClick = {
-                        if (tabMetadata is PanoTab.Profile) {
-                            onProfileClicked(user)
-                            return@WideNavigationRailItem
-                        }
+                if (user != null) {
+                    WideNavigationRailItem(
+                        selected = index == selectedTabIdx,
+                        onClick = {
+                            if (tabMetadata is PanoTab.Profile) {
+                                onProfileClicked()
+                                return@WideNavigationRailItem
+                            }
 
-                        if (index != selectedTabIdx) {
-                            onTabClicked(index)
-                        }
-                    },
-                    railExpanded = state.targetValue == WideNavigationRailValue.Expanded,
-                    icon = {
-                        if (tabMetadata is PanoTab.Profile) {
+                            if (index != selectedTabIdx) {
+                                onTabClicked(index)
+                            }
+                        },
+                        railExpanded = state.targetValue == WideNavigationRailValue.Expanded,
+                        icon = {
+                            if (tabMetadata is PanoTab.Profile) {
 
-                            AvatarOrInitials(
-                                avatarUrl = user.largeImage,
-                                avatarName = user.name,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clip(CircleShape)
-                            )
-                        } else
-                            Icon(
-                                imageVector = tabMetadata.icon,
-                                contentDescription = stringResource(tabMetadata.titleRes)
-                            )
-                    },
-                    label = {
-                        Text(
-                            text = if (tabMetadata is PanoTab.Profile)
-                                if (Stuff.isInDemoMode)
-                                    "me"
+                                AvatarOrInitials(
+                                    avatarUrl = user.largeImage,
+                                    avatarName = user.name,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clip(CircleShape)
+                                )
+                            } else
+                                Icon(
+                                    imageVector = tabMetadata.icon,
+                                    contentDescription = stringResource(tabMetadata.titleRes)
+                                )
+                        },
+                        label = {
+                            Text(
+                                text = if (tabMetadata is PanoTab.Profile)
+                                    if (Stuff.isInDemoMode)
+                                        "me"
+                                    else
+                                        user.name
                                 else
-                                    user.name
-                            else
-                                stringResource(tabMetadata.titleRes),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    colors = WideNavigationRailItemDefaults.colors(selectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                                    stringResource(tabMetadata.titleRes),
+                                maxLines = 1,
+                                overflow = TextOverflow.MiddleEllipsis,
+                            )
+                        },
+                        colors = WideNavigationRailItemDefaults.colors(selectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
     }
 }

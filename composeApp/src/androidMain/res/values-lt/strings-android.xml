@@ -17,9 +17,9 @@
     <string comment="%1= the word weekly or monthly" formatted="true" name="s_top_scrobbles">%1$s geriausi skroblai</string>
     <string name="appwidget_loading">Įkeliama…</string>
     <string name="show_persistent_noti">Rodyti nuolatinį pranešimą</string>
-    <string name="persistent_noti_text">Palieskite, kad paslėpti šį</string>
     <string name="scrobbler_off">Skroboklis išjungtas</string>
     <string name="scrobbler_on">Skroboklis aktyvius</string>
+    <string name="pref_noti">Pranešimai</string>
     <plurals name="num_weeks">
         <item quantity="one">%1$s savaitė</item>
         <item quantity="few">%1$s savaitės</item>

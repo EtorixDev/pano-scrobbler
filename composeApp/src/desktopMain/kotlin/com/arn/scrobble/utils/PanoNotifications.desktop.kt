@@ -15,6 +15,8 @@ import pano_scrobbler.composeapp.generated.resources.new_player_prompt_desktop
 import pano_scrobbler.composeapp.generated.resources.update_downloaded
 
 actual object PanoNotifications {
+    actual val forcePersistentNoti = false
+
     private val _playingTrackTrayInfo =
         MutableStateFlow<Map<String, PlayingTrackNotifyEvent.PlayingTrackState>>(emptyMap())
     val playingTrackTrayInfo = _playingTrackTrayInfo.asStateFlow()

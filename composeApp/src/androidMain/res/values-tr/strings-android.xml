@@ -17,9 +17,9 @@
     <string comment="%1= the word weekly or monthly" formatted="true" name="s_top_scrobbles">%1$s en çok skroplananlar</string>
     <string name="appwidget_loading">Yükleniyor…</string>
     <string name="show_persistent_noti">Kalıcı bildirim göster</string>
-    <string name="persistent_noti_text">Gizlemek için tıkla</string>
     <string name="scrobbler_off">Skroplayıcı devre dışı</string>
     <string name="scrobbler_on">Skroplayıcı aktif</string>
+    <string name="pref_noti">Bildirimler</string>
     <plurals name="num_weeks">
         <item quantity="one">%1$s hafta</item>
         <item quantity="other">%1$s hafta</item>

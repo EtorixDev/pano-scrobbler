@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,11 +46,11 @@ fun ProxyPrefDialog(modifier: Modifier = Modifier) {
     ) {
         val proxy by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.proxy }
 
-        var enabledEditable by remember { mutableStateOf(proxy.enabled) }
-        var hostEditable by remember { mutableStateOf(proxy.host) }
-        var portEditable by remember { mutableStateOf(proxy.port.toString()) }
-        var userEditable by remember { mutableStateOf(proxy.user) }
-        var passEditable by remember { mutableStateOf(proxy.pass) }
+        var enabledEditable by rememberSaveable { mutableStateOf(proxy.enabled) }
+        var hostEditable by rememberSaveable { mutableStateOf(proxy.host) }
+        var portEditable by rememberSaveable { mutableStateOf(proxy.port.toString()) }
+        var userEditable by rememberSaveable { mutableStateOf(proxy.user) }
+        var passEditable by rememberSaveable { mutableStateOf(proxy.pass) }
 
         var isValid by remember { mutableStateOf(true) }
 

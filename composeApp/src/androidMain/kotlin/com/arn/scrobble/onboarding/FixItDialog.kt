@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.arn.scrobble.BuildKonfig
 import com.arn.scrobble.main.ScrobblerState
-import com.arn.scrobble.media.PersistentNotificationService
 import com.arn.scrobble.navigation.PanoRoute
 import com.arn.scrobble.utils.AndroidStuff
 import com.arn.scrobble.utils.AndroidStuff.toast
@@ -39,12 +38,13 @@ import pano_scrobbler.composeapp.generated.resources.appwidget_show
 import pano_scrobbler.composeapp.generated.resources.check_nls
 import pano_scrobbler.composeapp.generated.resources.fix_it_action
 import pano_scrobbler.composeapp.generated.resources.fix_it_battery_title
-import pano_scrobbler.composeapp.generated.resources.fix_it_desc
 import pano_scrobbler.composeapp.generated.resources.fix_it_energy_title
 import pano_scrobbler.composeapp.generated.resources.fix_it_startup_title
 import pano_scrobbler.composeapp.generated.resources.fix_it_title
 import pano_scrobbler.composeapp.generated.resources.kill_reason
 import pano_scrobbler.composeapp.generated.resources.not_found
+import pano_scrobbler.composeapp.generated.resources.persistent_noti_desc
+import pano_scrobbler.composeapp.generated.resources.persistent_noti_oems
 import pano_scrobbler.composeapp.generated.resources.show_persistent_noti
 import pano_scrobbler.composeapp.generated.resources.special_app_access
 
@@ -83,7 +83,10 @@ fun FixItDialog(
             style = MaterialTheme.typography.titleLarge
         )
         Text(
-            text = stringResource(Res.string.fix_it_desc),
+            text = stringResource(
+                Res.string.persistent_noti_desc,
+                stringResource(Res.string.persistent_noti_oems)
+            ),
         )
 
         if (!showDkmaLayout && batteryIntent == null && !canShowPersistentNoti) {
@@ -166,8 +169,6 @@ fun FixItDialog(
                         scope.launch {
                             PlatformStuff.mainPrefs.updateData { it.copy(notiPersistent = true) }
                         }
-
-                        PersistentNotificationService.start(context)
                     },
                     modifier = Modifier.padding(start = 8.dp)
                 ) {

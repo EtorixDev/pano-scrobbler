@@ -22,7 +22,7 @@ data class ApiErrorResponse(
 
 object ApiErrorDeserializer : KSerializer<ApiErrorResponse> {
 
-    override val descriptor = buildClassSerialDescriptor("LastFmErrorResponse") {
+    override val descriptor = buildClassSerialDescriptor("ApiErrorResponse") {
         element<Int>("code")
         element<String>("message")
     }
@@ -62,16 +62,27 @@ object ApiErrorDeserializer : KSerializer<ApiErrorResponse> {
                         }
 
                         is JsonPrimitive -> {
-                            if (errorObject.jsonPrimitive.isString)
-                                ApiErrorResponse(
-                                    code = jsonElement["code"]?.jsonPrimitive?.int ?: 0,
-                                    message = errorObject.jsonPrimitive.content
-                                )
-                            else
-                                ApiErrorResponse(
-                                    code = errorObject.jsonPrimitive.int,
-                                    message = jsonElement["message"]?.jsonPrimitive?.content ?: ""
-                                )
+                            var message: String
+                            val code: Int
+                            if (errorObject.jsonPrimitive.isString) {
+                                code = jsonElement["code"]?.jsonPrimitive?.int ?: 0
+                                message = errorObject.jsonPrimitive.content
+                            } else {
+                                code = errorObject.jsonPrimitive.int
+                                message = jsonElement["message"]?.jsonPrimitive?.content ?: ""
+                            }
+
+                            message = when (code) { // lastfm errors
+                                17 -> "This profile is private"
+                                8 -> "Last.fm is temporarily unavailable. Try again later."
+                                9 -> "Session expired. Logout and log in again."
+                                else -> message
+                            }
+
+                            ApiErrorResponse(
+                                code = code,
+                                message = message
+                            )
                         }
 
                         else -> throw SerializationException("Unknown JSON structure")
@@ -87,8 +98,8 @@ object ApiErrorDeserializer : KSerializer<ApiErrorResponse> {
             var message = ""
             loop@ while (true) {
                 when (val index = composite.decodeElementIndex(descriptor)) {
-                    0 -> code = composite.decodeIntElement(descriptor, 0)
-                    1 -> message = composite.decodeStringElement(descriptor, 1)
+                    0 -> code = composite.decodeIntElement(descriptor, index)
+                    1 -> message = composite.decodeStringElement(descriptor, index)
                     else -> break@loop
                 }
             }
@@ -99,8 +110,6 @@ object ApiErrorDeserializer : KSerializer<ApiErrorResponse> {
             )
         }
 
-        if (apiErrorResponse.code == 17) // lastfm error
-            return apiErrorResponse.copy(message = "This profile is private")
         return apiErrorResponse
     }
 

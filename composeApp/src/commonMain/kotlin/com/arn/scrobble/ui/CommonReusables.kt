@@ -312,7 +312,8 @@ fun TextWithIcon(
         )
         Text(
             text = text,
-            style = style
+            style = style,
+            maxLines = 1,
         )
     }
 }

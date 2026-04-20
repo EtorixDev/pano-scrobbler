@@ -17,9 +17,9 @@
     <string comment="%1= the word weekly or monthly" formatted="true" name="s_top_scrobbles">%1$s 상위 스크로블</string>
     <string name="appwidget_loading">로딩 중...</string>
     <string name="show_persistent_noti">지속적인 알림 표시</string>
-    <string name="persistent_noti_text">탭하여 숨기기</string>
     <string name="scrobbler_off">스크로블러 비활성화</string>
     <string name="scrobbler_on">스크로블러 활성화</string>
+    <string name="pref_noti">알림</string>
     <plurals name="num_weeks">
         <item quantity="other">%1$s주</item>
     </plurals>

@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
@@ -14,7 +15,7 @@ import android.provider.Settings
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
 import androidx.work.ForegroundInfo
-import com.arn.scrobble.BuildKonfig
+import co.touchlab.kermit.Logger
 import com.arn.scrobble.R
 import com.arn.scrobble.api.lastfm.LastfmPeriod
 import com.arn.scrobble.api.lastfm.ScrobbleData
@@ -58,7 +59,18 @@ actual object PanoNotifications {
     }
     private val notiColor by lazy { context.getColor(R.color.pinkNoti) }
     private val nowPlayingScrobbleDataToHash = mutableMapOf<String, Pair<ScrobbleData, Int>>()
+    private val activeScrobbleNotifications = linkedMapOf<String, Notification.Builder>()
     private var channelsCreated = false
+    var fgNotiShown = false
+
+    private const val NOTI_ID = 1
+
+    actual val forcePersistentNoti = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            Build.MANUFACTURER.lowercase() in arrayOf(
+        Stuff.MANUFACTURER_HUAWEI,
+        Stuff.MANUFACTURER_XIAOMI,
+        Stuff.MANUFACTURER_SAMSUNG,
+    )
 
     private fun buildNotificationAction(
         icon: Int,
@@ -68,6 +80,24 @@ actual object PanoNotifications {
     ): Notification.Action {
         val icon = Icon.createWithResource(context, icon)
         return Notification.Action.Builder(icon, text, pIntent).build()
+    }
+
+    private fun postScrobbleNotification(notiKey: String, nb: Notification.Builder) {
+        activeScrobbleNotifications[notiKey] = nb
+
+        if (fgNotiShown && isNotiChannelEnabled(Stuff.CHANNEL_NOTI_FGS)) {
+            nb.setChannelIdCompat(Stuff.CHANNEL_NOTI_FGS)
+
+            if (activeScrobbleNotifications.keys.first() == notiKey) {
+                // Replace/update the FGS notification slot (no tag)
+                notificationManager.notify(NOTI_ID, nb.build())
+            } else {
+                notificationManager.notify(notiKey, NOTI_ID, nb.build())
+            }
+        } else {
+            nb.setChannelIdCompat(Stuff.CHANNEL_NOTI_SCROBBLING)
+            notificationManager.notify(notiKey, NOTI_ID, nb.build())
+        }
     }
 
     private fun Notification.Builder.setChannelIdCompat(channelId: String): Notification.Builder {
@@ -95,8 +125,8 @@ actual object PanoNotifications {
         else
             nowPlayingScrobbleDataToHash.remove(event.notiKey)
 
-        if (!isNotiChannelEnabled(Stuff.CHANNEL_NOTI_SCROBBLING))
-            return
+//        if (!isNotiChannelEnabled(Stuff.CHANNEL_NOTI_SCROBBLING))
+//            return
 
         val cancelEvent = PlayingTrackNotifyEvent.TrackCancelled(
             hash = event.hash,
@@ -239,18 +269,16 @@ actual object PanoNotifications {
         }
 
         try {
-            notificationManager.notify(event.notiKey, 0, nb.build())
+            postScrobbleNotification(event.notiKey, nb)
         } catch (e: RuntimeException) {
-            val nExpandable = nb.setLargeIcon(null as Bitmap?)
-                .setStyle(null)
-                .build()
-            notificationManager.notify(event.notiKey, 0, nExpandable)
+            val nExpandable = nb.setLargeIcon(null as Bitmap?).setStyle(null)
+            postScrobbleNotification(event.notiKey, nExpandable)
         }
     }
 
     actual suspend fun notifyError(event: PlayingTrackNotifyEvent.Error) {
-        if (!isNotiChannelEnabled(Stuff.CHANNEL_NOTI_SCR_ERR))
-            return
+//        if (!isNotiChannelEnabled(Stuff.CHANNEL_NOTI_SCROBBLING))
+//            return
 
         val subtitle = event.scrobbleError.description
             ?: Stuff.formatBigHyphen(
@@ -277,6 +305,7 @@ actual object PanoNotifications {
                     .setBigContentTitle(event.scrobbleError.title)
                     .bigText(subtitle)
             )
+            .setChannelIdCompat(Stuff.CHANNEL_NOTI_SCROBBLING)
             .also {
                 if (event.scrobbleError.canFixMetadata) {
                     val editDialogArgs = PanoRoute.Modal.EditScrobble(
@@ -288,13 +317,10 @@ actual object PanoNotifications {
                         DeepLinkUtils.buildDialogPendingIntent(editDialogArgs)
 
                     it.setContentIntent(editPi)
-                    it.setChannelIdCompat(Stuff.CHANNEL_NOTI_SCR_ERR)
-                } else {
-                    it.setChannelIdCompat(Stuff.CHANNEL_NOTI_SCROBBLING)
                 }
             }
 
-        notificationManager.notify(event.notiKey, 0, nb.build())
+        postScrobbleNotification(event.notiKey, nb)
     }
 
     actual suspend fun notifyAppDetected(appId: String, appLabel: String) {
@@ -360,7 +386,7 @@ actual object PanoNotifications {
             )
             .setAutoCancel(true)
             .build()
-        notificationManager.notify(Stuff.CHANNEL_NOTI_NEW_APP, 0, n)
+        notificationManager.notify(Stuff.CHANNEL_NOTI_NEW_APP, NOTI_ID, n)
     }
 
 
@@ -393,13 +419,13 @@ actual object PanoNotifications {
                         getString(Res.string.blocked_metadata_noti)
             )
             .setContentIntent(blockPi)
-            .setTimeoutAfterCompat(delayTime)
-        notificationManager.notify(notiKey, 0, nb.build())
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
-            Stuff.appScope.launch {
-                delay(delayTime)
-                notificationManager.cancel(notiKey, 0)
-            }
+
+        postScrobbleNotification(notiKey, nb)
+
+        Stuff.appScope.launch {
+            delay(delayTime)
+            removeNotificationByKey(notiKey)
+        }
     }
 
     actual suspend fun notifyDigest(lastfmPeriod: LastfmPeriod, title: String, text: String) {
@@ -468,7 +494,7 @@ actual object PanoNotifications {
                     .bigText(text)
             )
 
-        notificationManager.notify(channelId, lastfmPeriod.ordinal, nb.build())
+        notificationManager.notify(lastfmPeriod.toString(), NOTI_ID, nb.build())
     }
 
     actual suspend fun notifyUpdater(updateAction: UpdateAction) {
@@ -509,7 +535,7 @@ actual object PanoNotifications {
             .setContentIntent(contentPi)
             .setAutoCancel(true)
 
-        notificationManager.notify(Stuff.CHANNEL_NOTI_UPDATER, 0, nb.build())
+        notificationManager.notify(Stuff.CHANNEL_NOTI_UPDATER, NOTI_ID, nb.build())
     }
 
 
@@ -529,7 +555,26 @@ actual object PanoNotifications {
     actual fun removeNotificationByKey(key: String) {
         nowPlayingScrobbleDataToHash.remove(key)
 
-        notificationManager.cancel(key, 0)
+        val wasFirst = activeScrobbleNotifications.keys.firstOrNull() == key
+        activeScrobbleNotifications.remove(key)
+
+        if (wasFirst && fgNotiShown && isNotiChannelEnabled(Stuff.CHANNEL_NOTI_FGS)) {
+            val newFirst = activeScrobbleNotifications.entries.firstOrNull()
+            if (newFirst != null) {
+                // Cancel the tagged notification for the newly promoted key,
+                // then re-post it to the FGS slot (no tag)
+                val (newFirstKey, newFirstNb) = newFirst
+                notificationManager.cancel(newFirstKey, NOTI_ID)
+
+                val n = newFirstNb.setChannelIdCompat(Stuff.CHANNEL_NOTI_FGS).build()
+                notificationManager.notify(NOTI_ID, n)
+            } else if (fgNotiShown) {
+                // No more scrobble notifications — restore the static FGS notification
+                notificationManager.notify(NOTI_ID, persistentNotification())
+            }
+        } else {
+            notificationManager.cancel(key, NOTI_ID)
+        }
     }
 
     fun getNowPlayingFromBackgroundProcess(): Pair<ScrobbleData, Int>? {
@@ -543,8 +588,8 @@ actual object PanoNotifications {
             AndroidStuff.updateCurrentOrImmutable
         )
         val notification = Notification.Builder(context)
-            .setChannelIdCompat(Stuff.CHANNEL_NOTI_FG_SERVICE)
-            .setGroup(Stuff.GROUP_NOTI_FG_SERVICE)
+            .setChannelIdCompat(Stuff.CHANNEL_NOTI_FGS)
+            .setGroup(Stuff.GROUP_NOTI_SCROBBLES)
             .setShowWhen(false)
             .setColor(notiColor)
             .setSmallIcon(R.drawable.vd_noti_persistent)
@@ -563,22 +608,21 @@ actual object PanoNotifications {
         )
     }
 
-    fun persistentNotification(): Notification {
-        val nb =
-            Notification.Builder(context)
-                .setChannelIdCompat(Stuff.CHANNEL_NOTI_FG_SERVICE)
-                .setSmallIcon(R.drawable.vd_noti_persistent)
-                .setVisibility(Notification.VISIBILITY_SECRET)
-                .setCategory(Notification.CATEGORY_SERVICE)
-                .setOngoing(true)
-                .setShowWhen(false)
-                .setColor(notiColor)
-                .setGroup(Stuff.GROUP_NOTI_FG_SERVICE)
+    private fun persistentNotification(): Notification {
+        val nb = Notification.Builder(context)
+            .setChannelIdCompat(Stuff.CHANNEL_NOTI_FGS)
+            .setSmallIcon(R.drawable.vd_noti_persistent)
+            .setVisibility(Notification.VISIBILITY_SECRET)
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .setOngoing(true)
+            .setShowWhen(false)
+            .setColor(notiColor)
+            .setGroup(Stuff.GROUP_NOTI_SCROBBLES)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
                 putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                putExtra(Settings.EXTRA_CHANNEL_ID, Stuff.CHANNEL_NOTI_FG_SERVICE)
+                putExtra(Settings.EXTRA_CHANNEL_ID, Stuff.CHANNEL_NOTI_FGS)
             }
             val pendingIntent =
                 PendingIntent.getActivity(
@@ -588,17 +632,43 @@ actual object PanoNotifications {
                     AndroidStuff.updateCurrentOrImmutable
                 )
             nb.setContentIntent(pendingIntent)
-            nb.setContentTitle(context.getString(R.string.persistent_noti_text))
+            nb.setContentTitle(
+                context.getString(R.string.scrobbler_on) + " • " +
+                        context.getString(R.string.pref_noti)
+            )
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 nb.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)
             }
         } else {
-            nb.setContentTitle(BuildKonfig.APP_NAME)
+            nb.setContentTitle(context.getString(R.string.scrobbler_on))
             nb.setPriority(Notification.PRIORITY_MIN)
         }
 
         return nb.build()
+    }
+
+    fun startFgs(service: Service) {
+        if (fgNotiShown || !AndroidStuff.canShowPersistentNotiIfEnabled) return
+
+        try {
+            service.startForeground(NOTI_ID, persistentNotification())
+            fgNotiShown = true
+        } catch (e: Exception) {
+            Logger.e(e) { "Failed to post persistent notification" }
+            fgNotiShown = false
+        }
+    }
+
+    fun stopFgs(service: Service) {
+        if (!fgNotiShown || !AndroidStuff.canShowPersistentNotiIfEnabled) return
+
+        fgNotiShown = false
+        try {
+            service.stopForeground(true)
+        } catch (e: Exception) {
+            Logger.e(e) { "Failed to stop foreground service" }
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -620,10 +690,6 @@ actual object PanoNotifications {
                         context.getString(R.string.monthly)
             )
         )
-        groups += NotificationChannelGroup(
-            Stuff.GROUP_NOTI_FG_SERVICE,
-            context.getString(R.string.show_persistent_noti)
-        )
 
         notificationManager.createNotificationChannelGroups(groups)
 
@@ -632,24 +698,32 @@ actual object PanoNotifications {
 
         channels += NotificationChannel(
             Stuff.CHANNEL_NOTI_SCROBBLING,
-            context.getString(R.string.state_scrobbling),
+            context.getString(R.string.scrobbles),
             NotificationManager.IMPORTANCE_LOW
         ).apply {
             group = Stuff.GROUP_NOTI_SCROBBLES
         }
-        channels += NotificationChannel(
-            Stuff.CHANNEL_NOTI_SCR_ERR,
-            context.getString(R.string.channel_err),
-            NotificationManager.IMPORTANCE_MIN
-        ).apply {
-            group = Stuff.GROUP_NOTI_SCROBBLES
-        }
+//        channels += NotificationChannel(
+//            Stuff.CHANNEL_NOTI_SCR_ERR,
+//            context.getString(R.string.channel_err),
+//            NotificationManager.IMPORTANCE_MIN
+//        ).apply {
+//            group = Stuff.GROUP_NOTI_SCROBBLES
+//        }
         channels += NotificationChannel(
             Stuff.CHANNEL_NOTI_NEW_APP,
             context.getString(
                 R.string.new_player,
                 context.getString(R.string.new_app)
             ),
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            group = Stuff.GROUP_NOTI_SCROBBLES
+        }
+        channels += NotificationChannel(
+            Stuff.CHANNEL_NOTI_FGS,
+            context.getString(R.string.show_persistent_noti),
+            // foreground service noti cannot be IMPORTANCE_MIN
             NotificationManager.IMPORTANCE_LOW
         ).apply {
             group = Stuff.GROUP_NOTI_SCROBBLES
@@ -674,17 +748,10 @@ actual object PanoNotifications {
         ).apply {
             group = Stuff.GROUP_NOTI_DIGESTS
         }
-        channels += NotificationChannel(
-            Stuff.CHANNEL_NOTI_FG_SERVICE,
-            context.getString(R.string.show_persistent_noti),
-            // foreground service noti cannot be IMPORTANCE_MIN
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            group = Stuff.GROUP_NOTI_FG_SERVICE
-        }
-
-        notificationManager.createNotificationChannels(channels)
         notificationManager.deleteNotificationChannel("noti_persistent")
         notificationManager.deleteNotificationChannel("noti_pending_scrobbles")
+        notificationManager.deleteNotificationChannel("noti_scrobble_errors")
+        notificationManager.deleteNotificationChannelGroup("group_fg_service")
+        notificationManager.createNotificationChannels(channels)
     }
 }

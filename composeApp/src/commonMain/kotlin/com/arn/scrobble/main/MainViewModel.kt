@@ -1,5 +1,6 @@
 package com.arn.scrobble.main
 
+import androidx.annotation.Keep
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -116,7 +117,7 @@ class MainViewModel : ViewModel() {
 
     fun updateScrobblerServiceState(requestRebind: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
-            delay(100)
+            delay(1000)
             val state = PlatformStuff.checkScrobblerState(requestRebind)
             _scrobblerStateFlow.value = state
 
@@ -171,9 +172,11 @@ class MainViewModel : ViewModel() {
             .filter { it == id }
             .map { }
 
-    private class AppExitException(override val message: String) : RuntimeException()
 
     companion object {
         private var killedReasonReported = false
     }
 }
+
+@Keep
+private class AppExitException(override val message: String) : RuntimeException()

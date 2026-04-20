@@ -17,9 +17,9 @@
     <string comment="%1= the word weekly or monthly" formatted="true" name="s_top_scrobbles">%1$s scrobble atas</string>
     <string name="appwidget_loading">Memuat…</string>
     <string name="show_persistent_noti">Tampilkan pemberitahuan terus-menerus</string>
-    <string name="persistent_noti_text">Ketuk untuk menyembunyikan ini</string>
     <string name="scrobbler_off">Scrobbler dinonaktifkan</string>
     <string name="scrobbler_on">Scrobbler aktif</string>
+    <string name="pref_noti">Notifikasi</string>
     <plurals name="num_weeks">
         <item quantity="other">%1$s minggu</item>
     </plurals>

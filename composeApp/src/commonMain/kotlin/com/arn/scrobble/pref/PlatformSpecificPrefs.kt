@@ -3,7 +3,7 @@ package com.arn.scrobble.pref
 import com.arn.scrobble.navigation.PanoRoute
 
 expect object PlatformSpecificPrefs {
-    fun prefNotifications(filteredItem: FilteredItem)
+    fun prefNotifications(filteredItem: FilteredItem, notiPersistent: Boolean)
 
     fun prefScrobbler(
         filteredItem: FilteredItem,
@@ -13,8 +13,6 @@ expect object PlatformSpecificPrefs {
     )
 
     fun prefQuickSettings(filteredItem: FilteredItem, scrobblerEnabled: Boolean)
-
-    fun prefPersistentNoti(filteredItem: FilteredItem, notiEnabled: Boolean)
 
     fun prefChartsWidget(filteredItem: FilteredItem)
 

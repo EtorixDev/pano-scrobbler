@@ -19,6 +19,7 @@
     <string name="show_persistent_noti">Mostra una notificació persistent</string>
     <string name="scrobbler_off">Scrobbler desactivat</string>
     <string name="scrobbler_on">Scrobbler activat</string>
+    <string name="pref_noti">Notificacions</string>
     <plurals name="num_weeks">
         <item quantity="one">%1$s setmana</item>
         <item quantity="other">%1$s setmanes</item>

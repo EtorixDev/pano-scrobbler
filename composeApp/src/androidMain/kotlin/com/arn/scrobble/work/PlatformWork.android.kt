@@ -11,8 +11,8 @@ import com.arn.scrobble.utils.AndroidStuff
 import com.arn.scrobble.utils.PanoNotifications
 import com.arn.scrobble.utils.Stuff
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 
 fun mapWorkState(state: WorkInfo.State): CommonWorkState {
     return when (state) {
@@ -38,8 +38,7 @@ abstract class CommonWorkImpl(protected val name: String) : CommonWork {
     final override fun getProgress(): Flow<CommonWorkProgress> {
         return WorkManager.getInstance(AndroidStuff.applicationContext)
             .getWorkInfosForUniqueWorkFlow(name)
-            .map { it.firstOrNull() }
-            .filterNotNull()
+            .mapNotNull { it.firstOrNull() }
             .map { workInfo ->
                 if (workInfo.state.isFinished) {
                     dataToProgress(workInfo.outputData, workInfo.state)

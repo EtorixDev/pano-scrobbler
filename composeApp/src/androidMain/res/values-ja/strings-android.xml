@@ -19,6 +19,7 @@
     <string name="show_persistent_noti">通知を永続的に表示する</string>
     <string name="scrobbler_off">Scrobbler停止中</string>
     <string name="scrobbler_on">Scrobbler稼働中</string>
+    <string name="pref_noti">通知</string>
     <plurals name="num_weeks">
         <item quantity="other">%1$s週間</item>
     </plurals>

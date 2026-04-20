@@ -9,18 +9,17 @@ import com.arn.scrobble.db.RegexEditsDao.Companion.import
 import com.arn.scrobble.db.ScrobbleSource
 import com.arn.scrobble.db.SimpleEdit
 import com.arn.scrobble.utils.PlatformStuff
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNames
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonTransformingSerializer
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import java.io.InputStream
@@ -53,15 +52,11 @@ class ImExporter {
 
         // write to file
         return try {
-            json.encodeToStream(ExportDataSerializer, exportData, writer)
+            json.encodeToStream(exportData, writer)
             true
         } catch (e: Exception) {
             e.printStackTrace()
             false
-        } finally {
-            withContext(Dispatchers.IO) {
-                writer.close()
-            }
         }
 
     }
@@ -79,15 +74,11 @@ class ImExporter {
 
         // write to file
         return try {
-            json.encodeToStream(ExportDataSerializer, exportDataPrivate, writer)
+            json.encodeToStream(exportDataPrivate, writer)
             true
         } catch (e: Exception) {
             e.printStackTrace()
             false
-        } finally {
-            withContext(Dispatchers.IO) {
-                writer.close()
-            }
         }
     }
 
@@ -265,13 +256,23 @@ private data class ExportData(
     val pano_version: Int,
 
     @JsonNames("edits")
+    @Serializable(with = SimpleEditListSerializer::class)
     val simple_edits: List<SimpleEdit>?,
+
     @JsonNames("regex_edits")
     val regex_edits_legacy: List<RegexEditLegacy>? = null,
+
+    @Serializable(with = RegexEditListSerializer::class)
     val regex_rules: List<RegexEdit>?,
+
+    @Serializable(with = BlockedMetadataListSerializer::class)
     val blocked_metadata: List<BlockedMetadata>?,
+
     val artists_with_delimiters: List<String>?,
+
+    @Serializable(with = ScrobbleSourceListSerializer::class)
     val scrobble_sources: List<ScrobbleSource>?,
+
     val settings: MainPrefs.Public?,
 )
 
@@ -302,23 +303,30 @@ private data class ExtractionPatternsLegacy(
     val extractionAlbumArtist: String,
 )
 
-private object ExportDataSerializer :
-    JsonTransformingSerializer<ExportData>(ExportData.serializer()) {
-    override fun transformSerialize(element: JsonElement) = removeIdRecursively(element)
-
-    private fun removeIdRecursively(element: JsonElement): JsonElement = when (element) {
-        is JsonObject -> buildJsonObject {
-            element.forEach { (k, v) ->
-                // remove database ID fields
-                if (k != "_id") put(k, removeIdRecursively(v))
-            }
-        }
-
-        is JsonArray ->
-            buildJsonArray {
-                element.forEach { add(removeIdRecursively(it)) }
-            }
-
-        else -> element
+private class ExcludeIdSerializer<T>(delegate: KSerializer<T>) :
+    JsonTransformingSerializer<T>(delegate) {
+    override fun transformSerialize(element: JsonElement): JsonElement {
+        if (element !is JsonObject) return element
+        return JsonObject(element.filterKeys { it != "_id" })
     }
+    // transformDeserialize is not overridden, so _id is read normally
 }
+
+private class ExcludeIdListSerializer<T>(elementSerializer: KSerializer<T>) : KSerializer<List<T>> {
+    private val delegate = ListSerializer(ExcludeIdSerializer(elementSerializer))
+    override val descriptor = delegate.descriptor
+    override fun serialize(encoder: Encoder, value: List<T>) = delegate.serialize(encoder, value)
+    override fun deserialize(decoder: Decoder) = delegate.deserialize(decoder)
+}
+
+private object SimpleEditListSerializer :
+    KSerializer<List<SimpleEdit>> by ExcludeIdListSerializer(SimpleEdit.serializer())
+
+private object RegexEditListSerializer :
+    KSerializer<List<RegexEdit>> by ExcludeIdListSerializer(RegexEdit.serializer())
+
+private object BlockedMetadataListSerializer :
+    KSerializer<List<BlockedMetadata>> by ExcludeIdListSerializer(BlockedMetadata.serializer())
+
+private object ScrobbleSourceListSerializer :
+    KSerializer<List<ScrobbleSource>> by ExcludeIdListSerializer(ScrobbleSource.serializer())

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ButtonDefaults
@@ -35,6 +36,8 @@ import com.arn.scrobble.icons.Circle
 import com.arn.scrobble.icons.Icons
 import com.arn.scrobble.main.MainViewModel
 import com.arn.scrobble.navigation.PanoRoute
+import com.arn.scrobble.panoicons.Nothing
+import com.arn.scrobble.panoicons.PanoIcons
 import com.arn.scrobble.ui.accountTypeLabel
 import com.arn.scrobble.ui.horizontalOverscanPadding
 import com.arn.scrobble.ui.testTagsAsResId
@@ -144,9 +147,15 @@ fun VerticalStepperItem(
             onSkipClick = onSkip
         )
     },
+    additionalContent: (@Composable () -> Unit)? = null,
 ) {
 
-    val icon = if (isDone) Icons.CheckCircle else Icons.Circle
+    val icon = if (isDone)
+        Icons.CheckCircle
+    else if (isExpanded)
+        PanoIcons.Nothing
+    else
+        Icons.Circle
 
     Row(
         modifier = modifier
@@ -176,7 +185,6 @@ fun VerticalStepperItem(
                 color = MaterialTheme.colorScheme.primary,
             )
 
-
             AnimatedVisibility(isExpanded) {
                 Column(
                     modifier = modifier.fillMaxWidth()
@@ -187,6 +195,12 @@ fun VerticalStepperItem(
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
+
+                    if (additionalContent != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        additionalContent()
+                    }
+
                     buttonsContent()
                 }
             }

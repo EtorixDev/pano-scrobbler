@@ -605,7 +605,7 @@ fun PrefsScreen(
             )
         }
 
-        PlatformSpecificPrefs.prefNotifications(::filteredItem)
+        PlatformSpecificPrefs.prefNotifications(::filteredItem, notiPersistent)
 
         filteredHeader("lists", Res.string.simple_edits, Icons.EditNote)
 
@@ -862,8 +862,6 @@ fun PrefsScreen(
                 )
             }
         }
-
-        PlatformSpecificPrefs.prefPersistentNoti(::filteredItem, notiPersistent)
 
         if (!PlatformStuff.isTv) {
             filteredItem("automation", Res.string.automation) { title ->

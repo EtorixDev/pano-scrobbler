@@ -75,8 +75,9 @@ import pano_scrobbler.composeapp.generated.resources.pref_themes
 import pano_scrobbler.composeapp.generated.resources.pro_also_get
 import pano_scrobbler.composeapp.generated.resources.pro_support
 import pano_scrobbler.composeapp.generated.resources.purchase_pending
+import pano_scrobbler.composeapp.generated.resources.regex_rules
 import pano_scrobbler.composeapp.generated.resources.thank_you
-import pano_scrobbler.composeapp.generated.resources.upto_n_regexes
+import pano_scrobbler.composeapp.generated.resources.upto_n
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -101,10 +102,8 @@ fun BillingScreen(
         if (!PlatformStuff.isTv)
             Icons.Automation to stringResource(Res.string.automation)
         else null,
-        Icons.RegularExpression to stringResource(
-            Res.string.upto_n_regexes,
-            Stuff.MAX_PATTERNS_HIGH
-        ),
+        Icons.RegularExpression to stringResource(Res.string.regex_rules) + ": " +
+                stringResource(Res.string.upto_n, Stuff.MAX_PATTERNS_HIGH),
         Icons.RegularExpression to stringResource(Res.string.billing_regex_extract),
         if (!PlatformStuff.isTv && !PlatformStuff.isDesktop)
             Icons.Share to stringResource(Res.string.billing_sharing)

@@ -17,9 +17,9 @@
     <string comment="%1= the word weekly or monthly" formatted="true" name="s_top_scrobbles">%1$s اسکرابل برتر</string>
     <string name="appwidget_loading">درحال بارگیری…</string>
     <string name="show_persistent_noti">یک اعلان مقاوم نشون بده</string>
-    <string name="persistent_noti_text">برای مخفی‌ کردن کلیک کن</string>
     <string name="scrobbler_off">اسکرابل کننده خاموش</string>
     <string name="scrobbler_on">اسکرابل کننده روشن</string>
+    <string name="pref_noti">اعلانات</string>
     <plurals name="num_weeks">
         <item quantity="one">%1$s هفته</item>
         <item quantity="other">%1$s هفته</item>

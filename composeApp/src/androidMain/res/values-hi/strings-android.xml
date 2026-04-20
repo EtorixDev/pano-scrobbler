@@ -16,6 +16,7 @@
     <string name="charts_no_data">इस अवधि का डेटा नहीं है</string>
     <string name="appwidget_loading">लोड हो रहा है…</string>
     <string name="scrobbler_off">स्क्रौब्ल करना बंद है</string>
+    <string name="pref_noti">सूचनाएं</string>
     <plurals name="num_weeks">
         <item quantity="one">%1$s सप्ताह</item>
         <item quantity="other">%1$s सप्ताह</item>

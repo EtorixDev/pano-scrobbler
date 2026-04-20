@@ -9,6 +9,7 @@ import android.net.Uri
 import android.service.notification.NotificationListenerService
 import co.touchlab.kermit.Logger
 import com.arn.scrobble.BuildKonfig
+import com.arn.scrobble.MasterSwitchQS
 import com.arn.scrobble.media.NLService
 import com.arn.scrobble.media.PlayingTrackNotifyEvent
 import com.arn.scrobble.utils.AndroidStuff.toast
@@ -59,7 +60,17 @@ class AutomationProvider : ContentProvider() {
         )
 
         if (wasSuccessful) {
-            runBlocking(Dispatchers.Main) {
+            if (command == Automation.ENABLE || command == Automation.DISABLE) {
+                if (command == Automation.ENABLE) {
+                    requestRebind()
+                }
+
+                runBlocking(Dispatchers.Main.immediate) {
+                    MasterSwitchQS.requestListeningState(context ?: return@runBlocking)
+                }
+            }
+
+            runBlocking(Dispatchers.Main.immediate) {
                 context?.toast(command)
             }
         }

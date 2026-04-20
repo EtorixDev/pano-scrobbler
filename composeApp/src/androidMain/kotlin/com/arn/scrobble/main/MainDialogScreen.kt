@@ -1,8 +1,11 @@
 package com.arn.scrobble.main
 
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
@@ -18,10 +21,12 @@ import com.arn.scrobble.navigation.NavFromOutsideEffect
 import com.arn.scrobble.navigation.PanoRoute
 import com.arn.scrobble.navigation.panoModalNavGraph
 import com.arn.scrobble.navigation.rememberPanoNavBackStack
+import kotlinx.coroutines.launch
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PanoMainDialogContent(
     onClose: () -> Unit,
@@ -30,6 +35,9 @@ fun PanoMainDialogContent(
     setSingletonImageLoaderFactory { context ->
         PanoImageLoader.newImageLoader(context)
     }
+
+    val scope = rememberCoroutineScope()
+    val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val backStack = rememberPanoNavBackStack(
         SavedStateConfiguration {
@@ -59,7 +67,10 @@ fun PanoMainDialogContent(
     }
 
     fun removeAllModals() {
-        backStack.removeAll { it is PanoRoute.Modal }
+        scope.launch {
+            bottomSheetState.hide()
+            backStack.removeAll { it is PanoRoute.Modal }
+        }
     }
 
     fun replace(route: PanoRoute) {
@@ -68,6 +79,9 @@ fun PanoMainDialogContent(
             it != route && it != PanoRoute.Blank
         }
     }
+
+    val bottomSheetStrategy =
+        remember { BottomSheetSceneStrategy<PanoRoute>(bottomSheetState, ::removeAllModals) }
 
     NavFromOutsideEffect(
         onNavigate = ::replace,
@@ -81,22 +95,30 @@ fun PanoMainDialogContent(
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator()
         ),
-        sceneStrategies = remember { listOf(BottomSheetSceneStrategy(::removeAllModals)) },
+        sceneStrategies = remember { listOf(bottomSheetStrategy) },
         entryProvider = entryProvider {
             entry(PanoRoute.Blank) { }
 
             panoModalNavGraph(
                 navigate = {
                     when (it) {
-                        !is PanoRoute.Modal if it is PanoRoute.DeepLinkable ->
-                            DeepLinkUtils.handleNavigationFromInfoScreen(it)
+                        !is PanoRoute.Modal if it is PanoRoute.DeepLinkable -> {
+                            scope.launch {
+                                removeAllModals()
+                                DeepLinkUtils.handleNavigationFromInfoScreen(it)
+                            }
+                        }
 
-                        is PanoRoute.Modal -> navigate(it)
+                        is PanoRoute.Modal -> {
+                            navigate(it)
+                        }
 
-                        else -> Logger.e(
-                            "Cannot navigate to non-deeplinkable route",
-                            IllegalArgumentException("Called ${it::class.simpleName} from dialog")
-                        )
+                        else -> {
+                            Logger.e(
+                                "Cannot navigate to non-deeplinkable route",
+                                IllegalArgumentException("Called ${it::class.simpleName} from dialog")
+                            )
+                        }
                     }
                 },
                 goBack = ::goBack,

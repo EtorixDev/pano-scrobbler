@@ -29,11 +29,7 @@ actual object PlatformSpecificPrefs {
         // no-op
     }
 
-    actual fun prefNotifications(filteredItem: FilteredItem) {
-        // no-op
-    }
-
-    actual fun prefPersistentNoti(filteredItem: FilteredItem, notiEnabled: Boolean) {
+    actual fun prefNotifications(filteredItem: FilteredItem, notiPersistent: Boolean) {
         // no-op
     }
 

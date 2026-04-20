@@ -19,6 +19,7 @@
     <string name="show_persistent_noti">Näytä pysyvä ilmoitus</string>
     <string name="scrobbler_off">Scrobblaaja pois päältä</string>
     <string name="scrobbler_on">Scrobblaaja päällä</string>
+    <string name="pref_noti">Ilmoitukset</string>
     <plurals name="num_weeks">
         <item quantity="one">%1$s viikko</item>
         <item quantity="other">%1$s viikkoa</item>

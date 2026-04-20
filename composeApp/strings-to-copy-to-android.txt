@@ -10,7 +10,7 @@ new_player
 scrobbler_off
 scrobbler_on
 show_persistent_noti
-persistent_noti_text
+pref_noti
 channel_err
 monthly
 new_app

@@ -31,7 +31,6 @@ import com.arn.scrobble.api.lastfm.Album
 import com.arn.scrobble.api.lastfm.Artist
 import com.arn.scrobble.api.lastfm.MusicEntry
 import com.arn.scrobble.api.lastfm.Track
-import com.arn.scrobble.automation.Automation
 import com.arn.scrobble.db.PanoDb
 import com.arn.scrobble.main.ScrobblerState
 import com.arn.scrobble.media.NLService
@@ -172,16 +171,7 @@ actual object PlatformStuff {
                 null
 
             if (requestRebind) {
-                Stuff.appScope.launch(Dispatchers.IO) {
-                    val requestRebindResult = cr.query(
-                        "content://${Automation.PREFIX}/${Automation.ANDROID_REQUEST_REBIND}".toUri(),
-                        null,
-                        null,
-                        null,
-                        null,
-                    )
-                    requestRebindResult?.close()
-                }
+                AndroidStuff.requestRebindFromContentProvider(cr)
             }
 
             return ScrobblerState.Killed(killedReason)

@@ -19,6 +19,7 @@
     <string name="show_persistent_noti">Ενεργοποίηση συνεχών ειδοποιήσεων</string>
     <string name="scrobbler_off">Scrobbler ανενεργό</string>
     <string name="scrobbler_on">Scrobbler ενεργό</string>
+    <string name="pref_noti">Ειδοποιήσεις</string>
     <plurals name="num_weeks">
         <item quantity="one">%1$s εβδομάδα</item>
         <item quantity="other">%1$s εβδομάδες</item>

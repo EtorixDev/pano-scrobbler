@@ -24,12 +24,5 @@
                 android:name="com.arn.scrobble.crashreporter.CrashReporterInitializer"
                 android:value="androidx.startup" />
         </provider>
-
-
-        <!--  do not use FOREGROUND_SERVICE_SPECIAL_USE on play store builds due to play store restrictions  -->
-        <service
-            android:name="com.arn.scrobble.media.PersistentNotificationService"
-            android:exported="false"
-            android:process=":bgScrobbler" />
     </application>
 </manifest>

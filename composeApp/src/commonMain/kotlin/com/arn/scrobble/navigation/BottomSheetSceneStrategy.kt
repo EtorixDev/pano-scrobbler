@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.arn.scrobble.navigation
 
 import androidx.compose.foundation.layout.Box
@@ -13,13 +15,19 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedIconButton
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.rememberLifecycleOwner
 import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavMetadataKey
+import androidx.navigation3.runtime.get
+import androidx.navigation3.runtime.metadata
 import androidx.navigation3.scene.OverlayScene
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
@@ -38,15 +46,15 @@ import pano_scrobbler.composeapp.generated.resources.close
 
 // THANKS I HATE IT
 
-
-private const val BOTTOM_SHEET_KEY = "bottomsheet"
+private data object BottomSheetKey : NavMetadataKey<Unit>
 
 /** An [OverlayScene] that renders an [entry] within a [ModalBottomSheet]. */
-internal class BottomSheetScene<T : Any>(
+internal data class BottomSheetScene<T : Any>(
     override val key: T,
     override val previousEntries: List<NavEntry<T>>,
     override val overlaidEntries: List<NavEntry<T>>,
     private val entry: NavEntry<T>,
+    private val sheetState: SheetState,
     private val onDismissRequest: () -> Unit,
     private val onBack: () -> Unit,
 ) : OverlayScene<T> {
@@ -54,21 +62,29 @@ internal class BottomSheetScene<T : Any>(
     override val entries: List<NavEntry<T>> = listOf(entry)
 
     override val content: @Composable (() -> Unit) = {
+        val lifecycleOwner = rememberLifecycleOwner()
+        val canGoBack = previousEntries.lastOrNull()?.metadata?.get(BottomSheetKey) != null
+
         BottomSheetDialogParent(
+            sheetState = sheetState,
             onDismissRequest = onDismissRequest,
-            onBack = if (previousEntries.lastOrNull()?.metadata?.contains(BOTTOM_SHEET_KEY) == true) {
+            onBack = if (canGoBack) {
                 onBack
             } else {
                 null
             },
-        ) { entry.Content() }
+        ) {
+            CompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
+                entry.Content()
+            }
+        }
     }
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BottomSheetDialogParent(
+    sheetState: SheetState,
     onDismissRequest: () -> Unit,
     onBack: (() -> Unit)?,
     content: @Composable () -> Unit,
@@ -76,9 +92,6 @@ private fun BottomSheetDialogParent(
     val scope = rememberCoroutineScope()
     val sheetGesturesEnabled = !PlatformStuff.isTv && !PlatformStuff.isDesktop
     val isImeVisible = isImeVisible()
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true,
-    )
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -140,20 +153,22 @@ private fun BottomSheetDialogParent(
  * This strategy should always be added before any non-overlay scene strategies.
  */
 class BottomSheetSceneStrategy<T : Any>(
+    private val sheetState: SheetState,
     private val onDismiss: () -> Unit
 ) : SceneStrategy<T> {
 
     override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         val lastEntry = entries.lastOrNull()
-        val isBottomSheet = lastEntry?.metadata?.contains(BOTTOM_SHEET_KEY) == true
+        val isBottomSheet = lastEntry?.metadata?.get(BottomSheetKey) != null
 
         return if (isBottomSheet)
             @Suppress("UNCHECKED_CAST")
             BottomSheetScene(
                 key = lastEntry.contentKey as T,
                 previousEntries = entries.dropLast(1),
-                overlaidEntries = entries.filterNot { BOTTOM_SHEET_KEY in it.metadata },
+                overlaidEntries = entries.filterNot { it.metadata[BottomSheetKey] != null },
                 entry = lastEntry,
+                sheetState,
                 onDismissRequest = onDismiss,
                 onBack = onBack
             )
@@ -162,15 +177,8 @@ class BottomSheetSceneStrategy<T : Any>(
     }
 
     companion object {
-        /**
-         * Function to be called on the [NavEntry.metadata] to mark this entry as something that
-         * should be displayed within a [ModalBottomSheet].
-         *
-         * @param properties properties that should be passed to the containing
-         * [ModalBottomSheet].
-         */
-        fun bottomSheet(): Map<String, Any> =
-            mapOf(BOTTOM_SHEET_KEY to Unit)
-
+        fun bottomSheet() = metadata {
+            put(BottomSheetKey, Unit)
+        }
     }
 }
