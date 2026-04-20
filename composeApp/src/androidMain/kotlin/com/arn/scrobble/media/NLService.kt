@@ -66,8 +66,8 @@ class NLService : NotificationListenerService() {
             job = SupervisorJob()
             coroutineScope = CoroutineScope(Dispatchers.Main.immediate + job!!)
 
-//            if (BuildKonfig.DEBUG)
-            toast(R.string.scrobbler_on)
+            if (BuildKonfig.DEBUG)
+                toast(R.string.scrobbler_on)
 
             coroutineScope.launch {
                 Stuff.initializeMainPrefsCache()
@@ -182,9 +182,8 @@ class NLService : NotificationListenerService() {
     override fun onDestroy() {
         if (AndroidStuff.canShowPersistentNotiIfEnabled)
             PanoNotifications.stopFgs(this)
-//      todo undo
-//      if (BuildKonfig.DEBUG)
-        toast(R.string.scrobbler_off)
+        if (BuildKonfig.DEBUG)
+            toast(R.string.scrobbler_off)
 
         destroy()
 
