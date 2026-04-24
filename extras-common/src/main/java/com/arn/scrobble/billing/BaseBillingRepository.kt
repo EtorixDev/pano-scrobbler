@@ -1,14 +1,10 @@
 package com.arn.scrobble.billing
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.withContext
 
 
 abstract class BaseBillingRepository {
@@ -21,20 +17,7 @@ abstract class BaseBillingRepository {
     val licenseError = _licenseError.asSharedFlow()
     abstract val purchaseMethods: List<PurchaseMethod>
     abstract val needsActivationCode: Boolean
-    val licenseState by lazy {
-        receipt.map { (receipt, signature) ->
-            withContext(Dispatchers.IO) {
-                if (receipt == null) {
-                    LicenseState.NO_LICENSE
-                } else if (verifyPurchase(receipt, signature)) {
-                    LicenseState.VALID
-                } else {
-                    LicenseState.NO_LICENSE
-                }
-            }
-        }
-            .stateIn(scope, SharingStarted.Lazily, LicenseState.UNKNOWN)
-    }
+    val licenseState = MutableStateFlow(LicenseState.VALID)
 
     abstract fun initBillingClient()
 
