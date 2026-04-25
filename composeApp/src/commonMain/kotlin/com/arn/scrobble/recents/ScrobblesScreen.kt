@@ -63,8 +63,9 @@ import com.arn.scrobble.icons.Icons
 import com.arn.scrobble.icons.Refresh
 import com.arn.scrobble.main.PanoPullToRefresh
 import com.arn.scrobble.main.ScrobblerState
+import com.arn.scrobble.media.PlayingTrackNotifyEvent
+import com.arn.scrobble.media.globalTrackEventFlow
 import com.arn.scrobble.navigation.PanoRoute
-import com.arn.scrobble.ui.AutoRefreshEffect
 import com.arn.scrobble.ui.DismissableNotice
 import com.arn.scrobble.ui.EmptyText
 import com.arn.scrobble.ui.PanoLazyColumn
@@ -77,7 +78,10 @@ import com.arn.scrobble.utils.Stuff.collectAsStateWithInitialValue
 import com.arn.scrobble.utils.Stuff.format
 import com.arn.scrobble.utils.Stuff.timeToLocal
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
@@ -123,7 +127,6 @@ fun ScrobblesScreen(
     var selectedType by rememberSaveable { mutableStateOf(ScrobblesType.RECENTS) }
     var timeJumpMillis by rememberSaveable { mutableStateOf<Long?>(null) }
     val tracks = viewModel.tracks.collectAsLazyPagingItems()
-    val firstPageLoadedTime by viewModel.firstPageLoadedTime.collectAsStateWithLifecycle()
     val pendingScrobblesWithCount by
     if (user.isSelf)
         viewModel.pendingScrobblesWithCount.collectAsStateWithLifecycle()
@@ -286,19 +289,23 @@ fun ScrobblesScreen(
         }
     }
 
-    AutoRefreshEffect(
-        firstPageLoadedTime = firstPageLoadedTime,
-        interval = Stuff.RECENTS_REFRESH_INTERVAL,
-        doRefresh = {
-            if (selectedType == ScrobblesType.RECENTS && listState.firstVisibleItemIndex < 4) {
-                tracks.refresh()
-                true
-            } else {
-                false
+    LaunchedEffect(user.isSelf, selectedType) {
+        if (!user.isSelf || selectedType != ScrobblesType.RECENTS) {
+            return@LaunchedEffect
+        }
+
+        globalTrackEventFlow
+            .filterIsInstance<PlayingTrackNotifyEvent.TrackPlaying>()
+            .map { it.hash to it.nowPlaying }
+            .distinctUntilChanged()
+            .collect {
+                if (tracks.loadState.refresh is LoadState.NotLoading &&
+                    !tracks.loadState.hasError
+                ) {
+                    tracks.refresh()
+                }
             }
-        },
-        lazyPagingItems = tracks,
-    )
+    }
 
     OnEditEffect(
         viewModel,

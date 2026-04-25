@@ -14,13 +14,20 @@ import kotlinx.coroutines.launch
 
 
 actual fun notifyPlayingTrackEvent(event: PlayingTrackNotifyEvent) {
+    val context = AndroidStuff.applicationContext
+
     if (!AndroidStuff.isMainProcess) {
         if (globalTrackEventFlow.subscriptionCount.value > 0) {
             globalTrackEventFlow.tryEmit(event)
         }
-        // else scrobbler service is not running, do nothing
+
+        if (event is PlayingTrackNotifyEvent.TrackPlaying) {
+            context.sendBroadcast(MainProcessTrackPlayingReceiver.createIntent(context, event))
+        }
     } else {
-        val context = AndroidStuff.applicationContext
+        if (globalTrackEventFlow.subscriptionCount.value > 0) {
+            globalTrackEventFlow.tryEmit(event)
+        }
 
         val intent = PlayingTrackEventReceiver.createIntent(context, event)
         context.sendBroadcast(intent)

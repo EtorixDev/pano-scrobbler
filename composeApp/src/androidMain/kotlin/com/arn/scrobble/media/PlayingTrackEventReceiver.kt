@@ -10,60 +10,75 @@ class PlayingTrackEventReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null || intent == null) return
 
+        val event = PlayingTrackEventIntentCodec.decode(intent) ?: return
+
+        notifyPlayingTrackEvent(event)
+    }
+
+    companion object {
+        fun createIntent(context: Context, event: PlayingTrackNotifyEvent): Intent =
+            PlayingTrackEventIntentCodec.createIntent(
+                context,
+                PlayingTrackEventReceiver::class.java,
+                event
+            )
+    }
+}
+
+internal object PlayingTrackEventIntentCodec {
+    private const val EXTRA_EVENT = "event"
+    private const val EXTRA_EVENT_TYPE = "event_type"
+
+    fun decode(intent: Intent): PlayingTrackNotifyEvent? {
         val eventStr = intent.getStringExtra(EXTRA_EVENT)
         val eventType = intent.getStringExtra(EXTRA_EVENT_TYPE)
 
-        if (eventStr == null || eventType == null) return
+        if (eventStr == null || eventType == null) {
+            return null
+        }
 
-        val event = when (eventType) {
+        return when (eventType) {
+            PlayingTrackNotifyEvent.TrackPlaying::class.simpleName -> {
+                Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.TrackPlaying>(eventStr)
+            }
+
             PlayingTrackNotifyEvent.TrackCancelled::class.simpleName -> {
-                eventStr.let {
-                    Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.TrackCancelled>(it)
-                }
+                Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.TrackCancelled>(eventStr)
             }
 
             PlayingTrackNotifyEvent.TrackLovedUnloved::class.simpleName -> {
-                eventStr.let {
-                    Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.TrackLovedUnloved>(it)
-                }
+                Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.TrackLovedUnloved>(eventStr)
             }
 
             PlayingTrackNotifyEvent.AppAllowedBlocked::class.simpleName -> {
-                eventStr.let {
-                    Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.AppAllowedBlocked>(it)
-                }
+                Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.AppAllowedBlocked>(eventStr)
             }
 
             PlayingTrackNotifyEvent.TrackScrobbleLocked::class.simpleName -> {
-                eventStr.let {
-                    Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.TrackScrobbleLocked>(it)
-                }
+                Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.TrackScrobbleLocked>(eventStr)
             }
 
             else -> {
                 Logger.e {
                     "Unknown PlayingTrackNotifyEvent type: $eventType, eventStr: $eventStr"
                 }
-                return
+                null
             }
         }
-
-        notifyPlayingTrackEvent(event)
     }
 
-    companion object {
-        private const val EXTRA_EVENT = "event"
-        private const val EXTRA_EVENT_TYPE = "event_type"
-
-        fun createIntent(context: Context, event: PlayingTrackNotifyEvent): Intent =
-            Intent(context, PlayingTrackEventReceiver::class.java)
-                .putExtra(
-                    EXTRA_EVENT,
-                    Stuff.myJson.encodeToString(event)
-                )
-                .putExtra(
-                    EXTRA_EVENT_TYPE,
-                    event::class.simpleName
-                )
-    }
+    fun createIntent(
+        context: Context,
+        receiverClass: Class<out BroadcastReceiver>,
+        event: PlayingTrackNotifyEvent,
+    ): Intent =
+        Intent(context, receiverClass)
+            .putExtra(
+                EXTRA_EVENT,
+                Stuff.myJson.encodeToString(event)
+            )
+            .putExtra(
+                EXTRA_EVENT_TYPE,
+                event::class.simpleName
+            )
 }

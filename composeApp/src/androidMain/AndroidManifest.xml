@@ -75,6 +75,10 @@
             android:process=":bgScrobbler" />
 
         <receiver
+            android:name="com.arn.scrobble.media.MainProcessTrackPlayingReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name="com.arn.scrobble.work.WorkEnqueuerReceiver"
             android:exported="false" />
 
