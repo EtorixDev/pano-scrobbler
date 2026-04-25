@@ -78,10 +78,9 @@ import com.arn.scrobble.utils.Stuff.collectAsStateWithInitialValue
 import com.arn.scrobble.utils.Stuff.format
 import com.arn.scrobble.utils.Stuff.timeToLocal
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
@@ -294,12 +293,25 @@ fun ScrobblesScreen(
             return@LaunchedEffect
         }
 
+        var lastNowPlayingHash: Int? = null
+
         globalTrackEventFlow
             .filterIsInstance<PlayingTrackNotifyEvent.TrackPlaying>()
-            .map { it.hash to it.nowPlaying }
-            .distinctUntilChanged()
-            .collect {
-                if (tracks.loadState.refresh is LoadState.NotLoading &&
+            .collectLatest {
+                val shouldRefresh = if (it.nowPlaying) {
+                    val refreshForStart = lastNowPlayingHash != it.hash
+                    lastNowPlayingHash = it.hash
+                    refreshForStart
+                } else {
+                    true
+                }
+
+                if (shouldRefresh && it.nowPlaying) {
+                    delay(1000)
+                }
+
+                if (shouldRefresh &&
+                    tracks.loadState.refresh is LoadState.NotLoading &&
                     !tracks.loadState.hasError
                 ) {
                     tracks.refresh()

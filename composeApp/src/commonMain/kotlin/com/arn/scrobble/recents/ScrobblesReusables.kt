@@ -701,7 +701,6 @@ fun LazyListScope.scrobblesListItems(
                                 val hash: Int?
 
                                 if (!track.isNowPlaying && track.date != null) {
-                                    // no editing of now playing from here
                                     sd = ScrobbleData(
                                         track = track.name,
                                         artist = track.artist.name,
@@ -712,7 +711,7 @@ fun LazyListScope.scrobblesListItems(
                                         appId = null
                                     )
                                     hash = null
-                                } else {
+                                } else if (track.isNowPlaying) {
                                     val sdToHash = getNowPlayingFromMainProcess()
                                     if (sdToHash != null) {
                                         sd = sdToHash.first
@@ -721,6 +720,8 @@ fun LazyListScope.scrobblesListItems(
 
                                         return@TrackDropdownMenu null
                                     }
+                                } else {
+                                    return@TrackDropdownMenu null
                                 }
 
                                 PanoRoute.Modal.EditScrobble(
