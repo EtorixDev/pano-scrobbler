@@ -143,6 +143,8 @@ fun ScrobblesScreen(
     val otherPlatformsLearnt by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.desktopAppLearnt }
     var pendingScrobblesExpanded by rememberSaveable { mutableStateOf(false) }
     var expandedKey by rememberSaveable { mutableStateOf<String?>(null) }
+    var topTrackKeyBeforeRefresh by remember { mutableStateOf<String?>(null) }
+    var shouldAutoScrollToUpdatedTopTrack by remember { mutableStateOf(false) }
     val pendingScrobblesHeader =
         stringResource(Res.string.pending_scrobbles) + ": " + pendingScrobblesCount
     val canLove = accountType != AccountType.PLEROMA
@@ -172,6 +174,38 @@ fun ScrobblesScreen(
 
     fun onTrackClick(track: Track, appId: String?) {
         onNavigate(PanoRoute.Modal.MusicEntryInfo(user = user, track = track, appId = appId))
+    }
+
+    fun currentTopTrackItem() =
+        tracks.itemSnapshotList.items.firstOrNull() as? TrackWrapper.TrackItem
+
+    fun topTrackListIndex(): Int {
+        var index = 0
+
+        if (user.isSelf) {
+            when (scrobblerState) {
+                ScrobblerState.Disabled,
+                ScrobblerState.NLSDisabled,
+                is ScrobblerState.Killed,
+                    -> index += 1
+
+                ScrobblerState.Unknown,
+                ScrobblerState.Running,
+                    -> {
+                    if (!otherPlatformsLearnt && canEditOrDelete &&
+                        !PlatformStuff.isTv && !PlatformStuff.isDesktop
+                    ) {
+                        index += 1
+                    }
+                }
+            }
+        }
+
+        if (selectedType == ScrobblesType.RECENTS && user.isSelf && pendingScrobbles.isNotEmpty()) {
+            index += 1 + pendingScrobbles.size + 1
+        }
+
+        return index
     }
 
     LaunchedEffect(user, selectedType, timeJumpMillis, total) {
@@ -233,6 +267,57 @@ fun ScrobblesScreen(
         }
     }
 
+    LaunchedEffect(
+        tracks.loadState.refresh,
+        selectedType,
+        scrobblerState,
+        pendingScrobbles,
+        otherPlatformsLearnt,
+        canEditOrDelete,
+    ) {
+        if (selectedType != ScrobblesType.RECENTS) {
+            topTrackKeyBeforeRefresh = null
+            shouldAutoScrollToUpdatedTopTrack = false
+            return@LaunchedEffect
+        }
+
+        when (tracks.loadState.refresh) {
+            is LoadState.Loading -> {
+                val topTrackKey = currentTopTrackItem()?.key
+                val firstTrackIndex = topTrackListIndex()
+                val isNearTopOfTrackList =
+                    listState.firstVisibleItemIndex <= firstTrackIndex &&
+                            listState.firstVisibleItemScrollOffset <= 32
+
+                if (topTrackKey != null && isNearTopOfTrackList) {
+                    topTrackKeyBeforeRefresh = topTrackKey
+                    shouldAutoScrollToUpdatedTopTrack = true
+                } else {
+                    topTrackKeyBeforeRefresh = null
+                    shouldAutoScrollToUpdatedTopTrack = false
+                }
+            }
+
+            is LoadState.NotLoading -> {
+                if (shouldAutoScrollToUpdatedTopTrack) {
+                    val newTopTrackKey = currentTopTrackItem()?.key
+
+                    if (topTrackKeyBeforeRefresh != null &&
+                        newTopTrackKey != null &&
+                        newTopTrackKey != topTrackKeyBeforeRefresh
+                    ) {
+                        listState.animateScrollToItem(topTrackListIndex())
+                    }
+                }
+
+                topTrackKeyBeforeRefresh = null
+                shouldAutoScrollToUpdatedTopTrack = false
+            }
+
+            is LoadState.Error -> Unit
+        }
+    }
+
     if (user.isSelf) {
         LifecycleStartEffect(Unit) {
             viewModel.setForeground(true)
@@ -273,11 +358,8 @@ fun ScrobblesScreen(
             return@LaunchedEffect
         }
 
-        fun currentTopTrack() =
-            (tracks.itemSnapshotList.items.firstOrNull() as? TrackWrapper.TrackItem)?.track
-
         fun topTrackMatchesEvent(event: PlayingTrackNotifyEvent.TrackPlaying): Boolean {
-            val topTrack = currentTopTrack() ?: return false
+            val topTrack = currentTopTrackItem()?.track ?: return false
             val candidateArtists = setOf(
                 event.scrobbleData.artist,
                 event.origScrobbleData.artist,
@@ -326,14 +408,12 @@ fun ScrobblesScreen(
                         return@launch
                     }
 
-                    repeat(10) { attempt ->
+                    repeat(3) { _ ->
                         if (topTrackMatchesEvent(it)) {
                             return@launch
                         }
 
-                        if (attempt > 0) {
-                            delay(1000)
-                        }
+                        delay(3_000L)
 
                         if (topTrackMatchesEvent(it)) {
                             return@launch
