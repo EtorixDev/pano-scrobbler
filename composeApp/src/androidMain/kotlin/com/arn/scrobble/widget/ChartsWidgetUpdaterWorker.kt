@@ -74,11 +74,12 @@ class ChartsWidgetUpdaterWorker(appContext: Context, workerParams: WorkerParamet
                 )
             )
         val widgetPrefs = AndroidStuff.widgetPrefs.data.first()
+        val refreshIntervalHours = widgetPrefs.refreshIntervalHours
         val firstDayOfWeek = PlatformStuff.mainPrefs.data.map { it.firstDayOfWeek }.first()
 
         // don't run if it already ran recently
         if (!isOneTimeWork && (appWidgetIds.isEmpty() ||
-                    (System.currentTimeMillis() - widgetPrefs.lastFetched) < Stuff.CHARTS_WIDGET_REFRESH_INTERVAL_HOURS * 60 * 60 * 1000L / 2)
+                    (System.currentTimeMillis() - widgetPrefs.lastFetched) < refreshIntervalHours * 60 * 60 * 1000L / 2)
         ) {
             logTimestampToFile("skipped")
             return Result.failure(
@@ -224,7 +225,12 @@ class ChartsWidgetUpdaterWorker(appContext: Context, workerParams: WorkerParamet
         const val NAME_PERIODIC = "charts_widget_updater_periodic"
         private const val WORK_NAME_KEY = "uniqueWorkName"
 
-        fun schedule(context: Context, runImmediately: Boolean) {
+        fun schedule(
+            context: Context,
+            runImmediately: Boolean,
+            refreshIntervalHours: Int = WidgetPrefs.DEFAULT_REFRESH_INTERVAL_HOURS,
+            forceReschedule: Boolean = false,
+        ) {
             val constraintsBuilder = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
 
@@ -254,7 +260,7 @@ class ChartsWidgetUpdaterWorker(appContext: Context, workerParams: WorkerParamet
                 .build()
 
             val periodicWork = PeriodicWorkRequestBuilder<ChartsWidgetUpdaterWorker>(
-                Stuff.CHARTS_WIDGET_REFRESH_INTERVAL_HOURS.toLong(),
+                refreshIntervalHours.toLong(),
                 TimeUnit.HOURS
             )
                 .setConstraints(
@@ -265,14 +271,18 @@ class ChartsWidgetUpdaterWorker(appContext: Context, workerParams: WorkerParamet
                 .setInputData(inputData)
                 .addTag(NAME_PERIODIC)
                 .setInitialDelay(
-                    Stuff.CHARTS_WIDGET_REFRESH_INTERVAL_HOURS.toLong(),
+                    refreshIntervalHours.toLong(),
                     TimeUnit.HOURS
                 )
                 .build()
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 NAME_PERIODIC,
-                ExistingPeriodicWorkPolicy.KEEP,
+                if (forceReschedule) {
+                    ExistingPeriodicWorkPolicy.REPLACE
+                } else {
+                    ExistingPeriodicWorkPolicy.KEEP
+                },
                 periodicWork
             )
 

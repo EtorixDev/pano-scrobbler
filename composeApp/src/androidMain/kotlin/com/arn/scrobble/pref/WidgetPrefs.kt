@@ -23,6 +23,7 @@ data class SpecificWidgetPrefs(
 data class WidgetPrefs(
     val widgets: Map<Int, SpecificWidgetPrefs> = emptyMap(),
     val charts: Map<WidgetPeriod, ChartsData> = emptyMap(),
+    val refreshIntervalHours: Int = DEFAULT_REFRESH_INTERVAL_HOURS,
     val lastFetched: Long = -1,
     val version: Int = 0,
 ) {
@@ -36,6 +37,7 @@ data class WidgetPrefs(
 
     companion object {
         const val FILE_NAME = "widget-prefs.json"
+        const val DEFAULT_REFRESH_INTERVAL_HOURS = Stuff.CHARTS_WIDGET_REFRESH_INTERVAL_HOURS
     }
 }
 

@@ -58,15 +58,20 @@ import pano_scrobbler.composeapp.generated.resources.ok
 fun ChartsWidgetConfigScreen(
     isPinned: Boolean,
     prefs: SpecificWidgetPrefs,
-    onSave: (prefs: SpecificWidgetPrefs, reFetch: Boolean) -> Unit,
+    refreshIntervalHours: Int,
+    onSave: (prefs: SpecificWidgetPrefs, refreshIntervalHours: Int, reFetch: Boolean) -> Unit,
     onCancel: () -> Unit,
 ) {
 
     var period by rememberSaveable(saver = enumSaver()) { mutableStateOf(prefs.period) }
     var bgAlpha by rememberSaveable { mutableFloatStateOf(prefs.bgAlpha) }
     var shadow by rememberSaveable { mutableStateOf(prefs.shadow) }
+    var selectedRefreshIntervalHours by rememberSaveable { mutableStateOf(refreshIntervalHours) }
     val firstDayOfWeek by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.firstDayOfWeek }
     val scrollState = rememberScrollState()
+    val refreshIntervalOptions = remember {
+        listOf(1, 2, 4, 6, 12, 24)
+    }
     val widgetPeriod = remember {
         WidgetPeriod.entries.associateWith {
             it.toTimePeriod(firstDayOfWeek)
@@ -149,11 +154,33 @@ fun ChartsWidgetConfigScreen(
                         Res.string.appwidget_refresh_every,
                         pluralStringResource(
                             Res.plurals.num_hours,
-                            Stuff.CHARTS_WIDGET_REFRESH_INTERVAL_HOURS,
-                            Stuff.CHARTS_WIDGET_REFRESH_INTERVAL_HOURS,
+                            selectedRefreshIntervalHours,
+                            selectedRefreshIntervalHours,
                         )
                     ),
+                    style = MaterialTheme.typography.titleMedium,
                 )
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    refreshIntervalOptions.forEach { intervalHours ->
+                        FilterChip(
+                            label = {
+                                Text(
+                                    pluralStringResource(
+                                        Res.plurals.num_hours,
+                                        intervalHours,
+                                        intervalHours,
+                                    )
+                                )
+                            },
+                            selected = selectedRefreshIntervalHours == intervalHours,
+                            onClick = { selectedRefreshIntervalHours = intervalHours }
+                        )
+                    }
+                }
             }
         }
 
@@ -177,6 +204,7 @@ fun ChartsWidgetConfigScreen(
                             bgAlpha = bgAlpha,
                             shadow = shadow
                         ),
+                        selectedRefreshIntervalHours,
                         prefs.period != period
                     )
                 }) {

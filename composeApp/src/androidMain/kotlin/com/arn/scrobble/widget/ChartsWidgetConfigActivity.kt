@@ -71,6 +71,7 @@ class ChartsWidgetConfigActivity : ComponentActivity() {
                     ChartsWidgetConfigScreen(
                         isPinned = isPinned,
                         prefs = prefs.widgets[appWidgetId] ?: SpecificWidgetPrefs(),
+                        refreshIntervalHours = prefs.refreshIntervalHours,
                         onSave = ::savePrefsAndFinish,
                         onCancel = ::cancel
                     )
@@ -79,21 +80,32 @@ class ChartsWidgetConfigActivity : ComponentActivity() {
         }
     }
 
-    private fun savePrefsAndFinish(prefs: SpecificWidgetPrefs, reFetch: Boolean) {
+    private fun savePrefsAndFinish(
+        prefs: SpecificWidgetPrefs,
+        refreshIntervalHours: Int,
+        reFetch: Boolean,
+    ) {
         lifecycleScope.launch {
             var exists = false
+            var intervalChanged = false
 
             AndroidStuff.widgetPrefs.updateData {
                 exists = it.widgets.containsKey(appWidgetId)
-                it.copy(widgets = it.widgets + (appWidgetId to prefs))
+                intervalChanged = it.refreshIntervalHours != refreshIntervalHours
+                it.copy(
+                    widgets = it.widgets + (appWidgetId to prefs),
+                    refreshIntervalHours = refreshIntervalHours,
+                )
             }
 
             ChartsListUtils.updateWidgets(intArrayOf(appWidgetId))
 
-            if (!exists || reFetch)
+            if (!exists || reFetch || intervalChanged)
                 ChartsWidgetUpdaterWorker.schedule(
                     this@ChartsWidgetConfigActivity.applicationContext,
-                    true
+                    runImmediately = !exists || reFetch,
+                    refreshIntervalHours = refreshIntervalHours,
+                    forceReschedule = !exists || intervalChanged,
                 )
             setResult(true)
             finish()
