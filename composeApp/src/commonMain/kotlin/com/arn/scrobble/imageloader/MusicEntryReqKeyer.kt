@@ -16,7 +16,15 @@ class MusicEntryReqKeyer : Keyer<MusicEntryImageReq> {
             return when (data.musicEntry) {
                 is Artist -> prefix + "|artist=" + data.musicEntry.name
                 is Album -> prefix + "|artist=" + data.musicEntry.artist!!.name + "|album=" + data.musicEntry.name
-                is Track -> prefix + "|artist=" + data.musicEntry.artist.name + "|album=" + data.musicEntry.album?.name + "|track=" + data.musicEntry.name
+                is Track -> {
+                    val album = data.musicEntry.album
+                    if (album != null) {
+                        prefix + "|artist=" + (album.artist?.name ?: data.musicEntry.artist.name) +
+                                "|album=" + album.name
+                    } else {
+                        prefix + "|artist=" + data.musicEntry.artist.name + "|track=" + data.musicEntry.name
+                    }
+                }
             }
         }
     }

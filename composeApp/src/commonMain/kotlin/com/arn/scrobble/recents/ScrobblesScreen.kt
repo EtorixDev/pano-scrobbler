@@ -77,8 +77,8 @@ import com.arn.scrobble.utils.Stuff
 import com.arn.scrobble.utils.Stuff.collectAsStateWithInitialValue
 import com.arn.scrobble.utils.Stuff.format
 import com.arn.scrobble.utils.Stuff.timeToLocal
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -293,28 +293,42 @@ fun ScrobblesScreen(
             return@LaunchedEffect
         }
 
-        var lastNowPlayingHash: Int? = null
+        fun recentsSnapshot() =
+            tracks.itemCount to tracks.itemSnapshotList.items.take(3).map { it.key }
+
+        var lastRefreshEventKey: String? = null
+        var refreshJob: Job? = null
 
         globalTrackEventFlow
             .filterIsInstance<PlayingTrackNotifyEvent.TrackPlaying>()
-            .collectLatest {
-                val shouldRefresh = if (it.nowPlaying) {
-                    val refreshForStart = lastNowPlayingHash != it.hash
-                    lastNowPlayingHash = it.hash
-                    refreshForStart
-                } else {
-                    true
+            .collect {
+                val refreshEventKey =
+                    "${it.hash}\n${it.timelineStartTime}\n${it.nowPlaying}"
+
+                if (lastRefreshEventKey == refreshEventKey) {
+                    return@collect
                 }
 
-                if (shouldRefresh && it.nowPlaying) {
-                    delay(1000)
-                }
+                lastRefreshEventKey = refreshEventKey
+                val baselineSnapshot = recentsSnapshot()
 
-                if (shouldRefresh &&
-                    tracks.loadState.refresh is LoadState.NotLoading &&
-                    !tracks.loadState.hasError
-                ) {
-                    tracks.refresh()
+                refreshJob?.cancel()
+                refreshJob = launch {
+                    repeat(10) {
+                        if (it > 0) {
+                            delay(1000)
+                        }
+
+                        if (recentsSnapshot() != baselineSnapshot) {
+                            return@launch
+                        }
+
+                        if (tracks.loadState.refresh is LoadState.NotLoading &&
+                            !tracks.loadState.hasError
+                        ) {
+                            tracks.refresh()
+                        }
+                    }
                 }
             }
     }
