@@ -1,11 +1,12 @@
 package com.arn.scrobble.utils
 
+import com.arn.scrobble.BuildKonfig
 import com.arn.scrobble.VariantStuffInterface
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
-actual val VariantStuff: VariantStuffInterface = DesktopExtrasVariantStuff(
+private val desktopVariantStuff = DesktopExtrasVariantStuff(
     scope = Stuff.appScope,
     lastCheckTime = flow { emitAll(PlatformStuff.mainPrefs.data.map { it.lastLicenseCheckTime }) },
     setLastcheckTime = { time ->
@@ -17,3 +18,11 @@ actual val VariantStuff: VariantStuffInterface = DesktopExtrasVariantStuff(
     deviceIdentifier = PlatformStuff::getDeviceIdentifier,
     openInBrowser = PlatformStuff::openInBrowser,
 )
+
+actual val VariantStuff: VariantStuffInterface =
+    if (BuildKonfig.UPDATES_AVAILABLE)
+        desktopVariantStuff
+    else
+        object : VariantStuffInterface by desktopVariantStuff {
+            override val githubApiUrl: String? = null
+        }

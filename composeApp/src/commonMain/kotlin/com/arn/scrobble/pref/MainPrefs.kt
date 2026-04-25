@@ -249,11 +249,10 @@ data class MainPrefs(
     fun getRegexPresetApps(regexPreset: RegexPreset): Set<String> =
         regexPresetsApps.getOrDefault(regexPreset.name, emptySet())
 
-    fun constrainedForBuild() =
-        if (BuildKonfig.SPOTIFY_API_AVAILABLE || !spotifyApi)
-            this
-        else
-            copy(spotifyApi = false)
+    fun constrainedForBuild() = copy(
+        autoUpdates = autoUpdates && BuildKonfig.UPDATES_AVAILABLE,
+        spotifyApi = spotifyApi && BuildKonfig.SPOTIFY_API_AVAILABLE,
+    )
 
     fun updateFromPublicPrefs(prefs: Public) = copy(
         scrobblerEnabled = prefs.scrobblerEnabled,

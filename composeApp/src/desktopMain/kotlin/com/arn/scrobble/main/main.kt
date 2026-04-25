@@ -578,7 +578,8 @@ fun main(args: Array<String>) {
         }
 
         LaunchedEffect(Unit) {
-            if (!DesktopStuff.noUpdateCheck &&
+            if (VariantStuff.githubApiUrl != null &&
+                !DesktopStuff.noUpdateCheck &&
                 PlatformStuff.mainPrefs.data.map { it.autoUpdates }
                     .first()
             ) {

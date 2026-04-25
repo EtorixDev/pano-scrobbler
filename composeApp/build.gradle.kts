@@ -202,6 +202,9 @@ buildkonfig {
 
         val spotifyRefreshToken = localProperties["spotify.refreshToken"]
             ?.takeUnless { it.isBlank() || it == "replace-me" }
+        val updatesEnabled = localProperties["updates.enabled"]
+            ?.toBooleanStrictOrNull()
+            ?: false
 
         buildConfigField(
             STRING,
@@ -213,6 +216,12 @@ buildkonfig {
             STRING,
             "LASTFM_SECRET",
             xor(lastfmSecret, APP_ID),
+            const = true
+        )
+        buildConfigField(
+            BOOLEAN,
+            "UPDATES_AVAILABLE",
+            updatesEnabled.toString(),
             const = true
         )
         buildConfigField(

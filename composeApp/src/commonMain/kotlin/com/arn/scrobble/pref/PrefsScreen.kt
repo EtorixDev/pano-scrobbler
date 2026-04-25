@@ -196,6 +196,8 @@ fun PrefsScreen(
     val updateProgress by remember {
         UpdaterWork.getProgress().filter { it.state == CommonWorkState.RUNNING }
     }.collectAsStateWithLifecycle(null)
+    val updatesAvailable = BuildKonfig.UPDATES_AVAILABLE && VariantStuff.githubApiUrl != null
+    val showUpdatePrefs = PlatformStuff.isDesktop && (updatesAvailable || !BuildKonfig.UPDATES_AVAILABLE)
 
     val numSimpleEdits by if (Stuff.isInDemoMode) {
         remember { mutableIntStateOf(1000) }
@@ -836,11 +838,12 @@ fun PrefsScreen(
             )
         }
 
-        if (VariantStuff.githubApiUrl != null) {
+        if (showUpdatePrefs) {
             filteredItem(MainPrefs::autoUpdates.name, Res.string.pref_notify_updates) { title ->
                 SwitchPref(
                     text = title,
-                    value = checkForUpdates,
+                    value = updatesAvailable && checkForUpdates,
+                    enabled = updatesAvailable,
                     copyToSave = {
                         if (!it)
                             UpdaterWork.cancel()
@@ -854,8 +857,8 @@ fun PrefsScreen(
 
             filteredItem("check_for_updates", Res.string.pref_check_updates) { title ->
                 TextPref(
-                    text = updateProgress?.message ?: title,
-                    enabled = updateProgress == null,
+                    text = if (updatesAvailable) updateProgress?.message ?: title else title,
+                    enabled = updatesAvailable && updateProgress == null,
                     onClick = {
                         if (updateProgress == null)
                             UpdaterWork.schedule(true)

@@ -39,3 +39,5 @@ Gemfile.lock
 .jekyll-cache
 _site/
 .vscode/
+build-android.sh
+build-linux.sh
