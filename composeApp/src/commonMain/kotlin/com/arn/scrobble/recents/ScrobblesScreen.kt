@@ -143,7 +143,6 @@ fun ScrobblesScreen(
     val otherPlatformsLearnt by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.desktopAppLearnt }
     var pendingScrobblesExpanded by rememberSaveable { mutableStateOf(false) }
     var expandedKey by rememberSaveable { mutableStateOf<String?>(null) }
-    var canExpandNowPlaying by rememberSaveable { mutableStateOf(true) }
     val pendingScrobblesHeader =
         stringResource(Res.string.pending_scrobbles) + ": " + pendingScrobblesCount
     val canLove = accountType != AccountType.PLEROMA
@@ -220,7 +219,6 @@ fun ScrobblesScreen(
                             else
                                 ""
                 )
-                canExpandNowPlaying = true
             }
         }
     }
@@ -257,24 +255,6 @@ fun ScrobblesScreen(
             }
         )
 
-        // expand now playing
-        if (tracks.loadState.refresh is LoadState.NotLoading) {
-            if (canExpandNowPlaying && tracks.itemCount > 0 &&
-                (tracks.peek(0) as? TrackWrapper.TrackItem)?.track?.isNowPlaying == true
-            ) {
-                val newKey = tracks.peek(0)?.key
-
-                val newExpandedItemIsVisible = listState.layoutInfo.visibleItemsInfo.find {
-                    it.key == newKey
-                } != null
-
-                val isAlmostAtTop = listState.firstVisibleItemIndex < 5
-
-                if (isAlmostAtTop || newExpandedItemIsVisible)
-                    expandedKey = newKey
-            }
-        }
-
         onPauseOrDispose {
             onSetRefreshing(PanoPullToRefreshStateForTab.Disabled)
         }
@@ -293,8 +273,29 @@ fun ScrobblesScreen(
             return@LaunchedEffect
         }
 
-        fun recentsSnapshot() =
-            tracks.itemCount to tracks.itemSnapshotList.items.take(3).map { it.key }
+        fun currentTopTrack() =
+            (tracks.itemSnapshotList.items.firstOrNull() as? TrackWrapper.TrackItem)?.track
+
+        fun topTrackMatchesEvent(event: PlayingTrackNotifyEvent.TrackPlaying): Boolean {
+            val topTrack = currentTopTrack() ?: return false
+            val candidateArtists = setOf(
+                event.scrobbleData.artist,
+                event.origScrobbleData.artist,
+            )
+            val candidateTracks = setOf(
+                event.scrobbleData.track,
+                event.origScrobbleData.track,
+            )
+            val candidateAlbums = setOf(
+                event.scrobbleData.album,
+                event.origScrobbleData.album,
+            )
+
+            return topTrack.isNowPlaying == event.nowPlaying &&
+                    topTrack.artist.name in candidateArtists &&
+                    topTrack.name in candidateTracks &&
+                    topTrack.album?.name in candidateAlbums
+        }
 
         var lastRefreshEventKey: String? = null
         var refreshJob: Job? = null
@@ -310,16 +311,31 @@ fun ScrobblesScreen(
                 }
 
                 lastRefreshEventKey = refreshEventKey
-                val baselineSnapshot = recentsSnapshot()
 
                 refreshJob?.cancel()
                 refreshJob = launch {
-                    repeat(10) {
-                        if (it > 0) {
+                    if (!it.nowPlaying) {
+                        delay(1000)
+
+                        if (tracks.loadState.refresh is LoadState.NotLoading &&
+                            !tracks.loadState.hasError
+                        ) {
+                            tracks.refresh()
+                        }
+
+                        return@launch
+                    }
+
+                    repeat(10) { attempt ->
+                        if (topTrackMatchesEvent(it)) {
+                            return@launch
+                        }
+
+                        if (attempt > 0) {
                             delay(1000)
                         }
 
-                        if (recentsSnapshot() != baselineSnapshot) {
+                        if (topTrackMatchesEvent(it)) {
                             return@launch
                         }
 
@@ -495,11 +511,7 @@ fun ScrobblesScreen(
                     canDelete = canEditOrDelete,
                     canHate = accountType == AccountType.LISTENBRAINZ,
                     expandedKey = { expandedKey },
-                    onExpand = {
-                        canExpandNowPlaying = !(expandedKey != null && it == null)
-
-                        expandedKey = it
-                    },
+                    onExpand = { expandedKey = it },
                     onNavigate = onNavigate,
                     animateListItemContentSize = animateListItemContentSize,
                     maxHeight = listViewportHeight,
