@@ -21,6 +21,10 @@ import java.util.concurrent.TimeUnit
 
 class SpotifyRequester {
     private val _client = invalidatableLazy {
+        check(BuildKonfig.SPOTIFY_API_AVAILABLE) {
+            "Spotify API is not configured for this build."
+        }
+
         Requesters.genericKtorClient.config {
             install(CustomCachePlugin) {
                 policy = SpotifyCacheExpirationPolicy()

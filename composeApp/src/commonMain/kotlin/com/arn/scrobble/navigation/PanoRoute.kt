@@ -319,6 +319,7 @@ sealed interface PanoRoute : NavKey {
         @Serializable
         data class EditScrobble(
             val origScrobbleData: ScrobbleData,
+            val origTrack: Track? = null,
             val msid: String? = null,
             val hash: Int? = null, // from notification
             val key: String? = null, // from main ui

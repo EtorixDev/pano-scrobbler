@@ -725,6 +725,7 @@ fun LazyListScope.scrobblesListItems(
 
                                 PanoRoute.Modal.EditScrobble(
                                     origScrobbleData = sd,
+                                    origTrack = track,
                                     msid = track.msid,
                                     key = key,
                                     hash = hash

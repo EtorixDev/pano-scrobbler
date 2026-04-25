@@ -673,8 +673,9 @@ fun PrefsScreen(
                 summary = stringResource(Res.string.search) + ": " +
                         stringResource(Res.string.artist_image) + ", " +
                         stringResource(Res.string.album_art),
-                value = useSpotify,
-                copyToSave = { copy(spotifyApi = it) }
+                value = useSpotify && BuildKonfig.SPOTIFY_API_AVAILABLE,
+                copyToSave = { copy(spotifyApi = BuildKonfig.SPOTIFY_API_AVAILABLE && it) },
+                enabled = BuildKonfig.SPOTIFY_API_AVAILABLE,
             )
         }
 

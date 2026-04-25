@@ -17,14 +17,33 @@ data class ScrobbleData(
 ) {
     fun safeDuration() = duration?.takeIf { it in (30_000..3600_000) }
 
-    fun toTrack() = Track(
-        name = track,
-        artist = Artist(artist),
-        date = timestamp,
-        album = album?.ifEmpty { null }
-            ?.let { Album(album, Artist(albumArtist.orEmpty().ifEmpty { artist })) },
-        duration = duration,
-    )
+    fun toTrack(previousTrack: Track? = null): Track {
+        val trackArtist = Artist(artist)
+        val albumArtist = Artist(albumArtist.orEmpty().ifEmpty { artist })
+        val trackAlbum = album?.ifEmpty { null }
+            ?.let { albumName ->
+                previousTrack?.album
+                    ?.takeIf { it.name == albumName }
+                    ?.copy(name = albumName, artist = albumArtist)
+                    ?: Album(albumName, albumArtist)
+            }
+
+        return previousTrack?.copy(
+            name = track,
+            artist = trackArtist,
+            album = trackAlbum,
+            date = timestamp,
+            duration = duration,
+            appId = appId,
+        ) ?: Track(
+            name = track,
+            artist = trackArtist,
+            date = timestamp,
+            album = trackAlbum,
+            duration = duration,
+            appId = appId,
+        )
+    }
 
     fun trimmed() = copy(
         artist = artist.trim(),

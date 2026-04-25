@@ -55,6 +55,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.arn.scrobble.BuildKonfig
 import com.arn.scrobble.api.AccountType
 import com.arn.scrobble.api.UserCached
 import com.arn.scrobble.api.lastfm.Album
@@ -250,7 +251,7 @@ fun ChartsOverviewScreen(
                 .weight(1f)
                 .verticalScroll(scrollState)
         ) {
-            if (!spotifyConsentLearnt) {
+            if (BuildKonfig.SPOTIFY_API_AVAILABLE && !spotifyConsentLearnt) {
                 DismissableNotice(
                     title = stringResource(Res.string.spotify_consent),
                     onClick = {
@@ -276,7 +277,10 @@ fun ChartsOverviewScreen(
                         onYes = {
                             scope.launch {
                                 PlatformStuff.mainPrefs.updateData {
-                                    it.copy(spotifyConsentLearnt = true, spotifyApi = true)
+                                    it.copy(
+                                        spotifyConsentLearnt = true,
+                                        spotifyApi = BuildKonfig.SPOTIFY_API_AVAILABLE
+                                    )
                                 }
                             }
                         },

@@ -47,6 +47,7 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
     fun doEdit(
         simpleEdit: SimpleEdit,
         origScrobbleData: ScrobbleData?,
+        origTrack: Track?,
         msid: String?,
         hash: Int?,
         key: String?,
@@ -76,7 +77,7 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
                         }
 
                         if (key != null) { // from scrobble history
-                            _editData.emit(key to editedSd.toTrack())
+                            _editData.emit(key to editedSd.toTrack(origTrack))
                         }
                     }
                     .recoverCatching {

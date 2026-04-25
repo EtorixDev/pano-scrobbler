@@ -165,7 +165,10 @@ room3 {
 
 buildkonfig {
     fun xor(text: String, key: String): String {
-        require(text.isNotEmpty()) { "Key bytes must not be empty" }
+        if (text.isEmpty()) {
+            return ""
+        }
+
         val data = text.toByteArray()
         val keyBytes = key.toByteArray()
         val out = ByteArray(data.size)
@@ -198,7 +201,7 @@ buildkonfig {
             ?: throw IllegalStateException("lastfm.secret not found in local.properties")
 
         val spotifyRefreshToken = localProperties["spotify.refreshToken"]
-            ?: throw IllegalStateException("spotify.refreshToken not found in local.properties")
+            ?.takeUnless { it.isBlank() || it == "replace-me" }
 
         buildConfigField(
             STRING,
@@ -213,9 +216,15 @@ buildkonfig {
             const = true
         )
         buildConfigField(
+            BOOLEAN,
+            "SPOTIFY_API_AVAILABLE",
+            (spotifyRefreshToken != null).toString(),
+            const = true
+        )
+        buildConfigField(
             STRING,
             "SPOTIFY_REFRESH_TOKEN",
-            xor(spotifyRefreshToken, APP_ID),
+            spotifyRefreshToken?.let { xor(it, APP_ID) } ?: "",
             const = true
         )
 

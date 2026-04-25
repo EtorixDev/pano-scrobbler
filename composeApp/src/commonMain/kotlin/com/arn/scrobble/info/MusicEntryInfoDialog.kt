@@ -1,5 +1,6 @@
 package com.arn.scrobble.info
 
+import com.arn.scrobble.BuildKonfig
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.border
@@ -474,7 +475,7 @@ private fun InfoActionsRow(
             )
         }
 
-        if (entry is Album || entry is Artist) {
+        if (BuildKonfig.SPOTIFY_API_AVAILABLE && (entry is Album || entry is Artist)) {
             IconButtonWithTooltip(
                 onClick = {
                     onNavigate(

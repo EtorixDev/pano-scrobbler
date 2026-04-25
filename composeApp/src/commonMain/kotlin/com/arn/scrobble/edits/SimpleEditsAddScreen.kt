@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.arn.scrobble.api.lastfm.LastFm
 import com.arn.scrobble.api.lastfm.ScrobbleData
+import com.arn.scrobble.api.lastfm.Track
 import com.arn.scrobble.db.SimpleEdit
 import com.arn.scrobble.icons.Check
 import com.arn.scrobble.icons.Delete
@@ -86,6 +87,7 @@ fun SimpleEditsAddScreen(
     onDone: () -> Unit,
     onReauthenticate: () -> Unit,
     origScrobbleData: ScrobbleData?,
+    originalTrack: Track? = null,
     msid: String?,
     hash: Int?,
     key: String?,
@@ -182,6 +184,7 @@ fun SimpleEditsAddScreen(
             viewModel.editScrobbleUtils.doEdit(
                 simpleEdit = newEdit,
                 origScrobbleData = origScrobbleData,
+                origTrack = originalTrack,
                 msid = msid,
                 hash = hash,
                 key = key,

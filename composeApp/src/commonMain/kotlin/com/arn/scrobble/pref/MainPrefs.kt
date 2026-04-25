@@ -249,6 +249,12 @@ data class MainPrefs(
     fun getRegexPresetApps(regexPreset: RegexPreset): Set<String> =
         regexPresetsApps.getOrDefault(regexPreset.name, emptySet())
 
+    fun constrainedForBuild() =
+        if (BuildKonfig.SPOTIFY_API_AVAILABLE || !spotifyApi)
+            this
+        else
+            copy(spotifyApi = false)
+
     fun updateFromPublicPrefs(prefs: Public) = copy(
         scrobblerEnabled = prefs.scrobblerEnabled,
         delaySecs = prefs.delaySecs.coerceIn(PREF_DELAY_SECS_MIN, PREF_DELAY_SECS_MAX),
@@ -278,7 +284,7 @@ data class MainPrefs(
         tidalSteelSeriesApi = prefs.tidalSteelSeriesApi,
         deezerApi = prefs.deezerApi,
         lastfmApiAlways = prefs.lastfmApiAlways,
-    )
+    ).constrainedForBuild()
 
     fun toPublicPrefs() = Public(
         scrobblerEnabled = scrobblerEnabled,
@@ -305,7 +311,7 @@ data class MainPrefs(
         extractFirstArtistPackages = extractFirstArtistPackages,
         regexPresetsApps = regexPresetsApps,
         discordRpc = discordRpc,
-        spotifyApi = spotifyApi,
+        spotifyApi = spotifyApi && BuildKonfig.SPOTIFY_API_AVAILABLE,
         spotifyCountry = spotifyCountry,
         tidalSteelSeriesApi = tidalSteelSeriesApi,
         deezerApi = deezerApi,
@@ -314,14 +320,14 @@ data class MainPrefs(
 
 
     companion object {
-        private val defaultMainPrefs = MainPrefs()
+        private val defaultMainPrefs = MainPrefs().constrainedForBuild()
 
         val dataStoreSerializer = object : Serializer<MainPrefs> {
             override val defaultValue = defaultMainPrefs
 
             override suspend fun readFrom(input: InputStream) =
                 try {
-                    Stuff.myJson.decodeFromStream<MainPrefs>(input)
+                    Stuff.myJson.decodeFromStream<MainPrefs>(input).constrainedForBuild()
                 } catch (e: SerializationException) {
                     Logger.e(e) { "MainPrefs deserialization error" }
                     defaultValue
@@ -330,7 +336,7 @@ data class MainPrefs(
             override suspend fun writeTo(
                 t: MainPrefs,
                 output: OutputStream,
-            ) = Stuff.myJson.encodeToStream(t, output)
+            ) = Stuff.myJson.encodeToStream(t.constrainedForBuild(), output)
         }
 
         const val FILE_NAME = "main-prefs.json"

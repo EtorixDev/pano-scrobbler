@@ -38,3 +38,4 @@ crowdin.properties
 Gemfile.lock
 .jekyll-cache
 _site/
+.vscode/
