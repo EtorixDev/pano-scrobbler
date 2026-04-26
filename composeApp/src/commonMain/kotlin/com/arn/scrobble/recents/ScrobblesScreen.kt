@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -79,7 +80,9 @@ import com.arn.scrobble.utils.Stuff.format
 import com.arn.scrobble.utils.Stuff.timeToLocal
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -379,6 +382,20 @@ fun ScrobblesScreen(
                     topTrack.album?.name in candidateAlbums
         }
 
+        fun topTrackUpdatedSince(topTrackKeyBeforeRefresh: String?): Boolean {
+            val currentTopTrackKey = currentTopTrackItem()?.key
+
+            return topTrackKeyBeforeRefresh != null &&
+                    currentTopTrackKey != null &&
+                    currentTopTrackKey != topTrackKeyBeforeRefresh
+        }
+
+        suspend fun awaitRefreshCompletion() {
+            snapshotFlow { tracks.loadState.refresh }
+                .dropWhile { it !is LoadState.Loading }
+                .first { it !is LoadState.Loading }
+        }
+
         var lastRefreshEventKey: String? = null
         var refreshJob: Job? = null
 
@@ -396,6 +413,8 @@ fun ScrobblesScreen(
 
                 refreshJob?.cancel()
                 refreshJob = launch {
+                    val topTrackKeyBeforeRefresh = currentTopTrackItem()?.key
+
                     if (!it.nowPlaying) {
                         delay(1000)
 
@@ -409,13 +428,13 @@ fun ScrobblesScreen(
                     }
 
                     repeat(3) { _ ->
-                        if (topTrackMatchesEvent(it)) {
+                        if (topTrackMatchesEvent(it) || topTrackUpdatedSince(topTrackKeyBeforeRefresh)) {
                             return@launch
                         }
 
                         delay(3_000L)
 
-                        if (topTrackMatchesEvent(it)) {
+                        if (topTrackMatchesEvent(it) || topTrackUpdatedSince(topTrackKeyBeforeRefresh)) {
                             return@launch
                         }
 
@@ -423,6 +442,11 @@ fun ScrobblesScreen(
                             !tracks.loadState.hasError
                         ) {
                             tracks.refresh()
+                            awaitRefreshCompletion()
+
+                            if (topTrackMatchesEvent(it) || topTrackUpdatedSince(topTrackKeyBeforeRefresh)) {
+                                return@launch
+                            }
                         }
                     }
                 }
