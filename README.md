@@ -1,3 +1,26 @@
+## Fork Details
+This is a fork of Pano Scrobbler.
+
+Donate to the original developer here:
+- https://ko-fi.com/kawaiiDango
+- https://buymeacoffee.com/kawaiiDango
+
+Changes in this fork:
+- Premium features unlocked.
+- Refresh recents on track change rather than on 30 second interval.
+  - For mobile, only refreshes when app opened.
+  - For desktop, refreshes regardless of focus.
+  - Will refresh up to 3 times after a track change at 3, 6, and 9 seconds post update until a refresh succeeds.
+- Edit the actively playing track.
+  - Will scrobble immediately after an edit is saved.
+  - If you need to edit it again, you must edit the scrobbled entry, as the active entry is now treated as no longer scrobble-pending.
+- More robust album art preservation when editing a track.
+- Mobile widget now supports more refresh intervals (1, 2, 4, 6, 12, 24) instead of always 4 hours.
+- Spotify support for covers is locked in releases from this repo.
+  - Spotify Web API requires a premium subscription which I don't have.
+  - You can build your own copy of the app if you want to use your own Spotify API key.
+  - Simply populate `spotify.refreshToken` in your `local.properties` file.
+
 ## <img src="composeApp/src/desktopMain/composeResources/drawable/ic_launcher_with_bg.svg" alt="app icon" width="32"/> Pano Scrobbler
 
 [\[repository\]](https://github.com/kawaiiDango/pano-scrobbler)

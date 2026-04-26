@@ -1,14 +1,18 @@
 package com.arn.scrobble.onboarding
 
+import android.os.Bundle
 import android.os.Build
 import android.view.ViewGroup
+import android.webkit.CookieManager
 import android.webkit.WebView
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
@@ -38,7 +42,9 @@ actual fun WebViewScreen(
     val loadingStr = stringResource(Res.string.loading)
     val webViewChromeClient = remember { PanoWebViewChromeClient() }
     val pageTitleState = remember { mutableStateOf(loadingStr) }
+    val savedWebViewState = rememberSaveable { Bundle() }
     var statusText by remember { mutableStateOf("") }
+    var webView by remember { mutableStateOf<WebView?>(null) }
 
     LaunchedEffect(pageTitleState.value) {
         onSetTitle(pageTitleState.value)
@@ -55,6 +61,18 @@ actual fun WebViewScreen(
         }
     }
 
+    DisposableEffect(Unit) {
+        onDispose {
+            webView?.let {
+                savedWebViewState.clear()
+                it.saveState(savedWebViewState)
+                it.stopLoading()
+                it.destroy()
+            }
+            webView = null
+        }
+    }
+
     if (statusText.isEmpty())
         AndroidView(
             factory = {
@@ -63,7 +81,10 @@ actual fun WebViewScreen(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
+                    CookieManager.getInstance().setAcceptCookie(true)
+                    CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                     settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
                     settings.allowContentAccess = false
                     settings.allowFileAccess = false
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -75,8 +96,19 @@ actual fun WebViewScreen(
 
                     this.webViewClient = webViewClient
                     this.webChromeClient = webViewChromeClient
-                    loadUrl(initialUrl)
+                    webView = this
+
+                    val restoredState =
+                        if (savedWebViewState.keySet().isNotEmpty()) restoreState(savedWebViewState)
+                        else null
+
+                    if (restoredState == null) {
+                        loadUrl(initialUrl)
+                    }
                 }
+            },
+            update = {
+                webView = it
             },
             modifier = modifier
         )

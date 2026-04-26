@@ -1,6 +1,7 @@
 package com.arn.scrobble.onboarding
 
 import android.webkit.CookieManager
+import android.webkit.WebResourceResponse
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -14,6 +15,7 @@ class PanoWebViewClient(
     private val disableNavigation: Boolean,
 ) : WebViewClient() {
     private var firstLoadFinished = false
+    private var recoveredFromLastfmCsrfFailure = false
     lateinit var callbackUrlAndCookies: MutableSharedFlow<Pair<String, Map<String, String>>>
 
     override fun shouldOverrideUrlLoading(
@@ -73,6 +75,34 @@ class PanoWebViewClient(
         }
 
         super.onReceivedError(webView, request, error)
+    }
+
+    override fun onReceivedHttpError(
+        webView: WebView,
+        request: WebResourceRequest,
+        errorResponse: WebResourceResponse,
+    ) {
+        if (
+            request.isForMainFrame &&
+            !recoveredFromLastfmCsrfFailure &&
+            errorResponse.statusCode == 403 &&
+            request.method == "POST" &&
+            request.url.host?.contains("last.fm") == true
+        ) {
+            recoveredFromLastfmCsrfFailure = true
+
+            webView.post {
+                if (webView.canGoBack()) {
+                    webView.goBack()
+                } else {
+                    webView.reload()
+                }
+            }
+
+            return
+        }
+
+        super.onReceivedHttpError(webView, request, errorResponse)
     }
 
     override fun onPageFinished(webView: WebView, url: String?) {
