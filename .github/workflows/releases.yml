@@ -33,14 +33,21 @@ jobs:
 
       - name: Set up common secrets
         shell: bash
+        env:
+          LOCAL_PROPERTIES_SECRET: ${{ secrets.LOCAL_PROPERTIES }}
         run: |
-          echo "${{ secrets.LOCAL_PROPERTIES }}" > local.properties
+          printf '%s' "$LOCAL_PROPERTIES_SECRET" > local.properties
+          echo "updates.enabled=true" >> local.properties
 
       - if: matrix.resources-dir == 'linux-x64'
-        name: Set up Android secrets
+        name: Set up Android signing
         shell: bash
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_JKS }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_JKS }}" | base64 -d - > androidApp/android-keystore.jks
+          printf '%s' "$ANDROID_KEYSTORE_B64" | base64 -d - > androidApp/android-keystore.jks
+          echo "sdk.dir=$ANDROID_HOME" >> local.properties
+          echo "releaseGithub.keystore=androidApp/android-keystore.jks" >> local.properties
 
       - if: matrix.resources-dir == 'linux-x64'
         name: Build APK
@@ -55,8 +62,8 @@ jobs:
         name: Upload Android binary
         uses: actions/upload-artifact@v6
         with:
-          name: pano-scrobbler-android-universal
-          path: dist/pano-scrobbler-android-universal*
+          name: pano-scrobbler-etd-android-universal
+          path: dist/pano-scrobbler-etd-android-universal*
 
       - name: Install Liberica NIK (GraalVM)
         uses: graalvm/setup-graalvm@v1
@@ -94,8 +101,8 @@ jobs:
       - name: Upload desktop binary
         uses: actions/upload-artifact@v6
         with:
-          name: pano-scrobbler-${{ matrix.resources-dir }}
-          path: dist/pano-scrobbler-${{ matrix.resources-dir }}*
+          name: pano-scrobbler-etd-${{ matrix.resources-dir }}
+          path: dist/pano-scrobbler-etd-${{ matrix.resources-dir }}*
   
   upload-release:
     needs: [ build ]
@@ -135,30 +142,3 @@ jobs:
           name: ${{ steps.release_metadata.outputs.verName }}
           body: ${{ steps.release_metadata.outputs.changelog }}
           files: dist/**
-
-      - name: Dispatch static site build
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          sleep 7
-          gh api repos/${{ github.repository }}/dispatches \
-            -F event_type='static_site'
-
-      - name: Install WingetCreate
-        shell: bash
-        run: |
-          winget install --id Microsoft.WingetCreate --accept-package-agreements --accept-source-agreements --disable-interactivity
-
-      - name: Submit to winget-pkgs
-        env:
-          WINGET_CREATE_GITHUB_TOKEN: ${{ secrets.WINGET_CREATE_GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.WINGET_CREATE_GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          gh repo sync kawaiiDango/winget-pkgs -b master
-
-          wingetcreate update kawaiiDango.pano-scrobbler \
-            --version ${{ steps.release_metadata.outputs.verName }} \
-            --urls "https://github.com/EtorixDev/pano-scrobbler/releases/download/${{ steps.release_metadata.outputs.verCode }}/pano-scrobbler-windows-x64.exe" \
-            --submit

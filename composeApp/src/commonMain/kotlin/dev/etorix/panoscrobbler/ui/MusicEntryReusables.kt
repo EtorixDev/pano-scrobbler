@@ -1,0 +1,1519 @@
+package dev.etorix.panoscrobbler.ui
+
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.ZeroCornerSize
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedToggleButton
+import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.Group
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.RenderVectorGroup
+import androidx.compose.ui.graphics.vector.VectorPainter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
+import androidx.compose.ui.zIndex
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.itemKey
+import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
+import coil3.memory.MemoryCache
+import coil3.request.ImageRequest
+import coil3.size.SizeResolver
+import dev.etorix.panoscrobbler.api.lastfm.Album
+import dev.etorix.panoscrobbler.api.lastfm.Artist
+import dev.etorix.panoscrobbler.api.lastfm.MusicEntry
+import dev.etorix.panoscrobbler.api.lastfm.Track
+import dev.etorix.panoscrobbler.icons.Album
+import dev.etorix.panoscrobbler.icons.AllOut
+import dev.etorix.panoscrobbler.icons.AutoAwesomeMosaic
+import dev.etorix.panoscrobbler.icons.Close
+import dev.etorix.panoscrobbler.icons.Favorite
+import dev.etorix.panoscrobbler.icons.FiberManualRecord
+import dev.etorix.panoscrobbler.icons.GraphicEq
+import dev.etorix.panoscrobbler.icons.GridView
+import dev.etorix.panoscrobbler.icons.HeartBroken
+import dev.etorix.panoscrobbler.icons.HourglassEmpty
+import dev.etorix.panoscrobbler.icons.Icons
+import dev.etorix.panoscrobbler.icons.Info
+import dev.etorix.panoscrobbler.icons.KeyboardArrowDown
+import dev.etorix.panoscrobbler.icons.KeyboardArrowUp
+import dev.etorix.panoscrobbler.icons.KeyboardDoubleArrowDown
+import dev.etorix.panoscrobbler.icons.KeyboardDoubleArrowUp
+import dev.etorix.panoscrobbler.icons.Mic
+import dev.etorix.panoscrobbler.icons.MoreVert
+import dev.etorix.panoscrobbler.icons.PlayArrow
+import dev.etorix.panoscrobbler.icons.automirrored.ArrowRightAlt
+import dev.etorix.panoscrobbler.icons.automirrored.KeyboardArrowRight
+import dev.etorix.panoscrobbler.icons.automirrored.List
+import dev.etorix.panoscrobbler.icons.filled.Favorite
+import dev.etorix.panoscrobbler.imageloader.MusicEntryImageReq
+import dev.etorix.panoscrobbler.panoicons.Nothing
+import dev.etorix.panoscrobbler.panoicons.PanoIcons
+import dev.etorix.panoscrobbler.panoicons.RectFilledTranslucent
+import dev.etorix.panoscrobbler.panoicons.StonksNew
+import dev.etorix.panoscrobbler.pref.AppItem
+import dev.etorix.panoscrobbler.themes.LocalThemeAttributes
+import dev.etorix.panoscrobbler.utils.PanoTimeFormatter
+import dev.etorix.panoscrobbler.utils.PlatformStuff
+import dev.etorix.panoscrobbler.utils.Stuff
+import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
+import dev.etorix.panoscrobbler.utils.Stuff.format
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
+import pano_scrobbler.composeapp.generated.resources.Res
+import pano_scrobbler.composeapp.generated.resources.album_art
+import pano_scrobbler.composeapp.generated.resources.close
+import pano_scrobbler.composeapp.generated.resources.collapse
+import pano_scrobbler.composeapp.generated.resources.create_collage
+import pano_scrobbler.composeapp.generated.resources.expand
+import pano_scrobbler.composeapp.generated.resources.grid
+import pano_scrobbler.composeapp.generated.resources.hate
+import pano_scrobbler.composeapp.generated.resources.item_options
+import pano_scrobbler.composeapp.generated.resources.legend
+import pano_scrobbler.composeapp.generated.resources.list
+import pano_scrobbler.composeapp.generated.resources.loved
+import pano_scrobbler.composeapp.generated.resources.num_listeners
+import pano_scrobbler.composeapp.generated.resources.num_scrobbles_noti
+import pano_scrobbler.composeapp.generated.resources.show_all
+import pano_scrobbler.composeapp.generated.resources.time_just_now
+import kotlin.math.abs
+import kotlin.random.Random
+
+enum class GridMode {
+    HERO, LIST, GRID
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun MusicEntryListItem(
+    entry: MusicEntry,
+    onEntryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isPending: Boolean = false,
+    appItem: AppItem? = null,
+    fixedImageHeight: Boolean = true,
+    fetchAlbumImageIfMissing: Boolean = false,
+    index: Int? = null,
+    stonksDelta: Int? = null,
+    progress: Float? = null,
+    isColumn: Boolean = false,
+    forShimmer: Boolean = false,
+    imageUrlOverride: String? = null,
+    onImageClick: (() -> Unit)? = null,
+    onMenuClick: (() -> Unit)? = null,
+    menuContent: @Composable () -> Unit = {},
+) {
+    val hasOnlyOneClickable = onImageClick == null && onMenuClick == null
+    var imageMemoryCacheKey by remember(entry) { mutableStateOf<MemoryCache.Key?>(null) }
+    val context = LocalPlatformContext.current
+    val artInteractionSource = remember { MutableInteractionSource() }
+    val isArtFocused by artInteractionSource.collectIsFocusedAsState()
+    val isNowPlaying = (entry as? Track)?.isNowPlaying == true
+    val accountType by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.currentAccountType }
+
+    val topText = if (entry is Track && entry.date != null)
+        PanoTimeFormatter.relative(entry.date, stringResource(Res.string.time_just_now))
+    else
+        null
+
+    val firstText = when (entry) {
+        is Album -> entry.name
+        is Track -> entry.name
+        is Artist -> entry.name
+    }
+
+    val secondText = when (entry) {
+        is Album -> entry.artist?.name
+        is Track -> entry.artist.name
+        else -> null
+    }
+
+    val thirdText = when {
+        entry.listeners != null -> pluralStringResource(
+            Res.plurals.num_listeners,
+            entry.listeners!!.toInt(),
+            entry.listeners!!.format()
+        )
+
+        entry.playcount != null -> pluralStringResource(
+            Res.plurals.num_scrobbles_noti,
+            entry.playcount!!.toInt(),
+            entry.playcount!!.format()
+        )
+
+        entry is Track && entry.album?.name?.isEmpty() == false -> entry.album.name
+        else -> null
+    }
+
+    Box(
+        modifier = modifier
+            .then(
+                if (isNowPlaying)
+                    Modifier.zIndex(1f) // to fix the animation
+                else
+                    Modifier
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        NowPlayingSurface(
+            nowPlaying = isNowPlaying,
+        ) { childModifier ->
+            RowOrColumnLayout(
+                isColumnMode = isColumn,
+                modifier = childModifier.then(
+                    if (hasOnlyOneClickable)
+                        Modifier
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable(enabled = !forShimmer) { onEntryClick() }
+                    else
+                        Modifier
+                )
+                    .padding(
+                        horizontal = 8.dp,
+                        vertical = if (isColumn)
+                            8.dp
+                        else if (listOfNotNull(topText, secondText, thirdText, progress).size < 3)
+                            4.dp // add extra space
+                        else
+                            0.dp // the inner row is high enough
+                    )
+            ) {
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .then(
+                            if (fixedImageHeight)
+                                Modifier
+                                    .size(72.dp)
+                            else if (!isColumn) // height is bounded in my use case
+                                Modifier.aspectRatio(1f, true)
+                            else // unbounded height, let the custom layout handle it
+                                Modifier
+                        )
+                        .backgroundForShimmer(forShimmer)
+                ) {
+                    val imageDim by animateDpAsState(targetValue = maxWidth)
+
+                    AsyncImage(
+                        model = remember(
+                            forShimmer,
+                            entry,
+                            isColumn,
+                            fetchAlbumImageIfMissing
+                        ) {
+                            if (forShimmer)
+                                null
+                            else
+                                ImageRequest.Builder(context)
+                                    .data(
+                                        imageUrlOverride
+                                            ?: MusicEntryImageReq(
+                                                entry,
+                                                accountType = accountType,
+                                                isHeroImage = !fixedImageHeight,
+                                                fetchAlbumInfoIfMissing = fetchAlbumImageIfMissing
+                                            )
+                                    )
+                                    .placeholderMemoryCacheKey(imageMemoryCacheKey)
+                                    .size(SizeResolver.ORIGINAL)
+                                    .build()
+                        },
+                        fallback = placeholderImageVectorPainter(null),
+                        error = if (!isPending)
+                            placeholderImageVectorPainter(entry)
+                        else
+                            placeholderImageVectorPainter(entry, Icons.HourglassEmpty),
+                        // this placeholder overrides the one set in model
+                        placeholder = if (imageMemoryCacheKey != null)
+                            null
+                        else
+                            placeholderPainter(),
+                        onSuccess = {
+                            imageMemoryCacheKey = it.result.memoryCacheKey
+                        },
+                        contentDescription = stringResource(Res.string.album_art),
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.medium)
+                            .size(imageDim)
+                            .then(
+                                if (onImageClick != null)
+                                    Modifier.clickable(
+                                        enabled = !forShimmer,
+                                        interactionSource = artInteractionSource
+                                    ) { onImageClick() }
+                                        .then(
+                                            if (isArtFocused)
+                                                Modifier
+                                                    .border(
+                                                        width = 2.dp,
+                                                        color = MaterialTheme.colorScheme.inverseSurface,
+                                                        shape = MaterialTheme.shapes.medium
+                                                    )
+                                                    .border(
+                                                        width = 4.dp,
+                                                        color = MaterialTheme.colorScheme.surface,
+                                                        shape = MaterialTheme.shapes.medium
+                                                    )
+                                            else
+                                                Modifier
+
+                                        )
+                                else
+                                    Modifier
+                            )
+                    )
+
+                    if (entry is Track && (entry.userloved == true || entry.userHated == true)) {
+                        val loveHateModifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .rotate(11.25f)
+                            .offset(x = 6.dp, y = (-6).dp)
+
+                        Icon(
+                            imageVector = if (entry.userloved == true) Icons.Filled.Favorite else Icons.HeartBroken,
+                            contentDescription = stringResource(if (entry.userloved == true) Res.string.loved else Res.string.hate),
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = loveHateModifier
+                        )
+
+                        Icon(
+                            imageVector = Icons.Favorite,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondary,
+                            modifier = loveHateModifier
+                        )
+                    }
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .widthIn(200.dp)
+                        .then(
+                            if (isColumn)
+                                Modifier.padding(top = 8.dp)
+                            else
+                                Modifier.padding(start = 8.dp)
+                        )
+                        .then(
+                            if (isColumn)
+                                Modifier.border(
+                                    1.dp,
+                                    if (isNowPlaying)
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.outline,
+                                    MaterialTheme.shapes.medium
+                                )
+                            else
+                                Modifier
+                        )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .then(
+                                if (!hasOnlyOneClickable)
+                                    Modifier
+                                        .clip(MaterialTheme.shapes.medium)
+                                        .clickable(enabled = !forShimmer) { onEntryClick() }
+                                else
+                                    Modifier
+                            )
+                            .padding(8.dp)
+                            .backgroundForShimmer(forShimmer)
+                    ) {
+
+                        if (topText != null) {
+                            Text(
+                                text = if (forShimmer) "" else topText,
+                                style = MaterialTheme.typography.labelMedium,
+                                modifier = Modifier
+                                    .align(Alignment.End)
+                                    .backgroundForShimmer(forShimmer)
+                            )
+                        }
+
+                        Text(
+                            text = if (forShimmer)
+                                ""
+                            else if (index != null)
+                                "${index + 1}. $firstText"
+                            else
+                                firstText,
+                            style = MaterialTheme.typography.titleMediumEmphasized,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+
+                        if (secondText != null)
+                            Text(
+                                text = if (forShimmer) "" else secondText,
+                                style = MaterialTheme.typography.bodyLargeEmphasized,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+
+                        if (thirdText != null) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                if (stonksDelta != null) {
+                                    stonksIconForDelta(stonksDelta)?.let { (icon, color) ->
+                                        Icon(
+                                            imageVector = icon,
+                                            tint = color,
+                                            contentDescription = stonksDelta.toString(),
+                                            modifier = Modifier
+                                                .size(16.dp)
+                                                .offset((-2).dp)
+                                        )
+                                    }
+                                }
+
+                                Text(
+                                    text = if (forShimmer) "" else thirdText,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+
+                        if (progress != null) {
+                            ScrobblesCountProgress(progress)
+                        }
+                    }
+
+                    if (onMenuClick != null) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        ) {
+                            if (entry is Track && entry.isNowPlaying) {
+                                Icon(
+                                    imageVector = Icons.PlayArrow,
+                                    contentDescription = stringResource(Res.string.time_just_now),
+                                    modifier = Modifier
+                                        .size(22.dp)
+                                )
+                            } else if (appItem != null) {
+                                TooltipBox(
+                                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                        TooltipAnchorPosition.Above
+                                    ),
+                                    tooltip = { PlainTooltip { Text(appItem.friendlyLabel) } },
+                                    state = rememberTooltipState(),
+                                ) {
+                                    AppIcon(
+                                        appItem = appItem,
+                                        modifier = Modifier
+                                            .size(22.dp)
+                                    )
+                                }
+                            }
+
+                            IconButton(
+                                onClick = onMenuClick,
+                                enabled = !forShimmer
+                            ) {
+                                Icon(
+                                    imageVector = Icons.MoreVert,
+                                    contentDescription = stringResource(Res.string.item_options)
+                                )
+                            }
+
+                            menuContent()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NowPlayingSurface(
+    nowPlaying: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable (Modifier) -> Unit,
+) {
+    var isResumed by remember { mutableStateOf(false) }
+
+    LifecycleResumeEffect(Unit) {
+        isResumed = true
+
+        onPauseOrDispose {
+            isResumed = false
+        }
+    }
+
+    // Random initial phases, bounded to [0, 1), remembered across recompositions and
+    // navigation/process-death via rememberSaveable.
+    val initialPhase1 by rememberSaveable { mutableFloatStateOf(Random.nextFloat()) }
+    val initialPhase2 by rememberSaveable { mutableFloatStateOf(Random.nextFloat()) }
+    val reverseColors by rememberSaveable { mutableStateOf(Random.nextBoolean()) }
+
+    // Gradient 1: top-left corner, ~20s cycle
+    val anim1 = customFpsInfiniteAnimation(
+        initialValue = initialPhase1,
+        targetValue = initialPhase1 + 1f,   // one full cycle from wherever we started
+        durationMillis = 20_000,
+        enabled = isResumed && nowPlaying,
+    )
+
+    // Gradient 2: bottom-right corner, ~27s cycle (different prime-ish period for organic feel)
+    val anim2 = customFpsInfiniteAnimation(
+        initialValue = initialPhase2,
+        targetValue = initialPhase2 + 1f,
+        durationMillis = 27_000,
+        enabled = isResumed && nowPlaying,
+    )
+
+    // Map the raw [0,∞) playhead to a [0,1] ping-pong value so each gradient breathes
+    // independently. fract() gives the fractional part; mirroring gives the smooth bounce.
+    fun pingPong(raw: Float): Float {
+        val t = raw % 1f          // wrap into [0, 1)
+        return if (t < 0.5f) t * 2f else (1f - t) * 2f   // triangle wave → smooth breath
+    }
+
+    val fgColor1 = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.45f)
+    val fgColor2 = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)
+
+    Surface(
+        color = if (nowPlaying)
+            MaterialTheme.colorScheme.primaryContainer
+        else
+            Color.Unspecified,
+        shape = MaterialTheme.shapes.large,
+        modifier = modifier
+            .clip(MaterialTheme.shapes.large)
+    ) {
+        val childModifier = if (nowPlaying) {
+            Modifier.drawWithCache {
+                // Radius: large enough to bleed well past the opposite corner
+                val radius = size.maxDimension * 0.9f
+
+                val (finalFgColor1, finalFgColor2) = if (reverseColors)
+                    fgColor2 to fgColor1
+                else
+                    fgColor1 to fgColor2
+
+                // Gradient 1 — anchored top-left, breathes in-and-out
+                val breath1 = pingPong(anim1.value)
+                val center1 = Offset(
+                    x = size.width * lerp(-0.1f, 0.4f, breath1),
+                    y = size.height * lerp(-0.1f, 0.4f, breath1),
+                )
+                val brush1 = Brush.radialGradient(
+                    0f to finalFgColor1,
+                    0.6f to finalFgColor1.copy(alpha = finalFgColor1.alpha * 0.4f),
+                    1f to Color.Transparent,
+                    center = center1,
+                    radius = radius,
+                )
+
+                // Gradient 2 — anchored bottom-right, breathes at a different rate/phase
+                val breath2 = pingPong(anim2.value)
+                val center2 = Offset(
+                    x = size.width * lerp(0.6f, 1.1f, breath2),
+                    y = size.height * lerp(0.6f, 1.1f, breath2),
+                )
+                val brush2 = Brush.radialGradient(
+                    0f to finalFgColor2,
+                    0.6f to finalFgColor2.copy(alpha = finalFgColor2.alpha * 0.4f),
+                    1f to Color.Transparent,
+                    center = center2,
+                    radius = radius,
+                )
+
+                onDrawBehind {
+                    drawRect(brush = brush1)
+                    drawRect(brush = brush2)
+                }
+            }
+        } else
+            Modifier
+
+        content(childModifier)
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun MusicEntryGridItem(
+    entry: MusicEntry,
+    showArtist: Boolean,
+    index: Int?,
+    stonksDelta: Int?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    imageUrlOverride: String? = null,
+    fetchAlbumImageIfMissing: Boolean = false,
+    isHero: Boolean = false,
+    progress: Float? = null,
+    forShimmer: Boolean = false,
+) {
+    val accountType by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.currentAccountType }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(enabled = !forShimmer, onClick = onClick)
+            .padding(8.dp)
+    ) {
+        AsyncImage(
+            model = if (forShimmer)
+                null
+            else imageUrlOverride
+                ?: MusicEntryImageReq(
+                    entry,
+                    accountType = accountType,
+                    isHeroImage = isHero,
+                    fetchAlbumInfoIfMissing = fetchAlbumImageIfMissing
+                ),
+            fallback = placeholderImageVectorPainter(null),
+            error = placeholderImageVectorPainter(entry),
+            placeholder = placeholderPainter(),
+            contentDescription = stringResource(Res.string.album_art),
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(
+                    MaterialTheme.shapes.medium.copy(
+                        bottomEnd = ZeroCornerSize,
+                        bottomStart = ZeroCornerSize
+                    )
+                )
+                .backgroundForShimmer(forShimmer)
+        )
+        Column(
+            modifier = Modifier
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.outline,
+                    MaterialTheme.shapes.medium.copy(
+                        topEnd = ZeroCornerSize,
+                        topStart = ZeroCornerSize
+                    )
+                )
+                .padding(8.dp)
+        ) {
+
+            val firstText = when (entry) {
+                is Album -> entry.name
+                is Track -> (if (entry.userloved == true) "❤️ " else "") + entry.name
+                is Artist -> entry.name
+            }
+
+            val secondText = if (showArtist) {
+                when (entry) {
+                    is Album -> entry.artist?.name
+                    is Track -> entry.artist.name
+                    else -> null
+                }
+            } else null
+
+            val playCount = entry.userplaycount ?: entry.playcount
+            val scrobbleDateText = if (entry is Track && entry.date != null)
+                " | " + PanoTimeFormatter.relative(
+                    entry.date,
+                    stringResource(Res.string.time_just_now)
+                )
+            else
+                ""
+            val thirdText = if (playCount != null) {
+                pluralStringResource(
+                    Res.plurals.num_scrobbles_noti,
+                    playCount.toInt(),
+                    playCount.format()
+                ) + scrobbleDateText
+            } else
+                null
+
+            Text(
+                text = if (forShimmer)
+                    ""
+                else if (index != null)
+                    "${index + 1}. $firstText"
+                else
+                    firstText,
+                style = MaterialTheme.typography.titleMediumEmphasized,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .backgroundForShimmer(forShimmer)
+
+            )
+
+            if (secondText != null)
+                Text(
+                    text = if (forShimmer) "" else secondText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .backgroundForShimmer(forShimmer)
+                )
+
+            if (thirdText != null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .backgroundForShimmer(forShimmer)
+                ) {
+                    if (stonksDelta != null) {
+                        stonksIconForDelta(stonksDelta)?.let { (icon, color) ->
+                            Icon(
+                                imageVector = icon,
+                                tint = color,
+                                contentDescription = stonksDelta.toString(),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = if (forShimmer) "" else thirdText,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+
+                        )
+                }
+            }
+
+            ScrobblesCountProgress(progress)
+        }
+    }
+}
+
+@Composable
+private fun ScrobblesCountProgress(
+    progress: Float?,
+    modifier: Modifier = Modifier,
+) {
+    // always reserve space for the progress bar
+    Box(
+        modifier = modifier
+            .then(
+                if (progress == null)
+                    Modifier
+                else
+                    Modifier
+                        .fillMaxWidth(progress)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+            )
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+    )
+}
+
+@Composable
+fun ExpandableHeaderItem(
+    title: String,
+    icon: ImageVector,
+    expanded: Boolean,
+    onToggle: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .toggleable(enabled = enabled, value = expanded, onValueChange = onToggle)
+            .padding(16.dp)
+    ) {
+        if (enabled)
+            Icon(
+                imageVector = if (expanded) Icons.KeyboardArrowDown else Icons.AutoMirrored.KeyboardArrowRight,
+                contentDescription = if (expanded)
+                    stringResource(Res.string.collapse)
+                else
+                    stringResource(Res.string.expand),
+                tint = MaterialTheme.colorScheme.primary
+            )
+
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary
+        )
+
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun GoToDetailsHeaderItem(
+    title: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        shadowElevation = 4.dp,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(enabled = enabled, onClick = onClick)
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(16.dp)
+                .padding(end = horizontalOverscanPadding())
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f)
+            )
+
+            Icon(
+                imageVector = Icons.AutoMirrored.ArrowRightAlt,
+                contentDescription = stringResource(Res.string.show_all),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+fun TextHeaderItem(
+    title: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .indication(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current
+            )
+            .focusable(interactionSource = interactionSource)
+            .padding(16.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary
+        )
+
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+
+@Composable
+fun ExpandableHeaderMenu(
+    title: String,
+    icon: ImageVector,
+    menuItemText: String,
+    onMenuItemClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    var menuShown by remember { mutableStateOf(false) }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(enabled = enabled, onClick = {
+                menuShown = true
+            })
+            .padding(16.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f)
+        )
+
+        Box {
+            Icon(
+                imageVector = Icons.MoreVert,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+
+            DropdownMenu(
+                expanded = menuShown,
+                onDismissRequest = { menuShown = false },
+            ) {
+                DropdownMenuItem(
+                    text = { Text(menuItemText) },
+                    onClick = {
+                        onMenuItemClick()
+                        menuShown = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DismissableNotice(
+    title: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onDismiss: (() -> Unit)? = null,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
+
+        if (onDismiss != null) {
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+            ) {
+                Icon(
+                    imageVector = Icons.Close,
+                    contentDescription = stringResource(Res.string.close),
+                )
+            }
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxHeight()
+                .weight(1f)
+                .clip(MaterialTheme.shapes.medium)
+                .clickable(onClick = onClick)
+                .padding(16.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f)
+            )
+
+            Icon(
+                imageVector = Icons.AutoMirrored.ArrowRightAlt,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+fun LazyListScope.expandableSublist(
+    headerText: String,
+    headerIcon: ImageVector,
+    items: List<MusicEntry>,
+    expanded: Boolean,
+    onToggle: (Boolean) -> Unit,
+    onItemClick: (MusicEntry) -> Unit,
+    fetchAlbumImageIfMissing: Boolean = false,
+    minItems: Int = 3,
+) {
+    if (items.isEmpty()) return
+
+    stickyHeader(key = headerText) {
+        Surface(
+            shape = MaterialTheme.shapes.large,
+            shadowElevation = 4.dp,
+            tonalElevation = 4.dp,
+        ) {
+            ExpandableHeaderItem(
+                title = headerText,
+                icon = headerIcon,
+                expanded = expanded || items.size <= minItems,
+                enabled = items.size > minItems,
+                onToggle = onToggle,
+                modifier = Modifier.animateItem(),
+            )
+        }
+    }
+
+    items(
+        items.take(if (expanded) items.size else minItems),
+        key = { it.generateKey() }
+    ) { item ->
+
+        MusicEntryListItem(
+            item,
+            onEntryClick = { onItemClick(item) },
+            fetchAlbumImageIfMissing = fetchAlbumImageIfMissing,
+            modifier = Modifier.animateItem(),
+        )
+    }
+}
+
+@Composable
+fun EntriesRow(
+    title: String,
+    entries: LazyPagingItems<MusicEntry>,
+    headerIcon: ImageVector,
+    maxCountEvaluater: () -> Float = {
+        if (entries.itemCount > 0)
+            entries.peek(0)?.playcount?.toFloat() ?: 0f
+        else
+            0f
+//        (0 until entries.itemCount)
+//            .maxOfOrNull { i -> entries.peek(i)?.playcount?.toFloat() ?: 0f }
+//            ?: 0f
+    },
+    placeholderItem: MusicEntry,
+    fetchAlbumImageIfMissing: Boolean,
+    showArtists: Boolean,
+    emptyStringRes: StringResource,
+    onHeaderClick: () -> Unit,
+    onItemClick: (MusicEntry) -> Unit,
+) {
+    val maxCount by remember(entries.loadState) { mutableFloatStateOf(maxCountEvaluater()) }
+    val shimmer by remember(entries.loadState.refresh) { mutableStateOf(entries.loadState.refresh is LoadState.Loading) }
+
+    GoToDetailsHeaderItem(
+        icon = headerIcon,
+        title = title,
+        enabled = !shimmer,
+        onClick = onHeaderClick,
+    )
+
+    if (!entries.loadState.hasError && entries.itemCount == 0 && !shimmer) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+        ) {
+            EmptyText(
+                text = stringResource(emptyStringRes),
+                visible = true,
+            )
+        }
+    } else {
+        PanoLazyRow(
+            contentPadding = PaddingValues(horizontal = 24.dp),
+            modifier = if (shimmer) Modifier.shimmerWindowBounds() else Modifier
+        ) {
+            if (shimmer) {
+                items(4) { idx ->
+                    MusicEntryGridItem(
+                        placeholderItem,
+                        forShimmer = true,
+                        onClick = {},
+                        progress = 0f,
+                        showArtist = showArtists,
+                        stonksDelta = null,
+                        index = null,
+                        modifier = Modifier
+                            .animateItem()
+                            .width(minGridSize())
+                    )
+                }
+            }
+
+            items(entries.itemCount, key = entries.itemKey()) { idx ->
+                val entryNullable = entries[idx]
+                val entry = entryNullable ?: Artist(" ", listeners = idx.toLong())
+
+                MusicEntryGridItem(
+                    entry,
+                    forShimmer = entryNullable == null,
+                    onClick = {
+                        onItemClick(entry)
+                    },
+                    progress = if (maxCount > 0) {
+                        entry.playcount?.toFloat()?.div(maxCount) ?: 0f
+                    } else
+                        entry.match,
+                    stonksDelta = entry.stonksDelta,
+                    fetchAlbumImageIfMissing = fetchAlbumImageIfMissing,
+                    showArtist = showArtists,
+                    index = idx,
+                    modifier = Modifier
+                        .animateItem()
+                        .width(minGridSize())
+                )
+            }
+
+            if (entries.loadState.hasError) {
+                val error = when {
+                    entries.loadState.refresh is LoadState.Error -> entries.loadState.refresh as LoadState.Error
+                    entries.loadState.append is LoadState.Error -> entries.loadState.append as LoadState.Error
+                    else -> null
+                }
+
+                if (error != null) {
+                    item {
+                        ListLoadError(
+                            modifier = Modifier
+                                .height(150.dp)
+                                .fillParentMaxWidth()
+                                .animateItem(),
+                            throwable = error.error,
+                            onRetry = { entries.retry() })
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun GridOrListSelector(
+    gridMode: GridMode,
+    onGridModeChange: (GridMode) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+    ) {
+        Row(
+            Modifier.padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+        ) {
+
+            if (!PlatformStuff.isTv) {
+                OutlinedToggleButton(
+                    checked = gridMode == GridMode.HERO,
+                    onCheckedChange = {
+                        if (it)
+                            onGridModeChange(GridMode.HERO)
+                    },
+                    shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
+                ) {
+                    Icon(
+                        Icons.AllOut,
+                        contentDescription = stringResource(Res.string.expand)
+                    )
+                }
+            }
+
+            OutlinedToggleButton(
+                checked = gridMode == GridMode.GRID,
+                onCheckedChange = {
+                    if (it)
+                        onGridModeChange(GridMode.GRID)
+                },
+                shapes = ButtonGroupDefaults.connectedMiddleButtonShapes()
+            ) {
+                Icon(
+                    Icons.GridView,
+                    contentDescription = stringResource(Res.string.grid)
+                )
+            }
+
+            OutlinedToggleButton(
+                checked = gridMode == GridMode.LIST,
+                onCheckedChange = {
+                    if (it)
+                        onGridModeChange(GridMode.LIST)
+                },
+                shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
+            ) {
+                Icon(
+                    Icons.AutoMirrored.List,
+                    contentDescription = stringResource(Res.string.list)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ButtonsBarForCharts(
+    gridMode: GridMode,
+    onCollageClick: (() -> Unit)?,
+    onLegendClick: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    val scope = rememberCoroutineScope()
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+    ) {
+        if (onLegendClick != null)
+            IconButtonWithTooltip(
+                onClick = onLegendClick,
+                icon = Icons.Info,
+                contentDescription = stringResource(Res.string.legend)
+            )
+
+
+        GridOrListSelector(
+            gridMode = gridMode,
+            onGridModeChange = { gridMode ->
+                scope.launch {
+                    PlatformStuff.mainPrefs.updateData { it.copy(gridMode = gridMode) }
+                }
+            },
+            modifier = Modifier
+                .weight(1f)
+        )
+
+        if (onCollageClick != null)
+            IconButtonWithTooltip(
+                onClick = onCollageClick,
+                icon = Icons.AutoAwesomeMosaic,
+                contentDescription = stringResource(Res.string.create_collage)
+            )
+    }
+}
+
+@Composable
+fun EntriesGridOrList(
+    entries: LazyPagingItems<MusicEntry>,
+    onItemClick: (MusicEntry) -> Unit,
+
+    placeholderItem: MusicEntry,
+    fetchAlbumImageIfMissing: Boolean,
+    showArtists: Boolean,
+    emptyStringRes: StringResource,
+    modifier: Modifier = Modifier,
+    onCollageClick: (() -> Unit)? = null,
+    onLegendClick: (() -> Unit)? = null,
+    maxCountEvaluater: () -> Float = {
+        if (entries.itemCount > 0)
+            entries.peek(0)?.playcount?.toFloat() ?: 0f
+        else
+            0f
+//        (0 until entries.itemCount)
+//            .maxOfOrNull { i -> entries.peek(i)?.playcount?.toFloat() ?: 0f }
+//            ?: 0f
+    },
+) {
+    val maxCount by remember(entries.loadState) { mutableFloatStateOf(maxCountEvaluater()) }
+    val shimmer by remember(entries.loadState.refresh) { mutableStateOf(entries.loadState.refresh is LoadState.Loading) }
+    val gridMode by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.gridMode }
+
+    if (!entries.loadState.hasError && entries.itemCount == 0 && !shimmer) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = modifier
+                .fillMaxSize()
+        ) {
+            Text(
+                text = stringResource(emptyStringRes),
+                textAlign = TextAlign.Center,
+            )
+        }
+    } else {
+        PanoLazyVerticalGrid(
+            columns = if (gridMode == GridMode.GRID)
+                GridCells.Adaptive(minSize = minGridSize())
+            else
+                GridCells.Fixed(1),
+            modifier = modifier.fillMaxSize()
+                .then(if (shimmer) Modifier.shimmerWindowBounds() else Modifier)
+        ) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+
+                ButtonsBarForCharts(
+                    gridMode = gridMode,
+                    onCollageClick = onCollageClick?.takeIf { !PlatformStuff.isTv },
+                    onLegendClick = onLegendClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                )
+            }
+
+            if (shimmer) {
+                items(8) { idx ->
+
+                    if (gridMode == GridMode.LIST) {
+                        MusicEntryListItem(
+                            placeholderItem,
+                            forShimmer = true,
+                            onEntryClick = {},
+                            modifier = Modifier
+                                .animateItem()
+                        )
+                    } else {
+                        MusicEntryGridItem(
+                            placeholderItem,
+                            forShimmer = true,
+                            onClick = {},
+                            progress = 0f,
+                            stonksDelta = null,
+                            index = null,
+                            showArtist = showArtists,
+                            modifier = Modifier
+                                .animateItem()
+                        )
+                    }
+                }
+            }
+
+            items(entries.itemCount, key = entries.itemKey()) { idx ->
+                val entryNullable = entries[idx]
+                val entry = entryNullable ?: Artist(" ", listeners = idx.toLong())
+
+                if (gridMode == GridMode.LIST) {
+                    MusicEntryListItem(
+                        entry,
+                        forShimmer = entryNullable == null,
+                        onEntryClick = {
+                            onItemClick(entry)
+                        },
+                        progress = if (maxCount > 0) {
+                            entry.playcount?.toFloat()?.div(maxCount) ?: 0f
+                        } else
+                            entry.match,
+                        stonksDelta = entry.stonksDelta,
+                        fetchAlbumImageIfMissing = fetchAlbumImageIfMissing,
+                        //                    showArtist = showArtists,
+                        index = idx,
+                        modifier = Modifier
+                            .animateItem()
+                    )
+                } else {
+                    MusicEntryGridItem(
+                        entry,
+                        forShimmer = entryNullable == null,
+                        onClick = {
+                            onItemClick(entry)
+                        },
+                        progress = if (maxCount > 0) {
+                            entry.playcount?.toFloat()?.div(maxCount) ?: 0f
+                        } else
+                            entry.match,
+                        stonksDelta = entry.stonksDelta,
+                        fetchAlbumImageIfMissing = fetchAlbumImageIfMissing,
+                        showArtist = showArtists,
+                        index = idx,
+                        isHero = gridMode == GridMode.HERO,
+                        modifier = Modifier
+                            .animateItem()
+                    )
+                }
+            }
+
+            if (entries.loadState.hasError) {
+                val error = when {
+                    entries.loadState.refresh is LoadState.Error -> entries.loadState.refresh as LoadState.Error
+                    entries.loadState.append is LoadState.Error -> entries.loadState.append as LoadState.Error
+                    else -> null
+                }
+
+                if (error != null) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        ListLoadError(
+                            modifier = Modifier.animateItem(),
+                            throwable = error.error,
+                            onRetry = { entries.retry() })
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun getMusicEntryPlaceholderItem(type: Int, showScrobbleCount: Boolean = true): MusicEntry {
+    val count = if (showScrobbleCount) 10L else 0L
+
+    return when (type) {
+        Stuff.TYPE_TRACKS -> Track(
+            name = "Track",
+            album = Album(
+                name = "Album",
+            ),
+            artist = Artist(
+                name = "Artist",
+            ),
+            playcount = count,
+        )
+
+        Stuff.TYPE_ALBUMS -> Album(
+            name = "Album",
+            artist = Artist(
+                name = "Artist",
+            ),
+            playcount = count,
+        )
+
+        Stuff.TYPE_ARTISTS,
+        Stuff.TYPE_ALBUM_ARTISTS,
+            -> Artist(
+            name = "Artist",
+            playcount = count,
+        )
+
+        else -> throw IllegalArgumentException("Unknown type $type")
+    }
+}
+
+@Composable
+fun stonksIconForDelta(delta: Int?) = when {
+    delta == null -> null
+    delta == Int.MAX_VALUE -> PanoIcons.StonksNew to MaterialTheme.colorScheme.primary
+    delta in 1..5 -> Icons.KeyboardArrowUp to MaterialTheme.colorScheme.tertiary
+    delta > 5 -> Icons.KeyboardDoubleArrowUp to MaterialTheme.colorScheme.tertiary
+    delta in -1 downTo -5 -> Icons.KeyboardArrowDown to MaterialTheme.colorScheme.secondary
+    delta < -5 -> Icons.KeyboardDoubleArrowDown to MaterialTheme.colorScheme.secondary
+    delta == 0 -> Icons.FiberManualRecord to MaterialTheme.colorScheme.outline
+    else -> null
+}
+
+fun MusicEntry.generateKey(): String {
+    val str = when (this) {
+        is Track -> "Track" + "\n" + date + "\n" + artist.name + "\n" + album?.name + "\n" + name
+        is Album -> "Album" + "\n" + artist?.name + "\n" + name
+        is Artist -> "Artist" + "\n" + name
+    }
+
+    return str
+}
+
+fun MusicEntry?.colorSeed(): Int {
+    val str = this?.generateKey()
+    return str.hashCode()
+}
+
+@Composable
+fun placeholderImageVectorPainter(
+    musicEntry: MusicEntry?,
+    imageVector: ImageVector = when (musicEntry) {
+        is Artist -> Icons.Mic
+        is Album -> Icons.Album
+        is Track -> if (musicEntry.album != null)
+            Icons.Album
+        else
+            Icons.GraphicEq
+
+        else -> PanoIcons.Nothing
+    },
+    scaleFactor: Float = 0.6f,
+): VectorPainter {
+
+    val colors = LocalThemeAttributes.current.allSecondaryContainerColors
+    val color = colors[abs(musicEntry.colorSeed()) % colors.size]
+
+    return rememberVectorPainter(
+        defaultWidth = imageVector.defaultWidth,
+        defaultHeight = imageVector.defaultHeight,
+        viewportWidth = imageVector.viewportWidth,
+        viewportHeight = imageVector.viewportHeight,
+        name = imageVector.name,
+        tintColor = color,
+        tintBlendMode = imageVector.tintBlendMode,
+        autoMirror = imageVector.autoMirror
+    ) { viewportWidth, viewportHeight ->
+        RenderVectorGroup(group = PanoIcons.RectFilledTranslucent.root)
+        Group(
+            name = imageVector.root.name + "_scaled",
+            scaleX = scaleFactor,
+            scaleY = scaleFactor,
+            translationX = (viewportWidth - imageVector.viewportWidth * scaleFactor) / 2,
+            translationY = (viewportHeight - imageVector.viewportHeight * scaleFactor) / 2,
+        ) {
+            RenderVectorGroup(group = imageVector.root)
+        }
+    }
+}

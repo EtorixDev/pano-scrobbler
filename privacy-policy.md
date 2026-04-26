@@ -6,7 +6,7 @@
 
 ### Introduction
 
-This fork of Pano Scrobbler is maintained by EtorixDev and is based on the original app by
+This fork, Pano Scrobbler ETD, is maintained by EtorixDev and is based on the original app by
 kawaiiDango. It is a Free and Open Source app licensed under GPLv3 or later, provided at no cost
 and intended for use as is, without any warranty or fitness for a particular purpose. One may
 freely obtain its complete source code at:

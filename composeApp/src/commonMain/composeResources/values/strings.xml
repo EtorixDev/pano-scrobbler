@@ -91,7 +91,7 @@
     <string name="scrobble_services" comment="Services like lastfm, librefm, listenbrainz etc">Services</string>
     <string name="recents_share" formatted="true" comment="%1= artist — track, %2= relative time (with preposition e.g. on Sep 9)">I was listening to\n%1$s %2$s</string>
     <string name="recents_share_username" formatted="true" comment="%1= artist — track, %2= relative time (with preposition e.g. on Sep 9), %3= username">%3$s was listening to\n%1$s %2$s</string>
-    <string name="share_sig">(via Pano Scrobbler)</string>
+    <string name="share_sig">(via Pano Scrobbler ETD)</string>
     <string name="share">Share</string>
     <string name="legend" comment="Chart legend - descriptions of the symbols used">Legend</string>
     <string name="grid" comment="Grid view">Grid</string>
@@ -318,7 +318,7 @@
     <string name="download" comment="Its a verb">Download</string>
     <string name="changelog">Changelog</string>
 
-    <string name="import_hey_wtf">That's probably not a Pano Scrobbler export file</string>
+    <string name="import_hey_wtf">That's probably not a Pano Scrobbler ETD export file</string>
     <string name="imported">Imported</string>
     <string name="import_options">Import options</string>
     <string name="import_lists_nope">Do not import edits and blocklist</string>
@@ -331,7 +331,7 @@
     <string name="lastfm_reauth">You need to reauthenticate in order to edit or delete scrobbles</string>
     <string name="like_instance" comment="%1= the scrobbling service name, such as last.fm, ListenBrainz">%1$s-like instance</string>
     <string name="failed_encode_url">Failed to encode URL</string>
-    <string name="check_nls" formatted="true" comment="%1= the name Pano Scrobbler. Asks the user to check the app in notification access settings">Check %1$s</string>
+    <string name="check_nls" formatted="true" comment="%1= the name Pano Scrobbler ETD. Asks the user to check the app in notification access settings">Check %1$s</string>
     <string name="no_browser">No browser is installed</string>
     <string name="no_player">No music player is installed</string>
     <string name="not_running">⚠ The scrobbler was killed by your system</string>
@@ -374,7 +374,7 @@
     <string name="reload" comment="Reload or refresh">Reload</string>
     <string name="pref_tray_icon_theme">Tray icon theme</string>
     <string name="min_track_duration">Scrobble tracks longer than</string>
-    <string name="automation">Control Pano Scrobbler from automation apps</string>
+    <string name="automation">Control Pano Scrobbler ETD from automation apps</string>
     <string name="country_for_api" formatted="true" comment="%1$s is the name of the streaming service, like Spotify, Apple Music">Country for %1$s metadata</string>
     <string name="login_in_browser">Complete the login in the browser window</string>
     <string name="edit_no_save">This will not be saved for future scrobbles</string>
@@ -392,7 +392,7 @@
     <string name="when_not_using" formatted="true" comment="%1$s is the web service or media player name">When not using %1$s</string>
     <string name="as_text" comment="Like copy as text, but in short">As text</string>
     <string name="automation_cli">Command-line arguments</string>
-    <string name="automation_cli_info">Run the pano-scrobbler executable with one of these command line arguments, while an instance is already running.</string>
+    <string name="automation_cli_info">Run the pano-scrobbler-etd executable with one of these command line arguments, while an instance is already running.</string>
     <string name="album_art_now_playing_desc">Needs a last.fm login</string>
     <string name="spotify_consent">Fetch artist images from Spotify?</string>
     <string name="show_track_url">Track URL</string>
@@ -408,7 +408,7 @@
     <string name="system" comment="system default settings">System</string>
     <string name="host" comment="proxy host">Host</string>
     <string name="port" comment="proxy port">Port</string>
-    <string name="scanning" comment="finds other instances of Pano Scrobbler import server on the local network">Scanning</string>
+    <string name="scanning" comment="finds other instances of Pano Scrobbler ETD import server on the local network">Scanning</string>
     <string name="missing_local_network_permission">This feature needs permission to connect to the local network</string>
     <string name="artist_splitting_exceptions" comment="exceptions for the use first artist feature">Artist Splitting Exceptions</string>
     <string name="add_exception" comment="as in adding an exception to a rule or setting">Add an exception</string>

@@ -11,7 +11,7 @@ kotlin {
     // which platforms this KMP module supports.
     // See: https://kotlinlang.org/docs/multiplatform-discover-project.html#targets
     android {
-        namespace = "com.arn.scrobble.extras.nonplay"
+        namespace = "dev.etorix.panoscrobbler.extras.nonplay"
         compileSdk {
             version = release(libs.versions.targetSdk.get().toInt()) {
                 minorApiLevel = libs.versions.sdkMinor.get().toInt()

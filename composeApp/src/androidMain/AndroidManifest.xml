@@ -48,7 +48,7 @@
         tools:targetApi="BAKLAVA">
 
         <receiver
-            android:name="com.arn.scrobble.widget.ChartsWidgetProvider"
+            android:name="dev.etorix.panoscrobbler.widget.ChartsWidgetProvider"
             android:exported="true"
             android:label="@string/charts">
             <intent-filter>
@@ -61,7 +61,7 @@
         </receiver>
 
         <receiver
-            android:name="com.arn.scrobble.work.ReschedulerReceiver"
+            android:name="dev.etorix.panoscrobbler.work.ReschedulerReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.TIME_SET" />
@@ -70,16 +70,16 @@
         </receiver>
 
         <receiver
-            android:name="com.arn.scrobble.media.PlayingTrackEventReceiver"
+            android:name="dev.etorix.panoscrobbler.media.PlayingTrackEventReceiver"
             android:exported="false"
             android:process=":bgScrobbler" />
 
         <receiver
-            android:name="com.arn.scrobble.media.MainProcessTrackPlayingReceiver"
+            android:name="dev.etorix.panoscrobbler.media.MainProcessTrackPlayingReceiver"
             android:exported="false" />
 
         <receiver
-            android:name="com.arn.scrobble.work.WorkEnqueuerReceiver"
+            android:name="dev.etorix.panoscrobbler.work.WorkEnqueuerReceiver"
             android:exported="false" />
 
         <service
@@ -88,7 +88,7 @@
             android:permission="android.permission.BIND_REMOTEVIEWS" />
 
         <activity
-            android:name="com.arn.scrobble.main.MainActivity"
+            android:name="dev.etorix.panoscrobbler.main.MainActivity"
             android:configChanges="screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
             android:exported="true"
             android:launchMode="singleTop"
@@ -110,7 +110,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <category android:name="android.intent.category.DEFAULT" />
 
-                <data android:scheme="pano-scrobbler" />
+                <data android:scheme="pano-scrobbler-etd" />
                 <data android:host="screen" />
             </intent-filter>
 
@@ -121,7 +121,7 @@
         </activity>
 
         <activity
-            android:name="com.arn.scrobble.main.MainDialogActivity"
+            android:name="dev.etorix.panoscrobbler.main.MainDialogActivity"
             android:configChanges="screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
             android:excludeFromRecents="true"
             android:exported="false"
@@ -130,7 +130,7 @@
             android:windowSoftInputMode="adjustPan" />
 
         <activity
-            android:name="com.arn.scrobble.widget.ChartsWidgetConfigActivity"
+            android:name="dev.etorix.panoscrobbler.widget.ChartsWidgetConfigActivity"
             android:configChanges="screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
             android:exported="true"
             android:theme="@style/AppThemeWithWallpaper"
@@ -141,7 +141,7 @@
         </activity>
 
         <service
-            android:name="com.arn.scrobble.media.NLService"
+            android:name="dev.etorix.panoscrobbler.media.NLService"
             android:exported="false"
             android:foregroundServiceType="specialUse"
             android:label="@string/app_name"
@@ -161,7 +161,7 @@
         </service>
 
         <service
-            android:name="com.arn.scrobble.MasterSwitchQS"
+            android:name="dev.etorix.panoscrobbler.MasterSwitchQS"
             android:exported="true"
             android:icon="@drawable/vd_noti"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
@@ -192,7 +192,7 @@
             tools:node="merge" />
 
         <provider
-            android:name="com.arn.scrobble.automation.AutomationProvider"
+            android:name="dev.etorix.panoscrobbler.automation.AutomationProvider"
             android:authorities="${applicationId}.automation"
             android:exported="true"
             android:process=":bgScrobbler" />

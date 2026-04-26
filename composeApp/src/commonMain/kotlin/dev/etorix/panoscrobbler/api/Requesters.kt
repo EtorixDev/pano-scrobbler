@@ -1,0 +1,311 @@
+package dev.etorix.panoscrobbler.api
+
+import co.touchlab.kermit.Logger
+import dev.etorix.panoscrobbler.BuildKonfig
+import dev.etorix.panoscrobbler.api.cache.HttpMemoryCache
+import dev.etorix.panoscrobbler.api.cache.HybridCacheStorage
+import dev.etorix.panoscrobbler.api.deezer.DeezerRequester
+import dev.etorix.panoscrobbler.api.itunes.ItunesRequester
+import dev.etorix.panoscrobbler.api.lastfm.ApiException
+import dev.etorix.panoscrobbler.api.lastfm.DefaultExpirationPolicy
+import dev.etorix.panoscrobbler.api.lastfm.LastFm
+import dev.etorix.panoscrobbler.api.lastfm.LastFmUnauthedRequester
+import dev.etorix.panoscrobbler.api.lastfm.PageAttr
+import dev.etorix.panoscrobbler.api.lastfm.PageEntries
+import dev.etorix.panoscrobbler.api.lastfm.PageResult
+import dev.etorix.panoscrobbler.api.spotify.SpotifyRequester
+import dev.etorix.panoscrobbler.imageloader.PanoImageLoader
+import dev.etorix.panoscrobbler.utils.PlatformStuff
+import dev.etorix.panoscrobbler.utils.Stuff
+import dev.etorix.panoscrobbler.utils.Stuff.stateInWithCache
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpCallValidator
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.UserAgent
+import io.ktor.client.plugins.cache.HttpCache
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.jvm.javaio.toInputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.decodeFromStream
+import java.io.File
+import java.net.Authenticator
+import java.net.InetSocketAddress
+import java.net.PasswordAuthentication
+import java.net.Proxy
+import kotlin.coroutines.cancellation.CancellationException
+
+
+object Requesters {
+    val proxy = PlatformStuff.mainPrefs.data.stateInWithCache(Stuff.appScope) { it.proxy }
+
+    private val proxyAuthenticator = object : Authenticator() {
+        override fun getPasswordAuthentication(): PasswordAuthentication? {
+            val p = proxy.value.takeIf { it.enabled && it.hasAuth } ?: return null
+
+            if (requestingProtocol.equals("SOCKS5", ignoreCase = true) &&
+                requestingPort == p.port &&
+                requestingHost.equals(p.host, ignoreCase = true)
+            ) {
+                return PasswordAuthentication(p.user, p.pass.toCharArray())
+            }
+            return null
+        }
+    }
+
+    private var proxyAuthenticatorSet = false
+
+    init {
+        // invalidate clients when proxy settings change
+        Stuff.appScope.launch {
+            proxy.drop(1).collect {
+                invalidateAll()
+            }
+        }
+    }
+
+    val spotifyRequester by lazy { SpotifyRequester() }
+    val itunesRequester by lazy { ItunesRequester() }
+    val deezerRequester by lazy { DeezerRequester() }
+
+    val lastfmUnauthedRequester by lazy { LastFmUnauthedRequester() }
+
+    private val _baseKtorClient = invalidatableLazy {
+        HttpClient(OkHttp) {
+
+            val proxySettings = proxy.value.takeIf { it.enabled }
+            val proxyJvm: Proxy?
+
+            if (proxySettings != null) {
+                proxyJvm = Proxy(
+                    Proxy.Type.SOCKS, InetSocketAddress.createUnresolved(
+                        proxySettings.host,
+                        proxySettings.port
+                    )
+                )
+
+                if (!proxyAuthenticatorSet) {
+                    proxyAuthenticatorSet = true
+                    Authenticator.setDefault(proxyAuthenticator)
+                }
+            } else {
+                // fix to tunnel dns through socks5 proxy if set at system level
+                proxyJvm = PlatformStuff.getSystemSocksProxy()
+            }
+
+            engine {
+                dispatcher = Dispatchers.IO
+                proxy = proxyJvm
+            }
+
+            install(HttpTimeout) {
+                requestTimeoutMillis = 40 * 1000L
+            }
+
+            install(UserAgent) {
+                agent = BuildKonfig.APP_NAME + " " + BuildKonfig.VER_NAME
+            }
+        }
+    }
+    val baseKtorClient by _baseKtorClient
+
+    private val _genericKtorClient = invalidatableLazy {
+        baseKtorClient.config {
+            install(ContentNegotiation) {
+                json(Stuff.myJson)
+            }
+
+            if (!Stuff.isRunningInTest) {
+                install(HttpCache) {
+                    val cacheFile = File(PlatformStuff.cacheDir, "ktor")
+                    val memoryCache = HttpMemoryCache(25)
+                    val hybridCache = HybridCacheStorage(
+                        memoryCache = memoryCache,
+                        cacheFile,
+                    )
+                    publicStorage(hybridCache)
+                }
+            }
+
+            install(CustomCachePlugin) {
+                policy = DefaultExpirationPolicy()
+            }
+
+            install(HttpCallValidator) {
+                validateResponse { response ->
+                    if (response.status.isSuccess()) return@validateResponse
+                    try {
+                        val errorResponse = response.parseJsonBody<ApiErrorResponse>()
+                        throw ApiException(errorResponse.code, errorResponse.message)
+                    } catch (e: SerializationException) {
+                        throw ApiException(response.status.value, response.status.description)
+                    }
+                }
+            }
+
+//            expectSuccess = true
+            // https://youtrack.jetbrains.com/issue/KTOR-4225
+        }
+    }
+
+    val genericKtorClient by _genericKtorClient
+
+    private fun invalidateAll() {
+        _baseKtorClient.invalidate()
+        _genericKtorClient.invalidate()
+        spotifyRequester.invalidateClient()
+        LastFm.LastfmUnscrobbler.invalidateClient()
+        PanoImageLoader.invalidate()
+    }
+
+    suspend inline fun <reified T> HttpClient.getResult(
+        urlString: String = "",
+        crossinline block: HttpRequestBuilder.() -> Unit = {}
+    ) = try {
+        withContext(Dispatchers.IO) {
+            val resp = get(urlString, block)
+            try {
+                val body = if (T::class == String::class)
+                    resp.bodyAsText() as T
+                else
+                    resp.parseJsonBody<T>()
+                Result.success(body)
+            } catch (e: SerializationException) {
+                val errorResponse = resp.parseJsonBody<ApiErrorResponse>()
+                throw ApiException(errorResponse.code, errorResponse.message)
+            }
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: ApiException) {
+        e.fillInStackTrace()
+        reportRateLimitErrors(e)
+        Result.failure(e)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend inline fun <reified T> HttpClient.postResult(
+        urlString: String = "",
+        crossinline block: HttpRequestBuilder.() -> Unit = {}
+    ) = try {
+        withContext(Dispatchers.IO) {
+            val resp = post(urlString, block)
+            try {
+                val body = if (T::class == String::class)
+                    resp.bodyAsText() as T
+                else
+                    resp.parseJsonBody<T>()
+                Result.success(body)
+            } catch (e: SerializationException) {
+                val errorResponse = resp.parseJsonBody<ApiErrorResponse>()
+                throw ApiException(errorResponse.code, errorResponse.message)
+            }
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: ApiException) {
+        e.fillInStackTrace()
+        reportRateLimitErrors(e)
+        Result.failure(e)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend inline fun <reified T, U> HttpClient.getPageResult(
+        urlString: String = "",
+        crossinline transform: (T) -> PageEntries<U>,
+        crossinline pageAttrTransform: (T) -> PageAttr? = { null },
+        crossinline block: HttpRequestBuilder.() -> Unit = {}
+    ) = try {
+        withContext(Dispatchers.IO) {
+            val resp = get(urlString, block)
+            try {
+                // listenbrainz empty charts
+                if (resp.status.value == 204) {
+                    return@withContext Result.success(
+                        PageResult(
+                            PageAttr(1, 1, 0),
+                            emptyList(),
+                        )
+                    )
+                }
+
+                val body = resp.parseJsonBody<T>()
+                val pageEntries = transform(body)
+                val customPageAttr = pageAttrTransform(body)
+                val pr = PageResult(
+                    customPageAttr
+                        ?: pageEntries.attr
+                        ?: PageAttr(
+                            page = 1,
+                            totalPages = 1,
+                            total = pageEntries.entries.size,
+                        ),
+                    pageEntries.entries,
+                )
+                Result.success(pr)
+            } catch (e: SerializationException) {
+                val errorResponse = resp.parseJsonBody<ApiErrorResponse>()
+                throw ApiException(errorResponse.code, errorResponse.message)
+            }
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: ApiException) {
+        e.fillInStackTrace()
+        reportRateLimitErrors(e)
+        Result.failure(e)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun HttpClient.postString(
+        url: String,
+        body: String,
+    ): String {
+        return withContext(Dispatchers.IO) {
+            post(url) {
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            }
+                .bodyAsText()
+        }
+    }
+
+    // doing it like this avoids reflection according to graalvm
+    suspend inline fun <reified T> HttpResponse.parseJsonBody(): T {
+        return bodyAsChannel().toInputStream().use {
+            Stuff.myJson.decodeFromStream<T>(it)
+        }
+    }
+
+    inline fun <reified T> HttpRequestBuilder.setJsonBody(body: T) {
+        contentType(ContentType.Application.Json)
+        val jsonBody = Stuff.myJson.encodeToString(body)
+        setBody(jsonBody)
+    }
+
+
+    fun reportRateLimitErrors(e: ApiException) {
+        // surface rate limit failures in logs so they can be included in manual bug reports
+        if (e.code in arrayOf(29, 9, 429)) {
+            Logger.w(e) { e.description }
+        }
+    }
+}

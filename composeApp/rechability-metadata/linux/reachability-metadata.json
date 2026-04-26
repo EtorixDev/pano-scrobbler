@@ -57,17 +57,17 @@
       "type": "coil3.network.ktor3.internal.KtorNetworkFetcherServiceLoaderTarget"
     },
     {
-      "type": "com.arn.scrobble.DesktopWebView",
+      "type": "dev.etorix.panoscrobbler.DesktopWebView",
       "jniAccessible": true,
       "allDeclaredMethods": true
     },
     {
-      "type": "com.arn.scrobble.PanoNativeComponents",
+      "type": "dev.etorix.panoscrobbler.PanoNativeComponents",
       "jniAccessible": true,
       "allDeclaredMethods": true
     },
     {
-      "type": "com.arn.scrobble.db.PanoDb_Impl",
+      "type": "dev.etorix.panoscrobbler.db.PanoDb_Impl",
       "methods": [
         {
           "name": "<init>",

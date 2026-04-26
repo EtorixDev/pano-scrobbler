@@ -10,12 +10,12 @@ BLOCK "StringFileInfo"
 {
 	BLOCK "040904b0"
 	{
-		VALUE "CompanyName", "kawaiiDango"
-		VALUE "FileDescription", "Pano Scrobbler"
+		VALUE "CompanyName", "EtorixDev"
+		VALUE "FileDescription", "Pano Scrobbler ETD"
 		VALUE "FileVersion", "$versionMajor.$versionMinor"
-		VALUE "LegalCopyright", "(c) kawaiiDango"
+		VALUE "LegalCopyright", "(c) EtorixDev"
 		VALUE "OriginalFilename", "$fileName"
-		VALUE "ProductName", "Pano Scrobbler"
+		VALUE "ProductName", "Pano Scrobbler ETD"
 		VALUE "ProductVersion", "$versionMajor.$versionMinor"
 	}
 }

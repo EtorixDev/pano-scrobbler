@@ -1,0 +1,214 @@
+package dev.etorix.panoscrobbler.utils
+
+import android.app.ActivityManager
+import android.app.Application
+import android.app.ApplicationExitInfo
+import android.app.PendingIntent
+import android.content.ContentResolver
+import android.content.Context
+import android.media.MediaMetadata
+import android.os.Build
+import android.os.Bundle
+import android.view.View
+import android.view.ViewTreeObserver
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.annotation.RequiresApi
+import androidx.annotation.StringRes
+import androidx.core.net.toUri
+import androidx.datastore.core.DataStoreFactory
+import co.touchlab.kermit.Logger
+import dev.etorix.panoscrobbler.BuildKonfig
+import dev.etorix.panoscrobbler.automation.Automation
+import dev.etorix.panoscrobbler.pref.WidgetPrefs
+import dev.etorix.panoscrobbler.pref.WidgetPrefsSerializer
+import java.io.File
+
+object AndroidStuff {
+    lateinit var applicationContext: Context
+
+    val isMainProcess by lazy {
+        val procName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            // For API 28+ we can use Application.getProcessName()
+            Application.getProcessName()
+        } else {
+            Class
+                .forName("android.app.ActivityThread")
+                .getDeclaredMethod("currentProcessName")
+                .apply { isAccessible = true }
+                .invoke(null) as String
+        }
+
+        procName == BuildKonfig.APP_ID
+    }
+
+    const val updateCurrentOrImmutable =
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+
+    val updateCurrentOrMutable =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+        else PendingIntent.FLAG_UPDATE_CURRENT
+
+    const val canShowPersistentNotiIfEnabled = true
+
+//    @RequiresApi(Build.VERSION_CODES.Q)
+//    @Throws(IOException::class)
+//    fun savePictureQ(
+//        displayName: String,
+//        mimeType: String,
+//        block: (OutputStream) -> Unit,
+//    ) {
+//        val values = ContentValues().apply {
+//            put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
+//            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+//            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+//        }
+//
+//        var uri: Uri? = null
+//
+//        runCatching {
+//            with(application.contentResolver) {
+//                insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)?.also {
+//                    uri = it // Keep uri reference so it can be removed on failure
+//                    openOutputStream(it)?.use {
+//                        block(it)
+//                    } ?: throw IOException("Failed to open output stream.")
+//
+//                } ?: throw IOException("Failed to create new MediaStore record.")
+//            }
+//        }.getOrElse {
+//            uri?.let { orphanUri ->
+//                // Don't leave an orphan entry in the MediaStore
+//                application.contentResolver.delete(orphanUri, null, null)
+//            }
+//
+//            throw it
+//        }
+//    }
+
+    fun isDkmaNeeded(): Boolean {
+        val manufacturer = Build.MANUFACTURER.lowercase()
+
+        return manufacturer in arrayOf(
+            Stuff.MANUFACTURER_HUAWEI,
+            Stuff.MANUFACTURER_XIAOMI,
+            Stuff.MANUFACTURER_SAMSUNG,
+            Stuff.MANUFACTURER_ONEPLUS,
+            Stuff.MANUFACTURER_OPPO,
+            Stuff.MANUFACTURER_MEIZU,
+            Stuff.MANUFACTURER_VIVO,
+        )
+    }
+
+    val widgetPrefs by lazy {
+        DataStoreFactory.create(
+            serializer = WidgetPrefsSerializer,
+            corruptionHandler = null,
+            produceFile = {
+                File(PlatformStuff.filesDir, WidgetPrefs.FILE_NAME)
+            }
+        )
+    }
+
+
+    fun Bundle?.dump(): String {
+        this ?: return "null"
+        var s = ""
+        for (key in keySet().sortedDescending()) {
+            s += try {
+                val value = get(key) ?: "null"
+                "$key= $value, "
+            } catch (e: Exception) {
+                "$key= $e, "
+            }
+        }
+        return s
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    fun getScrobblerExitReasons(afterTime: Long = -1): List<ApplicationExitInfo> {
+        return try {
+            val activityManager =
+                applicationContext.getSystemService(ActivityManager::class.java)!!
+            val exitReasons = activityManager.getHistoricalProcessExitReasons(null, 0, 30)
+
+            exitReasons.filter {
+                it.processName == "${applicationContext.packageName}:${Stuff.SCROBBLER_PROCESS_NAME}"
+//                        && it.reason == ApplicationExitInfo.REASON_OTHER
+                        && it.timestamp > afterTime
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+        // Caused by java.lang.IllegalArgumentException at getHistoricalProcessExitReasons
+        // Comparison method violates its general contract!
+        // probably a samsung bug
+    }
+
+    fun requestRebindFromContentProvider(cr: ContentResolver) {
+        try {
+            val requestRebindResult = cr.query(
+                "content://${Automation.PREFIX}/${Automation.ANDROID_REQUEST_REBIND}".toUri(),
+                null,
+                null,
+                null,
+                null,
+            )
+            requestRebindResult?.close()
+        } catch (e: Exception) {
+            Logger.w(e) { "requestRebindFromContentProvider failed" }
+        }
+    }
+
+    fun MediaMetadata.dump() {
+        val data = keySet().joinToString(separator = "\n") {
+            var value: String? = getString(it)
+            if (value == null)
+                value = getLong(it).toString()
+            if (value == "0")
+                value = getBitmap(it)?.toString()
+            if (value == null)
+                value = getRating(it)?.toString()
+            "$it: $value"
+        }
+        Logger.d { "MediaMetadata\n$data" }
+    }
+
+    fun Context.toast(text: String, len: Int = Toast.LENGTH_SHORT) {
+        try {
+            Toast.makeText(this, text, len).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun Context.toast(@StringRes textRes: Int, len: Int = Toast.LENGTH_SHORT) {
+        try {
+            Toast.makeText(this, textRes, len).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun ComponentActivity.prolongSplashScreen(stopShowing: () -> Boolean) {
+        // Set up an OnPreDrawListener to the root view.
+        val content = findViewById<View>(android.R.id.content)
+        content.viewTreeObserver.addOnPreDrawListener(
+            object : ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    // Check whether the initial data is ready.
+                    return if (stopShowing()) {
+                        // The content is ready. Start drawing.
+                        content.viewTreeObserver.removeOnPreDrawListener(this)
+                        true
+                    } else {
+                        // The content isn't ready. Suspend.
+                        false
+                    }
+                }
+            }
+        )
+    }
+
+}

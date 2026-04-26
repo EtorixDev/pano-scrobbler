@@ -1,0 +1,304 @@
+package dev.etorix.panoscrobbler.edits
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
+import dev.etorix.panoscrobbler.db.BlockPlayerAction
+import dev.etorix.panoscrobbler.db.BlockedMetadata
+import dev.etorix.panoscrobbler.db.BlockedMetadataDao.Companion.insertLowerCase
+import dev.etorix.panoscrobbler.db.PanoDb
+import dev.etorix.panoscrobbler.icons.Block
+import dev.etorix.panoscrobbler.icons.Icons
+import dev.etorix.panoscrobbler.icons.SkipNext
+import dev.etorix.panoscrobbler.icons.automirrored.VolumeOff
+import dev.etorix.panoscrobbler.media.PlayingTrackNotifyEvent
+import dev.etorix.panoscrobbler.media.notifyPlayingTrackEvent
+import dev.etorix.panoscrobbler.navigation.enumSaver
+import dev.etorix.panoscrobbler.ui.ErrorText
+import dev.etorix.panoscrobbler.ui.InlineCheckButton
+import dev.etorix.panoscrobbler.ui.LabeledCheckbox
+import dev.etorix.panoscrobbler.ui.OutlinedToggleIconButtons
+import dev.etorix.panoscrobbler.ui.PanoOutlinedTextField
+import dev.etorix.panoscrobbler.utils.PlatformStuff
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.jetbrains.compose.resources.stringResource
+import pano_scrobbler.composeapp.generated.resources.Res
+import pano_scrobbler.composeapp.generated.resources.album
+import pano_scrobbler.composeapp.generated.resources.album_artist
+import pano_scrobbler.composeapp.generated.resources.any_value
+import pano_scrobbler.composeapp.generated.resources.artist
+import pano_scrobbler.composeapp.generated.resources.artist_channel
+import pano_scrobbler.composeapp.generated.resources.block
+import pano_scrobbler.composeapp.generated.resources.do_nothing
+import pano_scrobbler.composeapp.generated.resources.mute
+import pano_scrobbler.composeapp.generated.resources.player_actions
+import pano_scrobbler.composeapp.generated.resources.required_fields_empty
+import pano_scrobbler.composeapp.generated.resources.skip
+import pano_scrobbler.composeapp.generated.resources.track
+import pano_scrobbler.composeapp.generated.resources.use_channel
+
+@Composable
+private fun BlockedMetadataAddContent(
+    blockedMetadata: BlockedMetadata?,
+    ignoredArtist: String?,
+    onSave: (BlockedMetadata) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var artist by rememberSaveable(blockedMetadata) { mutableStateOf(blockedMetadata?.artist.orEmpty()) }
+    var hasArtist by rememberSaveable(blockedMetadata) {
+        mutableStateOf(blockedMetadata?.artist?.isNotEmpty() ?: true)
+    }
+    var albumArtist by rememberSaveable(blockedMetadata) { mutableStateOf(blockedMetadata?.albumArtist.orEmpty()) }
+    var hasAlbumArtist by rememberSaveable(blockedMetadata) {
+        mutableStateOf(blockedMetadata?.albumArtist?.isNotEmpty() ?: false)
+    }
+    var album by rememberSaveable(blockedMetadata) { mutableStateOf(blockedMetadata?.album.orEmpty()) }
+    var hasAlbum by rememberSaveable(blockedMetadata) {
+        mutableStateOf(blockedMetadata?.album?.isNotEmpty() ?: true)
+    }
+    var track by rememberSaveable(blockedMetadata) { mutableStateOf(blockedMetadata?.track.orEmpty()) }
+    var hasTrack by rememberSaveable(blockedMetadata) {
+        mutableStateOf(blockedMetadata?.track?.isNotEmpty() ?: true)
+    }
+    var blockPlayerAction by rememberSaveable(blockedMetadata, saver = enumSaver()) {
+        mutableStateOf(
+            blockedMetadata?.blockPlayerAction ?: BlockPlayerAction.ignore
+        )
+    }
+    var useChannel by rememberSaveable(blockedMetadata) { mutableStateOf(false) }
+    var errorText by rememberSaveable(blockedMetadata) { mutableStateOf<String?>(null) }
+    val emptyText = stringResource(Res.string.required_fields_empty)
+    val anythingText = "< " + stringResource(Res.string.any_value) + " >"
+
+    LaunchedEffect(useChannel) {
+        if (ignoredArtist != null) {
+            artist = if (useChannel) {
+                ignoredArtist
+            } else {
+                blockedMetadata?.artist.orEmpty()
+            }
+        }
+    }
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
+    ) {
+        PanoOutlinedTextField(
+            value = if (hasTrack) track else anythingText,
+            onValueChange = { track = it },
+            label = { Text(stringResource(Res.string.track)) },
+            isError = hasTrack && track.isEmpty(),
+            leadingIcon = {
+                InlineCheckButton(
+                    checked = hasTrack,
+                    onCheckedChange = { hasTrack = it }
+                )
+            },
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Next
+            ),
+            enabled = hasTrack,
+            enabledOnTv = false,
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+
+        PanoOutlinedTextField(
+            value = if (hasArtist) artist else anythingText,
+            onValueChange = { artist = it },
+            label = {
+                Text(
+                    stringResource(
+                        if (PlatformStuff.isDesktop)
+                            Res.string.artist
+                        else
+                            Res.string.artist_channel
+                    )
+                )
+            },
+            isError = hasArtist && artist.isEmpty(),
+            leadingIcon = {
+                InlineCheckButton(
+                    checked = hasArtist,
+                    onCheckedChange = { hasArtist = it }
+                )
+            },
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Next
+            ),
+            enabled = hasArtist,
+            enabledOnTv = false,
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+
+        PanoOutlinedTextField(
+            value = if (hasAlbum) album else anythingText,
+            onValueChange = { album = it },
+            label = { Text(stringResource(Res.string.album)) },
+            leadingIcon = {
+                InlineCheckButton(
+                    checked = hasAlbum,
+                    onCheckedChange = { hasAlbum = it }
+                )
+            },
+            isError = hasAlbum && album.isEmpty(),
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Next
+            ),
+            enabled = hasAlbum,
+            enabledOnTv = false,
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+
+        PanoOutlinedTextField(
+            value = if (hasAlbumArtist) albumArtist else anythingText,
+            onValueChange = { albumArtist = it },
+            label = { Text(stringResource(Res.string.album_artist)) },
+            leadingIcon = {
+                InlineCheckButton(
+                    checked = hasAlbumArtist,
+                    onCheckedChange = { hasAlbumArtist = it }
+                )
+            },
+            isError = hasAlbumArtist && albumArtist.isEmpty(),
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Done
+            ),
+            enabled = hasAlbumArtist,
+            enabledOnTv = false,
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+
+        if (ignoredArtist != null && ignoredArtist != blockedMetadata?.artist) {
+            LabeledCheckbox(
+                text = stringResource(Res.string.use_channel),
+                checked = useChannel,
+                onCheckedChange = { useChannel = it },
+                enabled = true,
+            )
+        }
+
+        BlockPlayerActions(
+            blockPlayerAction = blockPlayerAction,
+            onChange = { blockPlayerAction = it },
+            enabled = true,
+        )
+
+        ErrorText(errorText)
+
+        OutlinedButton(
+            onClick = {
+                val newBlockedMetadata = BlockedMetadata(
+                    _id = blockedMetadata?._id ?: 0,
+                    artist = if (hasArtist) artist else "",
+                    albumArtist = if (hasAlbumArtist) albumArtist else "",
+                    album = if (hasAlbum) album else "",
+                    track = if (hasTrack) track else "",
+                    blockPlayerAction = blockPlayerAction,
+                )
+                if (listOf(artist, albumArtist, album, track).all { it.isEmpty() } ||
+                    hasArtist && artist.isEmpty() ||
+                    hasAlbumArtist && albumArtist.isEmpty() ||
+                    hasAlbum && album.isEmpty() ||
+                    hasTrack && track.isEmpty()
+                ) {
+                    errorText = emptyText
+                } else {
+                    onSave(newBlockedMetadata)
+                }
+            },
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text(text = stringResource(Res.string.block))
+        }
+    }
+}
+
+@Composable
+fun ColumnScope.BlockPlayerActions(
+    blockPlayerAction: BlockPlayerAction,
+    onChange: (BlockPlayerAction) -> Unit,
+    enabled: Boolean,
+) {
+    Text(
+        text = stringResource(Res.string.player_actions),
+        color = MaterialTheme.colorScheme.secondary,
+    )
+
+    OutlinedToggleIconButtons(
+        items = listOf(
+            stringResource(Res.string.skip),
+            stringResource(Res.string.mute),
+            stringResource(Res.string.do_nothing),
+        ),
+        icons = listOf(
+            Icons.SkipNext,
+            Icons.AutoMirrored.VolumeOff,
+            Icons.Block,
+        ),
+        onSelected = { idx ->
+            BlockPlayerAction.entries
+                .find { it.ordinal == idx }
+                ?.let { onChange(it) }
+        },
+        selectedIndex = blockPlayerAction.ordinal,
+        enabled = enabled,
+    )
+}
+
+@Composable
+fun BlockedMetadataAddDialog(
+    blockedMetadata: BlockedMetadata?,
+    ignoredArtist: String?,
+    hash: Int?,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val scope = rememberCoroutineScope()
+
+    BlockedMetadataAddContent(
+        blockedMetadata = blockedMetadata,
+        ignoredArtist = ignoredArtist,
+        onSave = { blockedMetadata ->
+            scope.launch {
+                withContext(Dispatchers.IO) {
+                    PanoDb.db.getBlockedMetadataDao()
+                        .insertLowerCase(listOf(blockedMetadata), ignore = false)
+                }
+
+                notifyPlayingTrackEvent(
+                    PlayingTrackNotifyEvent.TrackCancelled(
+                        hash = hash,
+                        showUnscrobbledNotification = false,
+                        blockedMetadata = blockedMetadata,
+                    ),
+                )
+
+                onDismiss()
+            }
+        },
+        modifier = modifier
+    )
+}

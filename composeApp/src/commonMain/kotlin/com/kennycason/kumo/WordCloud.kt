@@ -1,9 +1,9 @@
 package com.kennycason.kumo
 
-import com.arn.scrobble.graphics.KumoPoint
-import com.arn.scrobble.graphics.KumoRect
-import com.arn.scrobble.graphics.PlatformBitmap
-import com.arn.scrobble.graphics.PlatformCanvas
+import dev.etorix.panoscrobbler.graphics.KumoPoint
+import dev.etorix.panoscrobbler.graphics.KumoRect
+import dev.etorix.panoscrobbler.graphics.PlatformBitmap
+import dev.etorix.panoscrobbler.graphics.PlatformCanvas
 import com.kennycason.kumo.bg.Background
 import com.kennycason.kumo.collide.RectanglePixelCollidable
 import com.kennycason.kumo.collide.checkers.RectanglePixelCollisionChecker

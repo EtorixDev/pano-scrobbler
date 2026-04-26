@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.arn.scrobble.baselineprofile"
+    namespace = "dev.etorix.panoscrobbler.baselineprofile"
     compileSdk = libs.versions.targetSdk.get().toInt()
 
     compileOptions {

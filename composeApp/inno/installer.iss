@@ -1,9 +1,9 @@
-#define APP_NAME "Pano Scrobbler"
-#define APP_NAME_WITHOUT_SPACES "pano-scrobbler"
-#define DEV_NAME "kawaiiDango"
-#define EXE_NAME "pano-scrobbler.exe"
-#define APP_GUID "85173f4e-ca52-4ec9-b77f-c2e0b1ff4209"
-#define APP_AUMID "com.arn.scrobble"
+#define APP_NAME "Pano Scrobbler ETD"
+#define APP_NAME_WITHOUT_SPACES "pano-scrobbler-etd"
+#define DEV_NAME "EtorixDev"
+#define EXE_NAME "pano-scrobbler-etd.exe"
+#define APP_GUID "b16dd8c3-21cf-4c07-a063-16ae79dc440b"
+#define APP_AUMID "dev.etorix.panoscrobbler"
 #define NSIS_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall"
 #define NSIS_APP_SOFTWARE_KEY "Software"
 #define NSIS_LOCALSERVER32_KEY "SOFTWARE\Classes\CLSID"
@@ -31,7 +31,7 @@ UninstallDisplayIcon={app}\{#EXE_NAME}
 Compression=lzma2
 SolidCompression=yes
 OutputDir={#OUT_DIR}
-OutputBaseFilename=pano-scrobbler-windows-x64
+OutputBaseFilename=pano-scrobbler-etd-windows-x64
 ChangesAssociations=no
 UserInfoPage=no
 PrivilegesRequiredOverridesAllowed=dialog
@@ -48,7 +48,7 @@ CloseApplications=yes
 DisableProgramGroupPage=yes
 DisableFinishedPage=yes
 DisableReadyPage=yes
-; AppMutex=pano-scrobbler-mutex
+; AppMutex=pano-scrobbler-etd-mutex
 Uninstallable=not WizardIsTaskSelected('extractonly')
 
 [Files]

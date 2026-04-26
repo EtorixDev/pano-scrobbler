@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
-        android:name="com.arn.scrobble.main.App"
+        android:name="dev.etorix.panoscrobbler.main.App"
         android:icon="@mipmap/ic_launcher"
         android:localeConfig="@xml/locales_config"
         tools:targetApi="BAKLAVA" />

@@ -26,7 +26,7 @@ Notes:
   - You can build your own copy of the app if you want to use your own Spotify API key.
   - See [instructions.md](./instructions.md) for building steps.
 
-## <img src="composeApp/src/desktopMain/composeResources/drawable/ic_launcher_with_bg.svg" alt="app icon" width="32"/> Pano Scrobbler
+## <img src="composeApp/src/desktopMain/composeResources/drawable/ic_launcher_with_bg.svg" alt="app icon" width="32"/> Pano Scrobbler ETD
 
 <img src="desktop-screenshots/1-scrobbles-desktop.jpg" alt="scrobbles screen" width="250"/> <img src="desktop-screenshots/2-charts-desktop.jpg" alt="charts screen" width="250"/>
 
@@ -36,12 +36,12 @@ Notes:
 
 **Windows:**
 
-[![github-x64](img/github-x64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-windows-x64.exe)
+[![github-x64](img/github-x64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-etd-windows-x64.exe)
 
 **Linux:**
 
-[![github-x64](img/github-x64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-linux-x64.AppImage)
-[![github-arm64](img/github-arm64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-liinux-arm64.AppImage)
+[![github-x64](img/github-x64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-etd-linux-x64.AppImage)
+[![github-arm64](img/github-arm64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-etd-linux-arm64.AppImage)
 
 **Android (phones, tablets, TVs and Chromebooks):**
 
@@ -78,7 +78,7 @@ Notes:
 - Collage generator
 - Add or remove personal tags from the info screen
 - Edit or delete existing scrobbles. Remembers edits
-- Control Pano Scrobbler from automation apps on Android or command-line on desktop
+- Control Pano Scrobbler ETD from automation apps on Android or command-line on desktop
 
 #### Android only (except TV):
 
@@ -115,5 +115,5 @@ This project is not affiliated with Last.fm, Libre.fm, ListenBrainz or any other
 
 SPDX-License-Identifier: GPL-3.0-or-later
 
-Pano Scrobbler is licensed under
+Pano Scrobbler ETD is licensed under
 the [GNU General Public License v3 or later](http://www.gnu.org/copyleft/gpl.html).

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Pano Scrobbler ETD
+Comment=Feature packed music tracker
+StartupWMClass=pano-scrobbler-etd
+Exec=
+Icon=
+Categories=AudioVideo;Audio;
+Terminal=false
+StartupNotify=true
+NoDisplay=false

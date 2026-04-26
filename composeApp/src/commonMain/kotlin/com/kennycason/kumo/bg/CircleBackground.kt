@@ -1,7 +1,7 @@
 package com.kennycason.kumo.bg
 
-import com.arn.scrobble.graphics.KumoPoint
-import com.arn.scrobble.graphics.KumoRect
+import dev.etorix.panoscrobbler.graphics.KumoPoint
+import dev.etorix.panoscrobbler.graphics.KumoRect
 import com.kennycason.kumo.collide.RectanglePixelCollidable
 import com.kennycason.kumo.image.CollisionRaster
 

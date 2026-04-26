@@ -7,11 +7,13 @@
     <color name="mdcolor_blue_200">#ACC7FF</color>
     <color name="mdcolor_red_200">#FFB2B6</color>
     <color name="mdcolor_green_200">#8FD6A2</color>
+    <color name="launcherBlue">#3A628B</color>
+    <color name="launcherBlueDark">#223B54</color>
 
     <color name="pinkLight">@color/mdcolor_sakurapink_100</color>
     <color name="pinkDark">#AB2C5D</color>
     <color name="pinkExtraDark">#66002E</color>
-    <color name="splash_fg">@color/pinkDark</color>
+    <color name="splash_fg">#D8E7FF</color>
 
     <color name="pinkNoti">#EC5F8F</color>
     <color name="pinkPrimary">#FFB1C7</color>

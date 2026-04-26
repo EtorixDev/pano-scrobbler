@@ -1,8 +1,8 @@
 package com.kennycason.kumo.image
 
-import com.arn.scrobble.graphics.KumoPoint
-import com.arn.scrobble.graphics.KumoRect
-import com.arn.scrobble.graphics.PlatformBitmap
+import dev.etorix.panoscrobbler.graphics.KumoPoint
+import dev.etorix.panoscrobbler.graphics.KumoRect
+import dev.etorix.panoscrobbler.graphics.PlatformBitmap
 import java.util.BitSet
 
 /**

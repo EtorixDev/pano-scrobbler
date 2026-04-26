@@ -87,7 +87,7 @@
     <string name="scrobble_services" comment="Services like lastfm, librefm, listenbrainz etc">Services</string>
     <string name="recents_share" formatted="true" comment="%1= artist — track, %2= relative time (with preposition e.g. on Sep 9)">J&apos;écoutais\n%1$s %2$s</string>
     <string name="recents_share_username" formatted="true" comment="%1= artist — track, %2= relative time (with preposition e.g. on Sep 9), %3= username">%3$s écoutait\n%1$s %2$s</string>
-    <string name="share_sig">(via Pano Scrobbler)</string>
+    <string name="share_sig">(via Pano Scrobbler ETD)</string>
     <string name="share">Partager</string>
     <string name="legend" comment="Chart legend - descriptions of the symbols used">Légende</string>
     <string name="grid" comment="Grid view">Grille</string>
@@ -305,7 +305,7 @@
     <string name="downloading">Téléchargement en cours</string>
     <string name="download" comment="Its a verb">Télécharger</string>
     <string name="changelog">Journal des modifications</string>
-    <string name="import_hey_wtf">Ce n&apos;est probablement pas un fichier d'exportation Pano Scrobbler</string>
+    <string name="import_hey_wtf">Ce n&apos;est probablement pas un fichier d'exportation Pano Scrobbler ETD</string>
     <string name="imported">Importé</string>
     <string name="import_options">Options d&apos;import</string>
     <string name="import_lists_nope">Ne pas importer les modifications et la liste noire</string>
@@ -317,7 +317,7 @@
     <string name="lastfm_reauth">Vous devez vous authentifier à nouveau pour éditer ou supprimer des scrobbles</string>
     <string name="like_instance" comment="%1= the scrobbling service name, such as last.fm, ListenBrainz">Instance de type %1$s</string>
     <string name="failed_encode_url">L&apos;encodage de l&apos;URL a échoué</string>
-    <string name="check_nls" formatted="true" comment="%1= the name Pano Scrobbler. Asks the user to check the app in notification access settings">Vérifier %1$s</string>
+    <string name="check_nls" formatted="true" comment="%1= the name Pano Scrobbler ETD. Asks the user to check the app in notification access settings">Vérifier %1$s</string>
     <string name="no_browser">Aucun navigateur n&apos;est installé</string>
     <string name="no_player">Aucun lecteur de musique n&apos;est installé</string>
     <string name="not_running">⚠ Le scrobbler a été tué par votre système</string>
@@ -359,7 +359,7 @@
     <string name="reload" comment="Reload or refresh">Recharger</string>
     <string name="pref_tray_icon_theme">Thème de l&apos;icône de la barre d'état</string>
     <string name="min_track_duration">Titres scrobblés plus long que</string>
-    <string name="automation">Contrôler Pano Scrobbler à partir d&apos;applications d&apos;automatisation</string>
+    <string name="automation">Contrôler Pano Scrobbler ETD à partir d&apos;applications d&apos;automatisation</string>
     <string name="country_for_api" formatted="true" comment="%1$s is the name of the streaming service, like Spotify, Apple Music">Pays des métadonnées %1$s</string>
     <string name="login_in_browser">Terminer la connexion dans la fenêtre du navigateur</string>
     <string name="edit_no_save">Ceci ne sera pas sauvegardé pour les scrobbles futurs</string>
@@ -377,7 +377,7 @@
     <string name="when_not_using" formatted="true" comment="%1$s is the web service or media player name">En n'utilisant pas %1$s</string>
     <string name="as_text" comment="Like copy as text, but in short">En tant que texte</string>
     <string name="automation_cli">Arguments de ligne de commande</string>
-    <string name="automation_cli_info">Lancez l'exécutable pano-scrobbler avec l'un de ces arguments de ligne de commande, pendant qu'une instance est déjà en cours d'exécution.</string>
+    <string name="automation_cli_info">Lancez l'exécutable pano-scrobbler-etd avec l'un de ces arguments de ligne de commande, pendant qu'une instance est déjà en cours d'exécution.</string>
     <string name="album_art_now_playing_desc">Nécessite une connexion à last.fm</string>
     <string name="spotify_consent">Récupérer les images d'artistes depuis Spotify ?</string>
     <string name="show_track_url">Suivre l'URL</string>

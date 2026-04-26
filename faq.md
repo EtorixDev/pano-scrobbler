@@ -23,8 +23,8 @@ impossible to use this app on a stock ROM from certain manufacturers, due to the
 
 ### [android] The app says that scrobbling is disabled
 
-Check if Pano Scrobbler has the permission to read notifications from other apps. Go to Settings >
-Apps > Special app access > Notification read, reply and control > Pano Scrobbler. The exact
+Check if Pano Scrobbler ETD has the permission to read notifications from other apps. Go to Settings >
+Apps > Special app access > Notification read, reply and control > Pano Scrobbler ETD. The exact
 location and name of the setting will depend on your Android version and manufacturer. Note that
 this is different from the standard "notifications" permission, which has nothing to do with reading
 notifications from other apps.
@@ -129,13 +129,13 @@ old versions of Android Go.
 - On Android 8.1 or higher:
 
 ```
-adb shell cmd notification allow_listener com.arn.scrobble/com.arn.scrobble.media.NLService
+adb shell cmd notification allow_listener dev.etorix.panoscrobbler/dev.etorix.panoscrobbler.media.NLService
 ```
 
 - On Android 8.0 and lower:
 
 ```
-adb shell 'settings put secure enabled_notification_listeners $(settings get secure enabled_notification_listeners):com.arn.scrobble/com.arn.scrobble.media.NLService'
+adb shell 'settings put secure enabled_notification_listeners $(settings get secure enabled_notification_listeners):dev.etorix.panoscrobbler/dev.etorix.panoscrobbler.media.NLService'
 ```
 
 - Do not add any additional spaces

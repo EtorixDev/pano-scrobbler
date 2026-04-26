@@ -1,0 +1,247 @@
+package dev.etorix.panoscrobbler.pref
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
+import dev.etorix.panoscrobbler.BuildKonfig
+import dev.etorix.panoscrobbler.utils.PlatformFile
+import dev.etorix.panoscrobbler.utils.PlatformStuff
+import dev.etorix.panoscrobbler.utils.Stuff
+import fi.iki.elonen.NanoHTTPD
+import fi.iki.elonen.NanoHTTPD.Response.Status
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import pano_scrobbler.composeapp.generated.resources.Res
+import java.io.IOException
+import java.io.InputStream
+import java.security.KeyStore
+import javax.net.ssl.KeyManagerFactory
+
+
+class ImportVM : ViewModel() {
+
+    private val _serverAddress = MutableStateFlow<String?>(null)
+    val serverAddress = _serverAddress.asStateFlow()
+    private val _incomingMdnsName = MutableStateFlow<String?>(null)
+    val incomingMdnsName = _incomingMdnsName.asStateFlow()
+    private val _serverResult = MutableStateFlow<Result<Unit>?>(null)
+    val serverResult = _serverResult.asStateFlow()
+    private val _availableImportTypes = MutableStateFlow<Set<ImExporter.ImportTypes>?>(null)
+    val availableImportTypes = _availableImportTypes.asStateFlow()
+    private val _importResult = MutableSharedFlow<Result<Unit>>()
+    val importResult = _importResult.asSharedFlow()
+    private val imExporter by lazy { ImExporter() }
+    val localIps by lazy { PlatformStuff.getLocalIpAddresses() }
+    private var server: ImportServer? = null
+    private val mdns = Mdns()
+    val mdnsStatus = mdns.status
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            serverAddress
+                .collectLatest { localIp ->
+                    server?.stop()
+                    mdns.stop()
+
+                    if (localIp == null) {
+                        _serverResult.value = null
+                        return@collectLatest
+                    }
+
+                    val randomPort = (PORT_BASE..PORT_MAX).random()
+
+                    Logger.d { "Server running on: https://$localIp:$randomPort" }
+
+                    try {
+//                        val encodedAddress = IpPortCode.encode(localIp, randomPort)
+                        server = ImportServer(
+                            localIp,
+                            randomPort,
+                            "import",
+                            readKeystore()
+                        ) { mdnsName, inputStream ->
+                            _incomingMdnsName.value = mdnsName
+
+                            try {
+                                _availableImportTypes.value =
+                                    imExporter.createImportTypes(inputStream)
+                            } catch (e: Exception) {
+                                Logger.i(e) { "Failed to read import data" }
+                                _importResult.tryEmit(Result.failure(e))
+                            }
+
+                        }
+                        server?.start()
+
+                        _serverResult.value = Result.success(Unit)
+
+                        mdns.register(localIp, randomPort)
+
+                    } catch (e: Exception) {
+                        Logger.e(e) { "Failed to start import server" }
+                        _serverResult.value = Result.failure(e)
+                    }
+                }
+        }
+
+        viewModelScope.launch {
+            mdnsStatus.collect { status ->
+                Logger.d { "Mdns registration status: $status" }
+            }
+        }
+    }
+
+    fun setServerAddress(address: String?) {
+        _availableImportTypes.value = null
+        _serverAddress.value = address
+    }
+
+    fun import(
+        userImportTypes: Set<ImExporter.ImportTypes>,
+        writeMode: ImExporter.WriteMode,
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (_availableImportTypes.value != null) {
+                try {
+                    imExporter.import(userImportTypes, writeMode)
+                    _importResult.emit(Result.success(Unit))
+                } catch (e: Exception) {
+                    Logger.i(e) { "Import failed" }
+                    _importResult.emit(Result.failure(e))
+                }
+
+                _availableImportTypes.value = null
+            }
+        }
+    }
+
+    fun setPlatformFile(platformFile: PlatformFile) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (platformFile.isWritable()) {
+                platformFile.read {
+                    try {
+                        _availableImportTypes.value = imExporter.createImportTypes(it)
+                    } catch (e: Exception) {
+                        _importResult.emit(Result.failure(e))
+                    }
+                }
+            } else {
+                _importResult.emit(Result.failure(IOException("File is not readable")))
+            }
+        }
+    }
+
+    override fun onCleared() {
+        server?.stop()
+        mdns.stop()
+    }
+
+    private class ImportServer(
+        hostname: String,
+        port: Int,
+        private val path: String,
+        ks: KeyStore,
+        private val onImport: (String, InputStream) -> Unit,
+    ) : NanoHTTPD(hostname, port) {
+
+        init {
+            val kmf =
+                KeyManagerFactory.getInstance(
+                    KeyManagerFactory.getDefaultAlgorithm()
+                )
+            kmf.init(
+                ks,
+                Stuff.xorWithKey(
+                    Stuff.EMBEDDED_SERVER_KS,
+                    BuildKonfig.APP_ID
+                ).toCharArray()
+            )
+            makeSecure(makeSSLSocketFactory(ks, kmf), null)
+
+            tempFileManagerFactory = MyTempFileManagerFactory()
+        }
+
+        override fun serve(session: IHTTPSession): Response {
+            return if (session.method == Method.POST && session.uri == "/$path") {
+                val id = session.queryParameterString.substringAfter("id=", "")
+                if (id.isEmpty()) return newFixedLengthResponse(
+                    Status.BAD_REQUEST,
+                    MIME_PLAINTEXT,
+                    "Missing id"
+                )
+                val contentLength = session.headers["content-length"]!!.toInt()
+                val lis = LimitedInputStream(session.inputStream, contentLength)
+                onImport(id, lis)
+
+                newFixedLengthResponse(
+                    Status.OK,
+                    MIME_PLAINTEXT,
+                    "Ok"
+                )
+            } else if (BuildKonfig.DEBUG && session.method == Method.GET && session.uri == "/test") {
+                newFixedLengthResponse("Ok")
+            } else {
+                super.serve(session)
+            }
+
+        }
+
+        private class MyTempFileManagerFactory : TempFileManagerFactory {
+            override fun create() = MyTempFileManager()
+        }
+
+        class MyTempFileManager : TempFileManager {
+            private val tmpdir = PlatformStuff.cacheDir.resolve("nanohttpd").apply { mkdirs() }
+            private val tempFiles = mutableListOf<TempFile>()
+
+            override fun clear() {
+                tempFiles.forEach { file ->
+                    try {
+                        file.delete()
+                    } catch (e: Exception) {
+                        Logger.w("could not delete file", e)
+                    }
+                }
+                tempFiles.clear()
+            }
+
+            override fun createTempFile(filename_hint: String?): TempFile {
+                val tempFile = DefaultTempFile(tmpdir)
+                this.tempFiles.add(tempFile)
+                return tempFile
+            }
+        }
+
+    }
+
+    companion object {
+        private const val PORT_BASE = 8500
+        private const val PORT_MAX = PORT_BASE + 255
+        suspend fun readKeystore(): KeyStore {
+            val ks = KeyStore.getInstance("PKCS12")
+            Res.readBytes("files/pano-embedded-server-ks.bin")
+                .let {
+                    Stuff.xorWithKeyBytes(
+                        it,
+                        BuildKonfig.APP_ID.toByteArray()
+                    )
+                }
+                .inputStream()
+                .use {
+                    ks.load(
+                        it, Stuff.xorWithKey(
+                            Stuff.EMBEDDED_SERVER_KS,
+                            BuildKonfig.APP_ID
+                        ).toCharArray()
+                    )
+                }
+
+            return ks
+        }
+    }
+}

@@ -1,0 +1,62 @@
+package dev.etorix.panoscrobbler.db
+
+import androidx.annotation.Keep
+import androidx.room3.ColumnInfo
+import androidx.room3.Embedded
+import androidx.room3.Entity
+import androidx.room3.Index
+import androidx.room3.PrimaryKey
+import androidx.room3.TypeConverters
+import kotlinx.serialization.Serializable
+
+@Entity(
+    tableName = RegexEditsDao.tableName,
+    indices = [
+        Index(value = ["order"]),
+    ]
+)
+@Serializable
+data class RegexEdit(
+    @PrimaryKey(autoGenerate = true)
+    val _id: Int = 0,
+
+    val order: Int = -1,
+    val name: String,
+
+    @Embedded
+    val search: SearchPatterns,
+    @Embedded
+    val replacement: ReplacementPatterns? = null,
+
+    @field:TypeConverters(Converters::class)
+    val appIds: Set<String> = emptySet(),
+    val caseSensitive: Boolean = false,
+    val blockPlayerAction: BlockPlayerAction? = null,
+
+    @ColumnInfo(defaultValue = "1")
+    var continueMatching: Boolean = true,
+    @ColumnInfo(defaultValue = "1")
+    val enabled: Boolean = true,
+) {
+    @Serializable
+    data class SearchPatterns(
+        val searchTrack: String,
+        val searchAlbum: String,
+        val searchArtist: String,
+        val searchAlbumArtist: String,
+    )
+
+    @Serializable
+    data class ReplacementPatterns(
+        val replacementTrack: String,
+        val replacementAlbum: String,
+        val replacementArtist: String,
+        val replacementAlbumArtist: String,
+        val replaceAll: Boolean = false,
+    )
+
+    @Keep
+    enum class Field {
+        track, albumArtist, artist, album
+    }
+}

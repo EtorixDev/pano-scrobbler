@@ -1,0 +1,153 @@
+package dev.etorix.panoscrobbler.main
+
+import androidx.annotation.Keep
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
+import dev.etorix.panoscrobbler.BuildKonfig
+import dev.etorix.panoscrobbler.api.DrawerData
+import dev.etorix.panoscrobbler.api.UserCached
+import dev.etorix.panoscrobbler.api.lastfm.ApiException
+import dev.etorix.panoscrobbler.db.PanoDb
+import dev.etorix.panoscrobbler.edits.EditScrobbleUtils
+import dev.etorix.panoscrobbler.pref.AppItem
+import dev.etorix.panoscrobbler.ui.PanoSnackbarVisuals
+import dev.etorix.panoscrobbler.utils.PlatformStuff
+import dev.etorix.panoscrobbler.utils.Stuff
+import dev.etorix.panoscrobbler.utils.redactedMessage
+import dev.etorix.panoscrobbler.work.CommonWorkState
+import dev.etorix.panoscrobbler.work.DigestWork
+import dev.etorix.panoscrobbler.work.DigestWorker
+import dev.etorix.panoscrobbler.work.PendingScrobblesWork
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.serialization.SerializationException
+import java.util.Calendar
+
+class MainViewModel : ViewModel() {
+
+    val drawerDataMap = mutableStateMapOf<UserCached, DrawerData>()
+
+    private val _pullToRefreshTriggered = MutableSharedFlow<Int>()
+
+    private val _selectedPackages = MutableSharedFlow<Pair<List<AppItem>, List<AppItem>>>()
+    val selectedPackages = _selectedPackages.asSharedFlow()
+
+    val isItChristmas by lazy {
+        val cal = Calendar.getInstance()
+        BuildKonfig.DEBUG ||
+                (cal.get(Calendar.MONTH) == Calendar.DECEMBER && cal.get(Calendar.DAY_OF_MONTH) >= 24) ||
+                (cal.get(Calendar.MONTH) == Calendar.JANUARY && cal.get(Calendar.DAY_OF_MONTH) <= 5)
+    }
+
+    val editScrobbleUtils = EditScrobbleUtils(viewModelScope)
+
+    private val _scrobblerStateFlow = MutableStateFlow<ScrobblerState>(ScrobblerState.Unknown)
+    val scrobblerStateFlow = _scrobblerStateFlow.asStateFlow()
+
+    init {
+        Stuff.globalExceptionFlow.map { e ->
+            if (BuildKonfig.DEBUG)
+                e.printStackTrace()
+
+            if (e is ApiException && e.code != 504) { // suppress cache not found exceptions
+                Stuff.globalSnackbarFlow.emit(
+                    PanoSnackbarVisuals(
+                        message = e.redactedMessage,
+                        isError = true
+                    )
+                )
+            }
+
+            if (e is SerializationException) {
+                Logger.w(e.cause) { "SerializationException" }
+            }
+        }.launchIn(viewModelScope)
+
+        if (!PlatformStuff.isDesktop && !PlatformStuff.isTv)
+            viewModelScope.launch {
+                if (DigestWork.state().first() == null) {
+                    val (nextWeek, nextMonth) = DigestWorker.nextWeekAndMonth()
+
+                    DigestWork.schedule(
+                        nextWeek,
+                        nextMonth,
+                    )
+                }
+            }
+
+        // schedule pending scrobbles work on UI start
+        viewModelScope.launch {
+            val force = PanoDb.db.getPendingScrobblesDao().canForceRetry()
+            val hasPending = if (!force)
+                PanoDb.db.getPendingScrobblesDao().count() > 0
+            else
+                true
+
+            val isRunning = PendingScrobblesWork.state().first() == CommonWorkState.RUNNING
+
+            if (hasPending && !isRunning) {
+                PendingScrobblesWork.schedule(force)
+            }
+        }
+
+        updateScrobblerServiceState(true)
+    }
+
+    fun updateScrobblerServiceState(requestRebind: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            delay(1000)
+            val state = PlatformStuff.checkScrobblerState(requestRebind)
+            _scrobblerStateFlow.value = state
+
+            if (!killedReasonReported && requestRebind &&
+                state is ScrobblerState.Killed && state.reason?.isProbablySystemKill == true
+            ) {
+                killedReasonReported = true
+                val message = state.reason.formatted()
+                val pss = " ${state.reason.pssMb} MB"
+                Logger.e(AppExitException(message + pss)) { message }
+            }
+        }
+    }
+
+    override fun onCleared() {
+    }
+
+
+    fun onSetPackagesSelection(checked: List<AppItem>, unchecked: List<AppItem>) {
+        viewModelScope.launch {
+            _selectedPackages.emit(checked to unchecked)
+        }
+    }
+
+    fun notifyPullToRefresh(id: Int) {
+        viewModelScope.launch {
+            _pullToRefreshTriggered.emit(id)
+        }
+    }
+
+
+    fun getPullToRefreshTrigger(id: Int) =
+        _pullToRefreshTriggered
+            .filter { it == id }
+            .map { }
+
+
+    companion object {
+        private var killedReasonReported = false
+    }
+}
+
+@Keep
+private class AppExitException(override val message: String) : RuntimeException()

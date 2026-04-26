@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <color name="splash_fg">@color/pinkLight</color>
+    <color name="splash_fg">#D8E7FF</color>
     <color name="stonks_up">@color/mdcolor_green_200</color>
     <color name="stonks_down">@color/mdcolor_red_200</color>
     <color name="stonks_new">@color/mdcolor_blue_200</color>

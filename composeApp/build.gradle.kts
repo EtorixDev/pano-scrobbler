@@ -5,6 +5,7 @@ import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 import com.google.gson.Gson
 import com.mikepenz.aboutlibraries.plugin.DuplicateMode
 import com.mikepenz.aboutlibraries.plugin.StrictMode
+import org.gradle.api.DefaultTask
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.reload.gradle.ComposeHotRun
 import java.io.IOException
@@ -36,6 +37,7 @@ val isReleaseBuild = gradle.startParameter.taskNames.any {
     it.contains("proguard", ignoreCase = true) || it.contains("release", ignoreCase = true) ||
             it.contains("packageUberJarForCurrentOS", ignoreCase = true)
 }
+val requestedTasks = gradle.startParameter.taskNames.map { it.lowercase() }
 val resourcesDirName = when {
     os.isMacOsX && arch in archAmd64 -> "macos-x64"
     os.isMacOsX && arch in archArm64 -> "macos-arm64"
@@ -66,7 +68,7 @@ kotlin {
                 minorApiLevel = libs.versions.sdkMinor.get().toInt()
             }
         }
-        namespace = APP_ID
+        namespace = "dev.etorix.panoscrobbler"
         minSdk = libs.versions.minSdk.get().toInt()
 
         androidResources {
@@ -184,7 +186,7 @@ buildkonfig {
             .encode(out)
     }
 
-    packageName = APP_ID
+    packageName = "dev.etorix.panoscrobbler"
 
     // default config is required
     defaultConfigs {
@@ -202,9 +204,12 @@ buildkonfig {
 
         val spotifyRefreshToken = localProperties["spotify.refreshToken"]
             ?.takeUnless { it.isBlank() || it == "replace-me" }
+        val updatesEnabledByDefault = requestedTasks.any {
+            it.contains("releasegithub") || it.contains("packageuberjarforcurrentos")
+        }
         val updatesEnabled = localProperties["updates.enabled"]
             ?.toBooleanStrictOrNull()
-            ?: false
+            ?: updatesEnabledByDefault
 
         buildConfigField(
             STRING,
@@ -293,7 +298,7 @@ aboutLibraries {
 
 compose.desktop {
     application {
-        mainClass = "com.arn.scrobble.main.MainKt"
+        mainClass = "dev.etorix.panoscrobbler.main.MainKt"
 
         val libraryPathRel = if (isReleaseBuild)
             "\$APPDIR/resources"
@@ -333,24 +338,24 @@ compose.desktop {
 
             targetFormats = formats
             packageVersion = VER_NAME
-            vendor = "kawaiiDango"
+            vendor = "EtorixDev"
             packageName = APP_NAME_NO_SPACES
 
             appResourcesRootDir = project.layout.projectDirectory.dir("resources")
 
             windows {
                 dirChooser = true
-                upgradeUuid = "85173f4e-ca52-4ec9-b77f-c2e0b1ff4209"
+                upgradeUuid = "f8267b5b-9d80-44e8-a2e5-9e4d1cf0bd5f"
                 msiPackageVersion = packageVersion
                 exePackageVersion = packageVersion
                 menuGroup = APP_NAME
-                description = APP_NAME_NO_SPACES
+                description = APP_NAME
                 iconFile = file("app-icons/pano-scrobbler.ico")
             }
 
             linux {
                 menuGroup = APP_NAME_NO_SPACES
-                description = APP_NAME_NO_SPACES
+                description = APP_NAME
                 iconFile = file("app-icons/pano-scrobbler.png")
             }
 
@@ -381,7 +386,7 @@ tasks.withType<ComposeHotRun>().configureEach {
         File(project.layout.projectDirectory.dir("resources").asFile, resourcesDirName).absolutePath
 
     isAutoReloadEnabled = true
-    mainClass = "com.arn.scrobble.main.MainKt"
+    mainClass = "dev.etorix.panoscrobbler.main.MainKt"
     jvmArgs = (jvmArgs.orEmpty()) + listOfNotNull(
         "-Dpano.native.components.path=$libraryPath",
         "--enable-native-access=ALL-UNNAMED",
@@ -565,6 +570,7 @@ tasks.register<Exec>("buildNativeImage") {
 
     val nativeLibsDir = file("resources/$resourcesDirName/")
     val iconFile = file("src/desktopMain/composeResources/drawable/ic_launcher_with_bg.svg")
+    val outputIconFileName = "$APP_NAME_NO_SPACES.svg"
     val desktopFile = file("$APP_NAME_NO_SPACES.desktop")
     val licenseFile = file("../LICENSE")
     val distDir = file("../dist")
@@ -614,7 +620,6 @@ tasks.register<Exec>("buildNativeImage") {
     commandLine(command)
 
     doFirst {
-        // env check
         if (graalvmHome.isNullOrEmpty() || graalvmHome != javaHome) {
             throw GradleException("GRAALVM_HOME should be set and should be equal to JAVA_HOME")
         }
@@ -623,9 +628,6 @@ tasks.register<Exec>("buildNativeImage") {
     }
 
     doLast {
-//        println("Executing command:")
-//        println(command.joinToString(" "))
-        // copy jawt
         jawtDir.mkdirs()
         jawtFile.copyTo(File(jawtDir, jawtFile.name), overwrite = true)
 
@@ -633,13 +635,11 @@ tasks.register<Exec>("buildNativeImage") {
         if (otherJawtFile.exists())
             otherJawtFile.delete()
 
-        // copy native components
         nativeLibsDir.copyRecursively(
             outputDir,
             overwrite = true
         )
 
-        // extract jni libraries from .jar
         jarTree.matching {
             include(*jarFilesToExtract)
         }.forEach { file ->
@@ -648,9 +648,8 @@ tasks.register<Exec>("buildNativeImage") {
 
         licenseFile.copyTo(File(outputDir, licenseFile.name), overwrite = true)
 
-        // copy icon and desktop file on linux
         if (copyDesktopAndIcon) {
-            iconFile.copyTo(File(outputDir, "pano-scrobbler.svg"), overwrite = true)
+            iconFile.copyTo(File(outputDir, outputIconFileName), overwrite = true)
             desktopFile.copyTo(File(outputDir, desktopFile.name), overwrite = true)
         }
     }
@@ -724,7 +723,7 @@ tasks.register("updateMaterialSymbols") {
 
 tasks.register<Exec>("convertMaterialSymbols") {
     val inputDir = layout.buildDirectory.dir("material-symbols-svgs").get().asFile
-    val outputDir = file("src/commonMain/kotlin/com/arn/scrobble/icons")
+    val outputDir = file("src/commonMain/kotlin/dev/etorix/panoscrobbler/icons")
     val cliPath = file(
         "valkyrie-cli/bin/valkyrie" +
                 (if (os.isWindows) ".bat" else "")
@@ -845,7 +844,7 @@ tasks.register("fetchCrowdinLanguages") {
     val projectIdProvider = project.provider { localProperties["crowdin.project"]!! }
     val tokenProvider = project.provider { localProperties["crowdin.token"]!! }
     val localesConfigFile = file("src/androidMain/res/xml/locales_config.xml")
-    val localeUtilsFile = file("src/commonMain/kotlin/com/arn/scrobble/utils/LocaleUtils.kt")
+    val localeUtilsFile = file("src/commonMain/kotlin/dev/etorix/panoscrobbler/utils/LocaleUtils.kt")
 
     outputs.file(localesConfigFile)
     outputs.file(localeUtilsFile)

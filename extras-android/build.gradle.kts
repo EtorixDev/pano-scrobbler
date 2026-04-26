@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.arn.scrobble.utils.android"
+    namespace = "dev.etorix.panoscrobbler.utils.android"
     compileSdk {
         version = release(libs.versions.targetSdk.get().toInt()) {
             minorApiLevel = libs.versions.sdkMinor.get().toInt()

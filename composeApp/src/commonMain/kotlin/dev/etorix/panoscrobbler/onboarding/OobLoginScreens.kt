@@ -1,0 +1,192 @@
+package dev.etorix.panoscrobbler.onboarding
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.etorix.panoscrobbler.api.AccountType
+import dev.etorix.panoscrobbler.api.Requesters
+import dev.etorix.panoscrobbler.api.UserAccountTemp
+import dev.etorix.panoscrobbler.api.pleroma.PleromaOauthClientCreds
+import dev.etorix.panoscrobbler.ui.ErrorText
+import dev.etorix.panoscrobbler.ui.PanoOutlinedTextField
+import dev.etorix.panoscrobbler.ui.VerifyButton
+import dev.etorix.panoscrobbler.utils.PlatformStuff
+import dev.etorix.panoscrobbler.utils.Stuff
+import dev.etorix.panoscrobbler.utils.redactedMessage
+import org.jetbrains.compose.resources.stringResource
+import pano_scrobbler.composeapp.generated.resources.Res
+import pano_scrobbler.composeapp.generated.resources.pref_imexport_code
+import pano_scrobbler.composeapp.generated.resources.retry
+
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun OobLastfmLibrefmLoginScreen(
+    userAccountTemp: UserAccountTemp,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: LoginViewModel = viewModel { LoginViewModel() },
+) {
+    var exception by remember { mutableStateOf<Throwable?>(null) }
+    val tokenResult by viewModel.tokenResult.collectAsStateWithLifecycle(null)
+    val token = remember(tokenResult) {
+        tokenResult?.getOrElse {
+            exception = it
+            null
+        }
+    }
+    val apiKey = if (userAccountTemp.type == AccountType.LASTFM)
+        Requesters.lastfmUnauthedRequester.apiKey
+    else
+        Stuff.LIBREFM_KEY
+
+    val apiSecret = if (userAccountTemp.type == AccountType.LASTFM)
+        Requesters.lastfmUnauthedRequester.apiSecret
+    else
+        Stuff.LIBREFM_KEY
+    val url = if (token == null)
+        null
+    else if (userAccountTemp.type == AccountType.LASTFM)
+        "https://www.last.fm/api/auth?api_key=$apiKey&token=$token"
+    else
+        "https://libre.fm/api/auth/?api_key=$apiKey&token=$token"
+    var browserOpened by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchToken(
+            userAccountTemp,
+            apiKey,
+            apiSecret
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.result.collect {
+            exception = it.exceptionOrNull()
+
+            if (it.isSuccess) {
+                onBack()
+            }
+        }
+    }
+
+    LaunchedEffect(url) {
+        if (!browserOpened && url != null) {
+            browserOpened = true
+
+            if (!PlatformStuff.isTv)
+                PlatformStuff.openInBrowser(url)
+
+            if (token != null) {
+                viewModel.lastfmOobLogin(
+                    userAccountTemp,
+                    token,
+                )
+            }
+        }
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = modifier
+    ) {
+        if (PlatformStuff.isTv && url != null) {
+            QrCodeCanvas(
+                url = url,
+                modifier = Modifier.weight(0.8f),
+            )
+        }
+
+        if (exception != null) {
+            exception?.printStackTrace()
+            ErrorText(exception?.redactedMessage)
+
+            if (token != null) {
+                OutlinedButton(
+                    onClick = {
+                        viewModel.lastfmOobLogin(
+                            userAccountTemp,
+                            token,
+                        )
+                    }
+                ) {
+                    Text(
+                        stringResource(Res.string.retry)
+                    )
+                }
+            }
+        } else
+            CircularWavyProgressIndicator()
+    }
+}
+
+@Composable
+fun OobPleromaLoginScreen(
+    url: String,
+    userAccountTemp: UserAccountTemp,
+    pleromaCreds: PleromaOauthClientCreds,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: LoginViewModel = viewModel { LoginViewModel() },
+) {
+    var code by rememberSaveable { mutableStateOf("") }
+    val result by viewModel.result.collectAsStateWithLifecycle(null)
+    val onSubmit = {
+        viewModel.pleromaLogin(userAccountTemp, pleromaCreds, code)
+    }
+
+    LaunchedEffect(Unit) {
+        PlatformStuff.openInBrowser(url)
+    }
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = modifier
+    ) {
+        PanoOutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = code,
+            singleLine = true,
+            onValueChange = { code = it },
+            label = { Text(stringResource(Res.string.pref_imexport_code)) },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                capitalization = KeyboardCapitalization.None,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    onSubmit()
+                }
+            )
+        )
+
+        VerifyButton(
+            onDone = onBack,
+            doStuff = onSubmit,
+            result = result
+        )
+    }
+}

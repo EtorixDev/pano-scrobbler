@@ -91,7 +91,7 @@
     <string name="scrobble_services" comment="Services like lastfm, librefm, listenbrainz etc">Servicios</string>
     <string name="recents_share" formatted="true" comment="%1= artist — track, %2= relative time (with preposition e.g. on Sep 9)">Estaba escuchando\n%1$s el %2$s</string>
     <string name="recents_share_username" formatted="true" comment="%1= artist — track, %2= relative time (with preposition e.g. on Sep 9), %3= username">%3$s estaba escuchando\n%1$s el %2$s</string>
-    <string name="share_sig">(a través de Pano Scrobbler)</string>
+    <string name="share_sig">(a través de Pano Scrobbler ETD)</string>
     <string name="share">Compartir</string>
     <string name="legend" comment="Chart legend - descriptions of the symbols used">Leyenda</string>
     <string name="grid" comment="Grid view">Cuadrícula</string>
@@ -309,7 +309,7 @@
     <string name="downloading">Descargando</string>
     <string name="download" comment="Its a verb">Descargar</string>
     <string name="changelog">Historial de cambios</string>
-    <string name="import_hey_wtf">Probablemente no sea un archivo de exportación de Pano Scrobbler</string>
+    <string name="import_hey_wtf">Probablemente no sea un archivo de exportación de Pano Scrobbler ETD</string>
     <string name="imported">Importado</string>
     <string name="import_options">Importar opciones</string>
     <string name="import_lists_nope">No importar ediciones y lista de bloqueos</string>
@@ -321,7 +321,7 @@
     <string name="lastfm_reauth">Necesitas volver a autenticarte para editar o eliminar scrobbles</string>
     <string name="like_instance" comment="%1= the scrobbling service name, such as last.fm, ListenBrainz">Instancia similar a %1$s</string>
     <string name="failed_encode_url">Error al codificar el enlace</string>
-    <string name="check_nls" formatted="true" comment="%1= the name Pano Scrobbler. Asks the user to check the app in notification access settings">Comprobar %1$s</string>
+    <string name="check_nls" formatted="true" comment="%1= the name Pano Scrobbler ETD. Asks the user to check the app in notification access settings">Comprobar %1$s</string>
     <string name="no_browser">No hay ningún navegador instalado</string>
     <string name="no_player">No hay reproductor de música instalado</string>
     <string name="not_running">⚠ El scrobbler fue asesinado por tu sistema</string>
@@ -363,7 +363,7 @@
     <string name="reload" comment="Reload or refresh">Recarga</string>
     <string name="pref_tray_icon_theme">Tema del menú desplegable</string>
     <string name="min_track_duration">Scrobblea pistas más largas que</string>
-    <string name="automation">Controla Pano Scrobbler desde aplicaciones de automatización</string>
+    <string name="automation">Controla Pano Scrobbler ETD desde aplicaciones de automatización</string>
     <string name="country_for_api" formatted="true" comment="%1$s is the name of the streaming service, like Spotify, Apple Music">País para los metadatos de %1$s</string>
     <string name="login_in_browser">Completa el inicio de sesión en el navegador</string>
     <string name="edit_no_save">Esto no será guardado para scrobbles futuros</string>
@@ -381,7 +381,7 @@
     <string name="when_not_using" formatted="true" comment="%1$s is the web service or media player name">Al usar %1$s</string>
     <string name="as_text" comment="Like copy as text, but in short">Como texto</string>
     <string name="automation_cli">Argumentos de la línea de comandos</string>
-    <string name="automation_cli_info">Ejecuta el ejecutable pano-scrobbler con uno de estos argumentos de línea de comandos, mientras que una instancia ya se está ejecutando.</string>
+    <string name="automation_cli_info">Ejecuta el ejecutable pano-scrobbler-etd con uno de estos argumentos de línea de comandos, mientras que una instancia ya se está ejecutando.</string>
     <string name="album_art_now_playing_desc">Necesita un login de last.fm</string>
     <string name="spotify_consent">¿Obtener imágenes de artista de Spotify?</string>
     <string name="show_track_url">URL del Track</string>

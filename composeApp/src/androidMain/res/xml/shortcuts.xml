@@ -11,9 +11,9 @@
         android:shortcutShortLabel="@string/settings">
         <intent
             android:action="android.intent.action.VIEW"
-            android:data="pano-scrobbler://screen?route=%7B%22type%22%3A%22com.arn.scrobble.navigation.PanoRoute.Prefs%22%7D"
-            android:targetClass="com.arn.scrobble.main.MainActivity"
-            android:targetPackage="com.arn.scrobble" />
+            android:data="pano-scrobbler-etd://screen?route=%7B%22type%22%3A%22dev.etorix.panoscrobbler.navigation.PanoRoute.Prefs%22%7D"
+            android:targetClass="dev.etorix.panoscrobbler.main.MainActivity"
+            android:targetPackage="dev.etorix.panoscrobbler" />
     </shortcut>
     <shortcut
         android:enabled="true"
@@ -24,8 +24,8 @@
         android:shortcutShortLabel="@string/search">
         <intent
             android:action="android.intent.action.VIEW"
-            android:data="pano-scrobbler://screen?route=%7B%22type%22%3A%22com.arn.scrobble.navigation.PanoRoute.Search%22%7D"
-            android:targetClass="com.arn.scrobble.main.MainActivity"
-            android:targetPackage="com.arn.scrobble" />
+            android:data="pano-scrobbler-etd://screen?route=%7B%22type%22%3A%22dev.etorix.panoscrobbler.navigation.PanoRoute.Search%22%7D"
+            android:targetClass="dev.etorix.panoscrobbler.main.MainActivity"
+            android:targetPackage="dev.etorix.panoscrobbler" />
     </shortcut>
 </shortcuts>

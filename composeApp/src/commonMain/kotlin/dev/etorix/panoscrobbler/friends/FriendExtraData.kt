@@ -1,0 +1,12 @@
+package dev.etorix.panoscrobbler.friends
+
+import dev.etorix.panoscrobbler.api.lastfm.Track
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class FriendExtraData(
+    val track: Track?,
+    val playCount: Int?,
+    val lastUpdated: Long,
+    val errorMessage: String? = null,
+)

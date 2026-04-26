@@ -23,11 +23,11 @@ captures
 /composeApp/resources/**/*.so
 /composeApp/resources/**/*.dll
 /composeApp/resources/**/*.dylib
-/baselineprofile/src/main/java/com/arn/scrobble/baselineprofile/Secrets.kt
+/baselineprofile/src/main/java/dev/etorix/panoscrobbler/baselineprofile/Secrets.kt
 /composeApp/*.json
 /androidApp/*.json
-/composeApp/src/commonTest/kotlin/com/arn/scrobble/AuthTest.kt
-/composeApp/src/desktopTest/kotlin/com/arn/scrobble/DesktopAuthTests.kt
+/composeApp/src/commonTest/kotlin/dev/etorix/panoscrobbler/AuthTest.kt
+/composeApp/src/desktopTest/kotlin/dev/etorix/panoscrobbler/DesktopAuthTests.kt
 /dist
 androidApp/src/release/generated
 androidApp/src/releaseGithub/generated
@@ -42,3 +42,6 @@ _site/
 build-android.sh
 build-linux.sh
 .venv/
+*.jks
+*.keystore
+*.p12

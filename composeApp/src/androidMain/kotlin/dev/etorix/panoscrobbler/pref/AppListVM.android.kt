@@ -1,0 +1,134 @@
+package dev.etorix.panoscrobbler.pref
+
+import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
+import android.service.media.MediaBrowserService
+import dev.etorix.panoscrobbler.BuildKonfig
+import dev.etorix.panoscrobbler.utils.AndroidStuff
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+
+actual suspend fun AppListVM.load(
+    packagesOverride: Set<String>?,
+    onSetAppList: (AppList) -> Unit,
+    onSetHasLoaded: () -> Unit,
+) {
+    val packageManager = AndroidStuff.applicationContext.packageManager
+
+    val packagesToNotConsider = setOf(
+        BuildKonfig.APP_ID,
+        "com.android.bluetooth",
+        "com.google.android.bluetooth"
+    )
+
+    fun Collection<ApplicationInfo>.removeSpam() = filter {
+        it.icon != 0 && it.enabled && it.packageName !in packagesToNotConsider
+    }
+
+    fun Collection<ApplicationInfo>.sortAndTransform(): List<AppItem> {
+        val (selectedList, unselectedList) = this
+            .map { AppItem(it.packageName, packageManager.getApplicationLabel(it).toString()) }
+            .sortedWith { a, b ->
+                a.friendlyLabel.compareTo(b.label, true)
+            }
+            .partition { it.appId in selectedPackages.value }
+        return selectedList + unselectedList
+    }
+
+    if (packagesOverride != null) {
+        val musicPlayers = mutableMapOf<String, ApplicationInfo>()
+
+        packagesOverride.forEach {
+            val appInfo = try {
+                packageManager.getApplicationInfo(it, 0)
+            } catch (e: PackageManager.NameNotFoundException) {
+                null
+            }
+
+            if (appInfo != null)
+                musicPlayers[it] = appInfo
+        }
+
+        onSetAppList(
+            AppList(
+                musicPlayers = musicPlayers.values.sortAndTransform(),
+            )
+        )
+
+        onSetHasLoaded()
+
+        return
+    }
+
+
+    withContext(Dispatchers.IO) {
+        val musicPlayers = mutableMapOf<String, ApplicationInfo>()
+        val otherApps = mutableMapOf<String, ApplicationInfo>()
+
+        // this matches music players including shazam
+        var intent = Intent(MediaBrowserService.SERVICE_INTERFACE)
+
+        musicPlayers += packageManager.queryIntentServices(
+            intent,
+            PackageManager.GET_RESOLVED_FILTER
+        ).map { it.serviceInfo.applicationInfo }
+            .removeSpam()
+            .map { it.packageName to it }
+
+        // this matches the chromecast receiver on pixel tablets and tv
+        intent = Intent("com.google.cast.action.BIND").addCategory(Intent.CATEGORY_DEFAULT)
+
+        musicPlayers += packageManager.queryIntentServices(
+            intent,
+            PackageManager.GET_RESOLVED_FILTER
+        ).map { it.serviceInfo.packageName to it.serviceInfo.applicationInfo }
+
+        // this matches pixel now playing including ambient music mod
+        intent =
+            Intent("com.google.intelligence.sense.NOW_PLAYING_HISTORY").addCategory(Intent.CATEGORY_DEFAULT)
+
+        musicPlayers += packageManager.queryIntentActivities(
+            intent,
+            PackageManager.GET_RESOLVED_FILTER
+        ).map { it.activityInfo.packageName to it.activityInfo.applicationInfo }
+
+        // apps on phone
+        intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+
+        otherApps +=
+            packageManager.queryIntentActivities(intent, PackageManager.GET_RESOLVED_FILTER)
+                .map { it.activityInfo.applicationInfo }
+                .removeSpam()
+                .map { it.packageName to it }
+
+        // apps on tv
+        intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
+
+        otherApps += packageManager.queryIntentActivities(
+            intent,
+            PackageManager.GET_RESOLVED_FILTER
+        )
+            .map { it.activityInfo.applicationInfo }
+            .removeSpam()
+            .map { it.packageName to it }
+
+        // remove music players from other apps
+        musicPlayers.forEach { (key, _) -> otherApps.remove(key) }
+
+        onSetAppList(
+            AppList(
+                musicPlayers = musicPlayers.values.sortAndTransform(),
+                otherApps = otherApps.values.sortAndTransform()
+            )
+        )
+
+        // add other apps to list
+
+        onSetHasLoaded()
+    }
+}
+
+actual val AppListVM.pluginsNeeded: List<Pair<String, String>>
+    get() = emptyList()

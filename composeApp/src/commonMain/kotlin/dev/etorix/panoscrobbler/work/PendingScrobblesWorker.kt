@@ -1,0 +1,230 @@
+package dev.etorix.panoscrobbler.work
+
+import dev.etorix.panoscrobbler.BuildKonfig
+import dev.etorix.panoscrobbler.api.AccountType
+import dev.etorix.panoscrobbler.api.Scrobblable
+import dev.etorix.panoscrobbler.api.Scrobblables
+import dev.etorix.panoscrobbler.api.ScrobbleEvent
+import dev.etorix.panoscrobbler.api.ScrobbleResult
+import dev.etorix.panoscrobbler.api.lastfm.Album
+import dev.etorix.panoscrobbler.api.lastfm.ApiException
+import dev.etorix.panoscrobbler.api.lastfm.Artist
+import dev.etorix.panoscrobbler.api.lastfm.Track
+import dev.etorix.panoscrobbler.db.AccountBitmaskConverter
+import dev.etorix.panoscrobbler.db.PanoDb
+import dev.etorix.panoscrobbler.db.PendingScrobble
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import org.jetbrains.compose.resources.getString
+import pano_scrobbler.composeapp.generated.resources.Res
+import pano_scrobbler.composeapp.generated.resources.pending_batch
+import pano_scrobbler.composeapp.generated.resources.submitting_loves
+
+class PendingScrobblesWorker(
+    override val setProgress: suspend (CommonWorkProgress) -> Unit,
+) : CommonWorker {
+
+    private val dao by lazy { PanoDb.db.getPendingScrobblesDao() }
+
+    private val failsMap = AccountType.entries.associateWith { 0 }.toMutableMap()
+
+    override suspend fun doWork(): CommonWorkerResult {
+        var errored: Boolean
+
+        val exHandler = CoroutineExceptionHandler { coroutineContext, throwable ->
+            throwable.printStackTrace()
+            errored = true
+        }
+
+        withContext(Dispatchers.IO + exHandler) {
+            deleteForLoggedOutServices()
+            submitLoves()
+            submitScrobbles()
+
+            errored = failsMap.values.any { it > 0 }
+        }
+
+        return if (errored) {
+            CommonWorkerResult.Retry
+        } else {
+            CommonWorkerResult.Success
+        }
+    }
+
+    private suspend fun submitScrobbles() {
+        val entries = dao.allScrobbles(HARD_LIMIT)
+
+        for (chunk in entries.chunked(BATCH_SIZE)) {
+            submitScrobbleBatch(chunk)
+
+            if (failsMap.values.any { it > MAX_FAILURES_PER_SERVICE })
+                return
+        }
+    }
+
+    private suspend fun submitScrobbleBatch(entries: List<PendingScrobble>) {
+        setProgress(
+            CommonWorkProgress(
+                message = getString(Res.string.pending_batch),
+                progress = 0.5f,
+            )
+        )
+
+        if (entries.isNotEmpty()) {
+            val scrobbleResults = mutableMapOf<Scrobblable, Result<ScrobbleResult>>()
+            // if an error occurs, there will be only one result
+
+            Scrobblables.all.forEach {
+                val filteredData by lazy { filterForService(it, entries) }
+                if (filteredData.isNotEmpty()) {
+                    val result = it.scrobble(filteredData.map { it.scrobbleData })
+
+                    if (result.isFailure) {
+                        // Rate Limit Exceeded - Too many scrobbles in a short period. Please try again later (29)
+                        // Invalid session key - Please re-authenticate (9)
+//                            if ((result.exceptionOrNull() as? ApiException)?.code in arrayOf(29, 9))
+//                                return false
+
+                        failsMap[it.userAccount.type] = failsMap[it.userAccount.type]!! + 1
+                    }
+
+                    scrobbleResults[it] = result
+                }
+            }
+
+            val idsAll = entries.map { it._id }.toSet()
+            val idsToDelete = mutableSetOf<Long>()
+
+            entries.forEach { pendingScrobble ->
+                val services = pendingScrobble.services -
+                        scrobbleResults.mapNotNull { (scrobblable, result) ->
+                            val err = result.exceptionOrNull() as? ApiException
+
+                            if (err?.code == 6 ||
+                                err?.code == 7 ||
+                                result.isSuccess
+                            ) {
+                                scrobblable.userAccount.type
+                            } else
+                                null
+                        }.toSet()
+
+                if (services.isEmpty())
+                    idsToDelete += pendingScrobble._id
+                else if (services != pendingScrobble.services) {
+                    val newPendingScrobble = pendingScrobble.copy(services = services)
+                    dao.update(newPendingScrobble)
+                }
+            }
+
+            if (!MOCK && idsToDelete.isNotEmpty())
+                dao.delete(idsToDelete.toList())
+
+            (idsAll - idsToDelete)
+                .takeIf { it.isNotEmpty() }
+                ?.let {
+                    val exceptions = scrobbleResults.values.mapNotNull { it.exceptionOrNull() }
+
+                    dao.logFailure(it.toList(), exceptions)
+                }
+        }
+    }
+
+    private suspend fun submitLoves() {
+        val entries = dao.allLoves(100)
+        val total = entries.size
+        for ((submitted, entry) in entries.withIndex()) {
+            setProgress(
+                CommonWorkProgress(
+                    message = getString(Res.string.submitting_loves, total - submitted),
+                    progress = submitted.toFloat() / total,
+                )
+            )
+
+            val loveResults = mutableMapOf<Scrobblable, Result<ScrobbleResult>>()
+
+            Scrobblables.all.forEach {
+                val shouldSubmit by lazy { filterOneForService(it, entry) }
+                if (shouldSubmit) {
+                    val track = Track(
+                        name = entry.scrobbleData.track,
+                        artist = Artist(entry.scrobbleData.artist),
+                        album = entry.scrobbleData.album?.ifEmpty { null }?.let { Album(it) }
+                    )
+
+                    val result = it.loveOrUnlove(track, entry.event == ScrobbleEvent.love)
+
+                    if (result.isFailure) {
+                        // Rate Limit Exceeded - Too many scrobbles in a short period. Please try again later
+//                            if ((result.exceptionOrNull() as? ApiException)?.code in arrayOf(29, 9))
+//                                return false
+                        failsMap[it.userAccount.type] = failsMap[it.userAccount.type]!! + 1
+                    }
+
+                    loveResults[it] = result
+                }
+            }
+
+            val services = entry.services -
+                    loveResults.mapNotNull { (scrobblable, result) ->
+                        if (result.isSuccess)
+                            scrobblable.userAccount.type
+                        else
+                            null
+                    }.toSet()
+
+            if (services.isEmpty() && !MOCK)
+                dao.delete(entry)
+            else {
+                val exceptions = loveResults.values.mapNotNull { it.exceptionOrNull() }
+                dao.logFailure(listOf(entry._id), exceptions)
+            }
+
+            delay(DELAY)
+        }
+    }
+
+    private fun filterOneForService(scrobblable: Scrobblable, pl: PendingScrobble): Boolean {
+        if (failsMap[scrobblable.userAccount.type]!! > MAX_FAILURES_PER_SERVICE)
+            return false
+
+        return scrobblable.userAccount.type in pl.services
+    }
+
+    private fun filterForService(
+        scrobblable: Scrobblable,
+        pendingScrobbles: List<PendingScrobble>,
+    ): List<PendingScrobble> {
+        if (failsMap[scrobblable.userAccount.type]!! > MAX_FAILURES_PER_SERVICE)
+            return emptyList()
+
+        return pendingScrobbles.filter { pendingScrobble ->
+            scrobblable.userAccount.type in pendingScrobble.services
+        }
+    }
+
+    private suspend fun deleteForLoggedOutServices() {
+        val loggedOutAccounts =
+            AccountType.entries.toSet() - Scrobblables.all.map { it.userAccount.type }.toSet()
+
+        val loggedOutAccountsBitset =
+            AccountBitmaskConverter.accountTypesToBitMask(loggedOutAccounts)
+
+        if (loggedOutAccounts.isNotEmpty())
+            dao.removeLoggedOutAccounts(loggedOutAccountsBitset)
+
+        dao.deleteEmptyAccounts()
+    }
+
+
+    companion object {
+        const val NAME = "pending_scrobbles"
+        private val MOCK = BuildKonfig.DEBUG && false
+        private const val HARD_LIMIT = 2500
+        private var BATCH_SIZE = 50 //max 50
+        private const val DELAY = 1000L
+        private const val MAX_FAILURES_PER_SERVICE = 1
+    }
+}

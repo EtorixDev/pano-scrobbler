@@ -1,7 +1,7 @@
 #!/bin/bash
 
 scriptDir="$(cd "$(dirname "$0")" && pwd)"
-pkgbuildDir="$scriptDir/../pano-scrobbler-bin"
+pkgbuildDir="$scriptDir/../pano-scrobbler-etd-bin"
 
 # --- Re-launch inside Arch container if not Arch ---
 if [[ -z "$(command -v makepkg)" ]]; then
@@ -25,8 +25,8 @@ if [ -f "$pkgbuildDir/PKGBUILD" ]; then
   OWNER="EtorixDev"
     REPO="pano-scrobbler"
 
-    ASSET_X64="pano-scrobbler-linux-x64.tar.gz"
-    ASSET_ARM64="pano-scrobbler-linux-arm64.tar.gz"
+    ASSET_X64="pano-scrobbler-etd-linux-x64.tar.gz"
+    ASSET_ARM64="pano-scrobbler-etd-linux-arm64.tar.gz"
 
     API="https://api.github.com"
     RELEASES_URL="$API/repos/$OWNER/$REPO/releases/latest"

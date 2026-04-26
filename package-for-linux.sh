@@ -8,10 +8,10 @@ if [ "$arch" = "aarch64" ]; then
 else
     resourcesDirName="linux-x64"
 fi
-appNameWithoutSpaces="pano-scrobbler"
+appNameWithoutSpaces="pano-scrobbler-etd"
 nativeImageDir="$scriptDir/composeApp/build/compose/native/$resourcesDirName"
-appDir="/tmp/PanoScrobbler.AppDir"
-libExecDir="$appDir/usr/libexec/pano-scrobbler"
+appDir="/tmp/PanoScrobblerETD.AppDir"
+libExecDir="$appDir/usr/libexec/pano-scrobbler-etd"
 distDir="$scriptDir/dist"
 
 # Read version code from version.txt

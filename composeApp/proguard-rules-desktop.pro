@@ -127,8 +127,8 @@
 -keep @androidx.room.Entity class *
 -keep class androidx.sqlite.** { *; }
 
-# Keep generated serializer classes in com.arn.scrobble and subpackages
--keep class com.arn.scrobble.**$$serializer { *; }
+# Keep generated serializer classes in dev.etorix.panoscrobbler and subpackages
+-keep class dev.etorix.panoscrobbler.**$$serializer { *; }
 
 # Keep important class metadata for serialization
 -keepattributes *Annotation*, Signature, InnerClasses#, EnclosingMethod, EnclosingClass

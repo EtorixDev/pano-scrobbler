@@ -1,0 +1,49 @@
+package dev.etorix.panoscrobbler.work
+
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import dev.etorix.panoscrobbler.utils.AndroidStuff
+import dev.etorix.panoscrobbler.utils.VariantStuff
+import java.util.concurrent.TimeUnit
+
+actual object UpdaterWork : CommonWorkImpl(UpdaterWorker.NAME) {
+    actual fun schedule(force: Boolean) {
+        if (VariantStuff.githubApiUrl == null) return
+
+        val workManager = WorkManager.getInstance(AndroidStuff.applicationContext)
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val inputData = workDataOf(
+            PlatformWorker.WORK_NAME_KEY to name
+        )
+
+        val work = OneTimeWorkRequestBuilder<PlatformWorker>()
+            .setConstraints(constraints)
+            .setInputData(inputData)
+            .addTag(name)
+            .apply {
+                if (force) {
+//                    setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                } else {
+                    setInitialDelay(
+                        1,
+                        TimeUnit.DAYS
+                    )
+                }
+            }
+            .build()
+
+        workManager.enqueueUniqueWork(
+            name,
+            ExistingWorkPolicy.REPLACE,
+            work
+        )
+    }
+}
