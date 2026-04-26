@@ -15,7 +15,7 @@ class BillingRepository(
     override val scope: CoroutineScope,
     override val receipt: Flow<Pair<String?, String?>>,
     private val lastCheckTime: Flow<Long>,
-    private val setLastcheckTime: suspend (Long) -> Unit,
+    private val setLastCheckTime: suspend (Long) -> Unit,
     private val setReceipt: suspend (String?, String?) -> Unit,
 
     private val httpPost: suspend (url: String, body: String) -> String,
@@ -88,7 +88,7 @@ class BillingRepository(
                         }
                     }
 
-                    setLastcheckTime(System.currentTimeMillis())
+                    setLastCheckTime(System.currentTimeMillis())
                 }.onFailure { e ->
                     e.printStackTrace()
                     _licenseError.emit(LicenseError.NETWORK_ERROR)

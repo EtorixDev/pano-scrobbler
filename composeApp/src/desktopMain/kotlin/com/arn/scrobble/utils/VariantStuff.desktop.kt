@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.map
 actual val VariantStuff: VariantStuffInterface = DesktopExtrasVariantStuff(
     scope = Stuff.appScope,
     lastCheckTime = flow { emitAll(PlatformStuff.mainPrefs.data.map { it.lastLicenseCheckTime }) },
-    setLastcheckTime = { time ->
+    setLastCheckTime = { time ->
         PlatformStuff.mainPrefs.updateData { it.copy(lastLicenseCheckTime = time) }
     },
     receipt = flow { emitAll(Stuff.receiptFlow) },

@@ -34,8 +34,6 @@ import com.arn.scrobble.updates.UpdateAvailableDialog
 import com.arn.scrobble.utils.PlatformStuff
 import com.arn.scrobble.utils.Stuff.collectAsStateWithInitialValue
 import com.arn.scrobble.utils.VariantStuff
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 
 fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
     navigate: (PanoRoute) -> Unit,
@@ -94,12 +92,7 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
             timePeriod = route.timePeriod,
             user = route.user,
             onAskForReview = {
-                VariantStuff.reviewPrompter.showIfNeeded(
-                    activity,
-                    { PlatformStuff.mainPrefs.data.map { it.lastReviewPromptTime }.first() }
-                ) { t ->
-                    PlatformStuff.mainPrefs.updateData { it.copy(lastReviewPromptTime = t) }
-                }
+                VariantStuff.reviewPrompter.showIfNeeded(activity)
             },
             modifier = modalModifier()
         )

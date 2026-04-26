@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ButtonDefaults
@@ -14,6 +13,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedToggleButton
@@ -64,9 +64,10 @@ enum class OnboardingStepType {
 fun ButtonsStepper(
     onOpenClick: () -> Unit,
     onSkipClick: (() -> Unit)?,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.End)
     ) {
         if (onSkipClick != null) {
@@ -86,7 +87,10 @@ fun ButtonsStepper(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ButtonStepperForLogin(navigate: (PanoRoute) -> Unit) {
+fun ButtonStepperForLogin(
+    navigate: (PanoRoute) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val accountTypesToStrings =
         AccountType.entries.filterNot {
             PlatformStuff.isTv && it == AccountType.FILE
@@ -101,7 +105,8 @@ fun ButtonStepperForLogin(navigate: (PanoRoute) -> Unit) {
         onCheckedChange = {
             dropDownShown = it
         },
-        modifier = Modifier
+        modifier = modifier
+            .padding(start = IconButtonDefaults.mediumIconSize + 16.dp)
             .testTag("login_type_dropdown")
     ) {
         Text(
@@ -144,7 +149,8 @@ fun VerticalStepperItem(
     buttonsContent: @Composable () -> Unit = {
         ButtonsStepper(
             onOpenClick = openAction,
-            onSkipClick = onSkip
+            onSkipClick = onSkip,
+            modifier = Modifier.fillMaxWidth()
         )
     },
     additionalContent: (@Composable () -> Unit)? = null,
@@ -157,7 +163,8 @@ fun VerticalStepperItem(
     else
         Icons.Circle
 
-    Row(
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp, horizontal = horizontalOverscanPadding())
@@ -167,42 +174,45 @@ fun VerticalStepperItem(
                 else
                     Modifier.alpha(0.5f)
             ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-        )
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.weight(1f)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+            )
+
             Text(
                 text = stringResource(titleRes),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f)
             )
+        }
 
-            AnimatedVisibility(isExpanded) {
-                Column(
-                    modifier = modifier.fillMaxWidth()
-                ) {
-                    if (description != null) {
-                        Text(
-                            text = description,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-
-                    if (additionalContent != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        additionalContent()
-                    }
-
-                    buttonsContent()
+        AnimatedVisibility(isExpanded) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                if (description != null) {
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = modifier
+                            .padding(start = IconButtonDefaults.mediumIconSize + 16.dp)
+                            .fillMaxWidth()
+                    )
                 }
+                if (additionalContent != null) {
+                    additionalContent()
+                }
+
+                buttonsContent()
             }
         }
     }

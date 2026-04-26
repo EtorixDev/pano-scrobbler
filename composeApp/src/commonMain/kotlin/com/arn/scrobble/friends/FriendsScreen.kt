@@ -116,7 +116,7 @@ fun FriendsScreen(
     user: UserCached,
     pullToRefreshState: PullToRefreshState,
     onSetRefreshing: (PanoPullToRefreshStateForTab) -> Unit,
-    pullToRefreshTriggered: Flow<Unit>,
+    pullToRefreshTriggered: () -> Flow<Unit>,
     onNavigate: (PanoRoute) -> Unit,
     onTitleChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -225,7 +225,7 @@ fun FriendsScreen(
 
 
     LaunchedEffect(Unit) {
-        pullToRefreshTriggered.collect {
+        pullToRefreshTriggered().collect {
             if (friends.loadState.refresh is LoadState.NotLoading) {
                 viewModel.markExtraDataAsStale()
                 viewModel.clearSortedFriends()

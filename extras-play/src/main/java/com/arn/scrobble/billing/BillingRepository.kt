@@ -32,7 +32,7 @@ class BillingRepository(
     override val scope: CoroutineScope,
     override val receipt: Flow<Pair<String?, String?>>,
     private val lastCheckTime: Flow<Long>,
-    private val setLastcheckTime: suspend (Long) -> Unit,
+    private val setLastCheckTime: suspend (Long) -> Unit,
     private val setReceipt: suspend (String?, String?) -> Unit,
 
     httpPost: suspend (url: String, body: String) -> String,
@@ -181,7 +181,7 @@ class BillingRepository(
 
                         clearReceipt = false
                         if (lastVoidedTime <= 0)
-                            setLastcheckTime(now)
+                            setLastCheckTime(now)
                     }
                 } else {
                     clearReceipt = true
@@ -194,7 +194,7 @@ class BillingRepository(
             validPurchases
                 .forEach { purchase ->
                     if (purchase.isAcknowledged) {
-                        setLastcheckTime(-1)
+                        setLastCheckTime(-1)
                         setReceipt(purchase.originalJson, purchase.signature)
                     } else {
                         val params = AcknowledgePurchaseParams.newBuilder()
@@ -205,7 +205,7 @@ class BillingRepository(
                             when (billingResult.responseCode) {
                                 BillingClient.BillingResponseCode.OK -> {
                                     scope.launch {
-                                        setLastcheckTime(-1)
+                                        setLastCheckTime(-1)
                                         setReceipt(purchase.originalJson, purchase.signature)
                                     }
                                 }

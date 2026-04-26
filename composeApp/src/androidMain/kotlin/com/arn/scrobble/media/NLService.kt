@@ -101,20 +101,15 @@ class NLService : NotificationListenerService() {
             }
         }
 
-        if (PlatformStuff.isTv) {
-            // TVs are low RAM devices, always use FGS
-            PanoNotifications.startFgs(this)
-        } else {
-            coroutineScope.launch {
-                PlatformStuff.mainPrefs.data.map { it.notiPersistent }
-                    .collect { notiPersistent ->
-                        if (notiPersistent) {
-                            PanoNotifications.startFgs(this@NLService)
-                        } else {
-                            PanoNotifications.stopFgs(this@NLService)
-                        }
+        coroutineScope.launch {
+            PlatformStuff.mainPrefs.data.map { it.notiPersistent }
+                .collect { notiPersistent ->
+                    if (notiPersistent) {
+                        PanoNotifications.startFgs(this@NLService)
+                    } else {
+                        PanoNotifications.stopFgs(this@NLService)
                     }
-            }
+                }
         }
 
         val sessManager = getSystemService(MediaSessionManager::class.java)!!

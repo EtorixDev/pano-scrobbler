@@ -194,8 +194,12 @@ fun main(args: Array<String>) {
         }
 
         return
-    } else if (!BuildKonfig.DEBUG) {
-        preventMultipleInstances()
+    } else {
+        val logFilePath = PlatformStuff.logsDir.resolve("pano-native-components.log")
+        PanoNativeComponents.setLogFilePath(logFilePath.absolutePath)
+
+        if (!BuildKonfig.DEBUG)
+            preventMultipleInstances()
     }
 
     val initialPrefs = runBlocking { Stuff.initializeMainPrefsCache() }

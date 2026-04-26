@@ -95,6 +95,9 @@ sealed interface PlayingTrackNotifyEvent {
         val appId: String,
         val allowed: Boolean,
     ) : PlayingTrackNotifyEvent
+
+    @Serializable
+    data object RepostFgNoti : PlayingTrackNotifyEvent
 }
 
 val globalTrackEventFlow by lazy { MutableSharedFlow<PlayingTrackNotifyEvent>(extraBufferCapacity = 10) }
@@ -268,6 +271,10 @@ suspend fun listenForPlayingTrackEvents(
                 }
 
                 PanoNotifications.removeNotificationByKey(Stuff.CHANNEL_NOTI_NEW_APP)
+            }
+
+            PlayingTrackNotifyEvent.RepostFgNoti -> {
+                PanoNotifications.repostFgNotiIfNeeded()
             }
         }
     }

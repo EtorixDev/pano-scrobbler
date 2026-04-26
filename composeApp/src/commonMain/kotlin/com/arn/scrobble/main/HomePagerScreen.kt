@@ -78,7 +78,7 @@ fun HomePagerScreen(
                 user = user,
                 pullToRefreshState = pullToRefreshState,
                 onSetRefreshing = { onSetRefreshing(page, it) },
-                pullToRefreshTriggered = getPullToRefreshTrigger(page),
+                pullToRefreshTriggered = { getPullToRefreshTrigger(page) },
                 showChips = currentTab.showChips,
                 onNavigate = onNavigate,
                 editDataFlow = mainViewModel.editScrobbleUtils.editDataFlow,
@@ -94,7 +94,7 @@ fun HomePagerScreen(
                 user = user,
                 pullToRefreshState = pullToRefreshState,
                 onSetRefreshing = { onSetRefreshing(page, it) },
-                pullToRefreshTriggered = getPullToRefreshTrigger(page),
+                pullToRefreshTriggered = { getPullToRefreshTrigger(page) },
                 onNavigate = onNavigate,
                 onTitleChange = {
                     followingTitle = it

@@ -50,7 +50,7 @@ import androidx.compose.material3.WideNavigationRail
 import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.material3.WideNavigationRailItemDefaults
 import androidx.compose.material3.WideNavigationRailValue
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -127,7 +127,7 @@ import pano_scrobbler.composeapp.generated.resources.update_downloaded
 fun PanoAppContent(
     viewModel: MainViewModel = viewModel { MainViewModel() },
 ) {
-    val sizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    val sizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
     val navigationType = when {
         sizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_EXPANDED_LOWER_BOUND)
             -> PanoNavigationType.PERMANENT_NAVIGATION_DRAWER

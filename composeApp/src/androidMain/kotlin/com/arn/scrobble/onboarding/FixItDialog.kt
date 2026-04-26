@@ -58,7 +58,7 @@ fun FixItDialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val showDkmaLayout = remember { !PlatformStuff.isTv }
-    val canShowPersistentNoti by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue {
+    val canEnablePersistentNoti by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue {
         !it.notiPersistent && AndroidStuff.canShowPersistentNotiIfEnabled
     }
 
@@ -89,7 +89,32 @@ fun FixItDialog(
             ),
         )
 
-        if (!showDkmaLayout && batteryIntent == null && !canShowPersistentNoti) {
+        if (canEnablePersistentNoti) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp)
+            ) {
+                Text(
+                    text = stringResource(Res.string.show_persistent_noti),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedButton(
+                    onClick = {
+                        scope.launch {
+                            PlatformStuff.mainPrefs.updateData { it.copy(notiPersistent = true) }
+                        }
+                    },
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Text(text = stringResource(Res.string.appwidget_show))
+                }
+            }
+        }
+
+        if (!showDkmaLayout && batteryIntent == null && !canEnablePersistentNoti) {
             Text(
                 text = stringResource(Res.string.not_found),
                 style = MaterialTheme.typography.titleLarge
@@ -148,31 +173,6 @@ fun FixItDialog(
                     modifier = Modifier.padding(start = 8.dp)
                 ) {
                     Text(text = stringResource(Res.string.fix_it_action))
-                }
-            }
-        }
-
-        if (canShowPersistentNoti) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp)
-            ) {
-                Text(
-                    text = stringResource(Res.string.show_persistent_noti),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f)
-                )
-                OutlinedButton(
-                    onClick = {
-                        scope.launch {
-                            PlatformStuff.mainPrefs.updateData { it.copy(notiPersistent = true) }
-                        }
-                    },
-                    modifier = Modifier.padding(start = 8.dp)
-                ) {
-                    Text(text = stringResource(Res.string.appwidget_show))
                 }
             }
         }

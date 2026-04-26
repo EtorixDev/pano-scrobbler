@@ -136,6 +136,8 @@ actual object PlatformStuff {
         }
 
         if (!nlsRunning) {
+            val fgNoti = mainPrefs.data.map { it.notiPersistent }.first()
+
             // check kill reason
             val killedReason = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
                 AndroidStuff.getScrobblerExitReasons().firstOrNull()
@@ -164,7 +166,8 @@ actual object PlatformStuff {
                                 ?: "",
                             desc = exitInfo.description ?: "",
                             pssMb = (exitInfo.pss / 1024).toInt(),
-                            isProbablySystemKill = isProbablySystemKill
+                            isProbablySystemKill = isProbablySystemKill,
+                            fgNoti = fgNoti,
                         )
                     }
             else

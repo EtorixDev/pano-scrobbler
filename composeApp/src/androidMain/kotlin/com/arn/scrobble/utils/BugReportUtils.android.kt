@@ -44,10 +44,14 @@ actual object BugReportUtils {
 
         text += "Background RAM usage: " + bgRam + "M \n"
 
-        if (scrobblerState is ScrobblerState.Killed)
-            text += "ScrobblerState: Killed\n"
-        else if (scrobblerState != ScrobblerState.Running)
+        if (scrobblerState is ScrobblerState.Killed) {
+            text += "ScrobblerState: Killed"
+            if (scrobblerState.reason?.fgNoti == false)
+                text += " noFgNoti"
+            text += "\n"
+        } else if (scrobblerState != ScrobblerState.Running) {
             text += "ScrobblerState: $scrobblerState\n"
+        }
 
         if (lastExitInfo != null)
             text += "Last exit reason: $lastExitInfo\n"

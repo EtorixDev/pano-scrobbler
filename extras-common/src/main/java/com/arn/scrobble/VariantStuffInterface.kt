@@ -8,5 +8,4 @@ interface VariantStuffInterface {
     val billingRepository: BaseBillingRepository
     val reviewPrompter: BaseReviewPrompter
     val githubApiUrl: String?
-    val hasForegroundServiceSpecialUse: Boolean
 }
