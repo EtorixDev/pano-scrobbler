@@ -40,7 +40,6 @@ import com.arn.scrobble.api.lastfm.Artist
 import com.arn.scrobble.api.lastfm.MusicEntry
 import com.arn.scrobble.api.lastfm.ScrobbleData
 import com.arn.scrobble.api.lastfm.Track
-import com.arn.scrobble.billing.LocalLicenseValidState
 import com.arn.scrobble.db.BlockedMetadata
 import com.arn.scrobble.db.PanoDb
 import com.arn.scrobble.db.PendingScrobble
@@ -92,7 +91,6 @@ import pano_scrobbler.composeapp.generated.resources.network_error
 import pano_scrobbler.composeapp.generated.resources.scrobble_services
 import pano_scrobbler.composeapp.generated.resources.search
 import pano_scrobbler.composeapp.generated.resources.share
-import pano_scrobbler.composeapp.generated.resources.share_sig
 import pano_scrobbler.composeapp.generated.resources.time_just_now
 import pano_scrobbler.composeapp.generated.resources.track
 import pano_scrobbler.composeapp.generated.resources.unlove
@@ -132,7 +130,6 @@ private fun TrackDropdownMenu(
     val moreFocusRequester = remember { FocusRequester() }
     val blockFocusRequester = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
-    val isLicenseValid = LocalLicenseValidState.current
 
     LaunchedEffect(menuLevel) {
         when (menuLevel) {
@@ -179,7 +176,7 @@ private fun TrackDropdownMenu(
         @Composable
         fun searchItem() {
             val searchInSource by
-            PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.searchInSource && isLicenseValid }
+                PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.searchInSource }
 
             DropdownMenuItem(
                 onClick = {
@@ -350,12 +347,9 @@ private fun TrackDropdownMenu(
                     copyItem()
 
                     if (onShare != null) {
-                        val shareSig =
-                            stringResource(Res.string.share_sig).takeIf { !isLicenseValid }
-
                         DropdownMenuItem(
                             onClick = {
-                                onShare(track, shareSig)
+                                onShare(track, null)
 
                                 onDismissRequest()
                             },

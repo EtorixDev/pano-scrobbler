@@ -39,7 +39,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.arn.scrobble.billing.LocalLicenseValidState
 import com.arn.scrobble.db.BlockPlayerAction
 import com.arn.scrobble.db.PanoDb
 import com.arn.scrobble.db.RegexEdit
@@ -53,7 +52,6 @@ import com.arn.scrobble.icons.Check
 import com.arn.scrobble.icons.ContentCopy
 import com.arn.scrobble.icons.Delete
 import com.arn.scrobble.icons.Icons
-import com.arn.scrobble.icons.Lock
 import com.arn.scrobble.icons.Mic
 import com.arn.scrobble.icons.MusicNote
 import com.arn.scrobble.main.MainViewModel
@@ -170,8 +168,6 @@ fun RegexEditsAddScreen(
     }
 
     var errorText by rememberSaveable { mutableStateOf<String?>(null) }
-    val isLicenseValid = LocalLicenseValidState.current
-
     var trackCopyFrom by rememberSaveable { mutableStateOf<RegexEdit.Field?>(null) }
     var artistCopyFrom by rememberSaveable { mutableStateOf<RegexEdit.Field?>(null) }
     var albumCopyFrom by rememberSaveable { mutableStateOf<RegexEdit.Field?>(null) }
@@ -468,10 +464,7 @@ fun RegexEditsAddScreen(
                             searchArtist = artist
                             searchAlbumArtist = albumArtist
                         },
-                        enabled = if (regexMode == RegexMode.Extract || regexMode == RegexMode.Block)
-                            isLicenseValid
-                        else
-                            true,
+                        enabled = true,
                         highlightCaptureGroups = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -498,10 +491,7 @@ fun RegexEditsAddScreen(
                             searchArtist = artist
                             searchAlbumArtist = albumArtist
                         },
-                        enabled = if (regexMode == RegexMode.Extract || regexMode == RegexMode.Block)
-                            isLicenseValid
-                        else
-                            true,
+                        enabled = true,
                         highlightCaptureGroups = false,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -509,7 +499,7 @@ fun RegexEditsAddScreen(
                     BlockPlayerActions(
                         blockPlayerAction = blockPlayerAction,
                         onChange = { blockPlayerAction = it },
-                        enabled = isLicenseValid,
+                        enabled = true,
                     )
                 }
             }
@@ -594,44 +584,22 @@ fun RegexEditsAddScreen(
                             onClick = {
                                 regexMode = RegexMode.Extract
                                 dropDownShown = false
-
-                                if (!isLicenseValid)
-                                    onNavigate(PanoRoute.Billing)
                             },
                             enabled = regexMode != RegexMode.Extract,
                             text = {
                                 Text(stringResource(Res.string.edit_extract))
-                            },
-                            leadingIcon = if (!isLicenseValid) {
-                                {
-                                    Icon(
-                                        Icons.Lock,
-                                        contentDescription = null,
-                                    )
-                                }
-                            } else null
+                            }
                         )
 
                         DropdownMenuItem(
                             onClick = {
                                 regexMode = RegexMode.Block
                                 dropDownShown = false
-
-                                if (!isLicenseValid)
-                                    onNavigate(PanoRoute.Billing)
                             },
                             enabled = regexMode != RegexMode.Block,
                             text = {
                                 Text(stringResource(Res.string.block))
-                            },
-                            leadingIcon = if (!isLicenseValid) {
-                                {
-                                    Icon(
-                                        Icons.Lock,
-                                        contentDescription = null,
-                                    )
-                                }
-                            } else null
+                            }
                         )
 
                     }
@@ -668,10 +636,6 @@ fun RegexEditsAddScreen(
 
                             if (validationResult.isFailure) {
                                 errorText = validationResult.exceptionOrNull()?.redactedMessage
-                            } else if (
-                                !isLicenseValid && (re.replacement == null || re.blockPlayerAction != null)
-                            ) {
-                                onNavigate(PanoRoute.Billing)
                             } else {
                                 withContext(Dispatchers.IO) {
                                     dao.insert(listOf(re))

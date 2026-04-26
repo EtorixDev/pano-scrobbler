@@ -35,8 +35,7 @@ android {
 dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(projects.extrasCommon)
-    releaseImplementation(projects.extrasPlay)
-//    debugImplementation(projects.extrasNonplay)
-    debugImplementation(projects.extrasPlay)
+    releaseImplementation(projects.extrasNonplay)
+    debugImplementation(projects.extrasNonplay)
     "releaseGithubImplementation"(projects.extrasNonplay)
 }

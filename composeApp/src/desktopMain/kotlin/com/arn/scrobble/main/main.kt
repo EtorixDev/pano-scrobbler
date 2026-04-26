@@ -40,7 +40,6 @@ import co.touchlab.kermit.Severity
 import com.arn.scrobble.BuildKonfig
 import com.arn.scrobble.PanoNativeComponents
 import com.arn.scrobble.automation.Automation
-import com.arn.scrobble.billing.LicenseState
 import com.arn.scrobble.discordrpc.DiscordRpc
 import com.arn.scrobble.logger.JavaUtilFileLogger
 import com.arn.scrobble.media.PlayingTrackNotifyEvent
@@ -406,13 +405,6 @@ fun main(args: Array<String>) {
             onOpenIfNeeded = ::openIfNeeded,
             onExit = ::onExit
         )
-    }
-
-    Stuff.appScope.launch {
-        // init this to prevent a white flash and fix the tray menu window size
-        VariantStuff.billingRepository.licenseState
-            .filterNot { it == LicenseState.UNKNOWN }
-            .first()
     }
 
     if (cmdlineArgs.minimized && DesktopStuff.os == DesktopStuff.Os.Linux) {

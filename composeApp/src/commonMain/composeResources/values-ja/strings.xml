@@ -254,7 +254,6 @@
     <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">認証トークンは %1$s で確認できます。</string>
     <string name="pref_now_playing">再生中の状態情報を送信する</string>
     <string name="pref_locale">言語</string>
-    <string name="pref_crashlytics_enabled">エラーを自動的に報告する</string>
     <string name="pref_misc">その他</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">週の始まり</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">インポート &amp; エクスポート</string>
@@ -338,23 +337,5 @@
     <string name="also_available_on" formatted="true" comment="%1$s is the platform name, like Android, PC">%1$sでこのアプリを入手</string>
     <string name="first_artist">最初のアーティストのみを使用</string>
     <string name="external_metadata">外部メタデータソース</string>
-    <string name="get_pro">このアプリを支援</string>
     <string name="help">ヘルプ</string>
-    <string name="pro_support">支援は、このアプリの価値を認識していることを示す方法の一つです。あなたのような素晴らしいユーザー様なら、きっと容易いことでしょう。</string>
-    <string name="pro_also_get">以下の機能も得ることができます。</string>
-    <string name="thank_you">ありがとうございます！</string>
-    <string name="purchase_pending">お支払いの確認が取れませんでした。後ほどお試しください。</string>
-    <string name="billing_troubleshoot">すでに支援してくださっていますか？
-
-お支払い情報はGoogle Playで管理され、それを行ったアカウントに記録されています。複数のアカウントが登録されたデバイスでこのアプリをインストールした際、別のアカウントが紐付けられる可能性があります。購入したアカウントを指定するには、PCでGoogle Playのストアページを開き、そちらからインストールを行う方法が最適です。手順は以下のとおりです。
-
-• このアプリをアンインストール
-• PCでGoogle Playのストアページを開く
-• お支払いを行ったアカウントでログイン
-• このアプリをストアページ上から直接インストール</string>
-    <string name="billing_block">アーティスト/トラックのブロック、オートスキップ/ミュート機能</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">最大%1$d人のフレンドのピン留めおよび並び替え</string>
-    <string name="billing_sharing">共有時にアプリ名を含めない</string>
-    <string name="billing_scrobble_source">Scrobble元のアプリの記録やそのアプリでの楽曲検索</string>
-    <string name="billing_regex_extract">正規表現を使用してカスタムメタデータ抽出ルールを記述</string>
 </resources>

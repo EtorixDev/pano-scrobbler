@@ -257,7 +257,6 @@
     <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">인증 토큰은 다음 위치에서 찾을 수 있습니다: %1$s</string>
     <string name="pref_now_playing">지금 재생 중인 음악 등록하기</string>
     <string name="pref_locale">언어</string>
-    <string name="pref_crashlytics_enabled">자동으로 오류 보고</string>
     <string name="pref_misc">기타</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">한 주의 시작</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">가져오기 &amp; 내보내기</string>
@@ -338,24 +337,5 @@
     <string name="login_in_browser">브라우저 창에서 로그인을 완료하세요</string>
     <string name="also_available_on" formatted="true" comment="%1$s is the platform name, like Android, PC">이 앱을 %1$s에서 설치하기</string>
     <string name="first_artist">첫번째 아티스트에만 사용하기</string>
-    <string name="get_pro">앱 지원하기</string>
-    <string name="one_time_purchase">한 번</string>
     <string name="help">도움말</string>
-    <string name="pro_support">이것은 당신같이 훌륭한 사용자들이 이 앱의 가치를 인정하고 지원하는 간편하고 빠른 방법입니다.</string>
-    <string name="pro_also_get">다음과 같은 기능도 이용하실 수 있습니다:</string>
-    <string name="thank_you">감사합니다!</string>
-    <string name="purchase_pending">아직 결제 제공업체에서 구매가 확인되지 않았습니다. 몇 분 후에 다시 확인해 주세요.</string>
-    <string name="billing_troubleshoot">이미 구매하셨나요?
-
-구매한 항목은 Google Play에서 관리되어, 구매를 완료한 Google Play 계정과 연결되어 있습니다. 여러 계정이 있는 새로운 기기에 앱을 설치하면 Google Play가 잘못된 계정과 연결할 수 있습니다. 구매를 소유한 계정을 명시적으로 선택하는 가장 좋은 해결책은 다음과 같습니다:
-
-• 이 앱을 제거하세요. 
-• 컴퓨터에서 Google Play 웹 페이지를 엽니다. 
-• 구매한 계정으로 로그인하세요. 
-• Google Play 웹 페이지에서 직접 이 앱을 설치하세요.</string>
-    <string name="billing_block">아티스트/트랙 차단 시 자동으로 스킵 또는 음소거</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">친구 최대 %1$d명까지 고정 및 재정렬</string>
-    <string name="billing_sharing">공유할 때 앱 이름 제거</string>
-    <string name="billing_scrobble_source">스크로블한 앱 기록 및 조회와 그 앱으로 바로 검색</string>
-    <string name="billing_regex_extract">정규식을 사용하여 사용자 지정 메타데이터 추출 규칙 작성</string>
 </resources>

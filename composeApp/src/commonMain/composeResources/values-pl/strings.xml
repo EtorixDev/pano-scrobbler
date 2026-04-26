@@ -293,7 +293,6 @@ https://www.google.com/search?q=regex+named+capture+groups</string>
     <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">Możesz znaleźć swój token uwierzytelniania na: %1$s</string>
     <string name="pref_now_playing">Przesyłaj "Co jest grane"</string>
     <string name="pref_locale">Języki</string>
-    <string name="pref_crashlytics_enabled">Automatycznie wysyłaj raporty o błędach</string>
     <string name="pref_misc">Różne</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Tydzień rozpoczyna się od</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Import &amp; eksport</string>
@@ -402,26 +401,5 @@ https://www.google.com/search?q=regex+named+capture+groups</string>
     <string name="show_track_url">Znajdź URL</string>
     <string name="move_up" comment="Screen reader text for drag and drop reordering">Przesuń w górę</string>
     <string name="move_down" comment="Screen reader text for drag and drop reordering">Przesuń w dół</string>
-    <string name="code_will_be_sent" formatted="true" comment="%1$s is either Ko-Fi or BuyMeACoffee, %2$s is the donation amount">Kod zostanie wysłany na maila powiązanego z twoim %1$s kontem, jeśli podarowałeś %2$s</string>
-    <string name="get_pro">Wesprzyj tę aplikację</string>
-    <string name="one_time_purchase">Jednorazowo</string>
     <string name="help">Pomoc</string>
-    <string name="pro_support">Jest to prosty i szybki sposób dla niesamowitych użytkowników takich jak Ty, aby pokazać że doceniasz wartość, jaką oferuje ta aplikacja.</string>
-    <string name="pro_also_get">Otrzymasz również następujące funkcje:</string>
-    <string name="thank_you">Dziękujemy!</string>
-    <string name="purchase_pending">Zakup nie został jeszcze potwierdzony przez dostawcę płatności. Sprawdź ponownie za kilka minut.</string>
-    <string name="billing_troubleshoot">Już kupiłeś?
-
-Twoje zakupy są zarządzane przez Google Play. Są one połączone z kontem Google Play, na którym dokonałeś zakupu. Po zainstalowaniu aplikacji na nowym urządzeniu z wieloma kontami Google Play, może powiązać ją z błędnym kontem. Najlepszym rozwiązaniem do wyraźnego wyboru konta posiadającego zakup jest zainstalowanie aplikacji z komputera za pośrednictwem strony internetowej Google Play:
-
-• Odinstaluj tę aplikację.
-• Otwórz stronę Google Play ze swojego komputera.
-• Zaloguj się przy użyciu konta posiadającego zakup.
-• Zainstaluj tę aplikację bezpośrednio ze strony Google Play.</string>
-    <string name="billing_block">Blokuj artystów/utwory i automatycznie pomiń lub wycisz</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Przypnij do %1$d znajomych i zmień kolejność</string>
-    <string name="billing_sharing">Usuń nazwę aplikacji podczas udostępniania</string>
-    <string name="billing_scrobble_source">Zapamiętaj i zobacz aplikacje, z których scrobblowałeś i przeszukaj w nich bezpośrednio</string>
-    <string name="billing_regex_extract">Napisz niestandardowe zasady ekstrakcji metadanych używając regex</string>
-    <string name="billing_max_devices_reached" formatted="true">Ten kod został już użyty na maksymalnie (%1$d) urządzeniach.</string>
 </resources>

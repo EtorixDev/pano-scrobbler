@@ -1,6 +1,6 @@
 #!/bin/bash
 
-USER=kawaiiDango
+USER=EtorixDev
 REPO=pano-scrobbler
 PACKAGE=com.arn.scrobble
 # Define the URL of the GitHub repository

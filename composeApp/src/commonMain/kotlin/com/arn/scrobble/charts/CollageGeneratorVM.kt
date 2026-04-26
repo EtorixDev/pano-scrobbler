@@ -37,7 +37,6 @@ import coil3.SingletonImageLoader
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Scale
-import com.arn.scrobble.BuildKonfig
 import com.arn.scrobble.api.Scrobblables
 import com.arn.scrobble.api.UserCached
 import com.arn.scrobble.api.lastfm.Album
@@ -66,14 +65,13 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
 import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.charts_num_text
-import pano_scrobbler.composeapp.generated.resources.share_sig
 import pano_scrobbler.composeapp.generated.resources.top_albums
 import pano_scrobbler.composeapp.generated.resources.top_artists
 import pano_scrobbler.composeapp.generated.resources.top_tracks
 import kotlin.math.abs
 import kotlin.math.max
 
-class CollageGeneratorVM(private val isLicenseValid: Boolean) : ViewModel() {
+class CollageGeneratorVM : ViewModel() {
 
     private val _sharableCollage = MutableSharedFlow<Pair<ImageBitmap, String>>()
     val sharableCollage = _sharableCollage.asSharedFlow()
@@ -193,7 +191,6 @@ class CollageGeneratorVM(private val isLicenseValid: Boolean) : ViewModel() {
             timePeriod,
             user.name.takeIf { username },
             textMeasurer,
-            iconPainters.app,
             iconPainters.user,
         )
         _progress.value = 1f
@@ -214,14 +211,12 @@ class CollageGeneratorVM(private val isLicenseValid: Boolean) : ViewModel() {
 
         shareTitle += "\n\n"
 
-        val shareSig = if (!isLicenseValid) "\n\n" + getString(Res.string.share_sig) else ""
-
         val shareBody = if (type == Stuff.TYPE_ALL)
             createDigestShareText(collagesAndTexts.map { it.second })
         else
             createSpecificCollageShareText(collagesAndTexts.first().second)
 
-        _sharableCollage.emit(image to (shareTitle + shareBody + shareSig))
+        _sharableCollage.emit(image to (shareTitle + shareBody))
     }
 
 //    private suspend fun fetchProfilePic(user: UserCached, sizePx: Int): ImageBitmap? {
@@ -521,7 +516,6 @@ class CollageGeneratorVM(private val isLicenseValid: Boolean) : ViewModel() {
         timePeriod: TimePeriod,
         username: String?,
         textMeasurer: TextMeasurer,
-        appIcon: Painter,
         userIcon: Painter,
     ): ImageBitmap {
 
@@ -552,22 +546,10 @@ class CollageGeneratorVM(private val isLicenseValid: Boolean) : ViewModel() {
 
         val totalWidth = mosaics.first().width
 
-        val brandText = "Pano\nScrobbler"
-
-        val brandTextPadding = 32
-
-
-        var brandTextWidth = if (isLicenseValid) 0 else measureText(
-            textMeasurer,
-            brandText,
-            TextStyle.Default.copy(fontSize = 21.sp),
-            2
-        ).size.width
-
         val footerTextSize =
             findFooterTextSize(
                 footerText,
-                totalWidth - brandTextWidth - brandTextPadding - 2 * paddingPx.toFloat(),
+                totalWidth - 2 * paddingPx.toFloat(),
                 textMeasurer
             )
 
@@ -578,22 +560,10 @@ class CollageGeneratorVM(private val isLicenseValid: Boolean) : ViewModel() {
             fontWeight = FontWeight.Medium
         )
 
-        val brandTlr = measureText(
-            textMeasurer,
-            brandText,
-            style = titleStyle.copy(fontSize = titleStyle.fontSize / 2.25),
-            maxLines = 2
-        )
-
-        brandTextWidth = if (isLicenseValid) 0 else brandTlr.size.width
-
         val extraHeights =
             headerTexts.map {
                 measureText(textMeasurer, it, titleStyle).size.height
-            } + max(
-                measureText(textMeasurer, footerText, titleStyle).size.height,
-                brandTlr.size.height
-            )
+            } + measureText(textMeasurer, footerText, titleStyle).size.height
 
         val totalHeight = mosaics.size * mosaics.first().height +
                 extraHeights.sum() + extraHeights.size * 2 * paddingPx
@@ -652,38 +622,8 @@ class CollageGeneratorVM(private val isLicenseValid: Boolean) : ViewModel() {
                 topLeft = Offset(paddingPx.toFloat(), offsetY),
                 style = titleStyle,
                 maxLines = 1,
-                size = Size(totalWidth.toFloat() - 2 * paddingPx - brandTextWidth, 100f)
+                size = Size(totalWidth.toFloat() - 2 * paddingPx, 100f)
             )
-
-            if (!isLicenseValid || BuildKonfig.DEBUG) {
-
-                val appIconScaledSize = brandTlr.size.height
-
-                with(appIcon) {
-                    translate(
-                        left = (totalWidth - brandTlr.size.width - appIconScaledSize - brandTextPadding / 2 - paddingPx).toFloat(),
-                        top = offsetY
-                    ) {
-                        draw(
-                            size = Size(
-                                appIconScaledSize.toFloat(),
-                                appIconScaledSize.toFloat()
-                            ),
-                            colorFilter = ColorFilter.tint(
-                                color = Color(0xFFFFB1C7) // pinkPrimary
-                            )
-                        )
-                    }
-                }
-
-                drawText(
-                    brandTlr,
-                    topLeft = Offset(
-                        totalWidth - brandTlr.size.width - paddingPx.toFloat(),
-                        offsetY
-                    ),
-                )
-            }
         }
 
         return bitmap

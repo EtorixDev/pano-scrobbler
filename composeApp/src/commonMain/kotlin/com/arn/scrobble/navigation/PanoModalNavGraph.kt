@@ -151,9 +151,6 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
             ignoredArtist = route.ignoredArtist,
             hash = route.hash,
             onDismiss = goBack,
-            onNavigateToBilling = {
-                navigate(PanoRoute.Billing)
-            },
             modifier = modalModifier()
         )
     }

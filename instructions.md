@@ -15,13 +15,6 @@ spotify.refreshToken=<base64 encoded client_id:client_secret>
 
 - Run `./gradlew androidApp:assembleReleaseGithub`
 
-- **Info**: the FOSS build includes no non-free dependencies.
-
-### For Android (Play Store):
-
-- Create a Firebase project for Crashlytics and add the google-services.json to composeApp/
-  See https://firebase.google.com/docs/android/setup
-
 - If you want to generate the optional custom baseline profile for the app, which can improve its
   startup time, create a file
   `/baselineprofile/src/main/java/com/arn/scrobble/baselineprofile/Secrets.kt`:
@@ -41,14 +34,11 @@ Then run `./gradlew :baselineprofile:generateBaselineProfile`
 
 Currently, the builds skip this step.
 
-- Run `./gradlew androidApp:assembleRelease`
-
-- **Info**: the Play Store variant includes Google Play billing, Crashlytics (has opt-out) and
-  Google Play Review API as its non-free dependencies
+- **Info**: the FOSS build includes no non-free dependencies.
 
 ### For desktop:
 
-- Compile the native lib https://github.com/kawaiiDango/pano-native-components
+- Compile the native lib https://github.com/EtorixDev/pano-native-components
 
 - If you intend to package a build for desktop,
   use [Bellsoft's GraalVM based on OpenJDK 25](https://bell-sw.com/pages/downloads/native-image-kit/)

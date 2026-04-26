@@ -6,17 +6,12 @@ import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.arn.scrobble.billing.LicenseState
-import com.arn.scrobble.billing.LocalLicenseValidState
+import androidx.compose.runtime.State
 import com.arn.scrobble.themes.colors.ThemeVariants
 import com.arn.scrobble.utils.PlatformStuff
 import com.arn.scrobble.utils.Stuff.collectAsStateWithInitialValue
-import com.arn.scrobble.utils.VariantStuff
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -29,7 +24,6 @@ fun AppTheme(
     content: @Composable () -> Unit,
 ) {
     val prefsVersion by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.version }
-    val licenseState by VariantStuff.billingRepository.licenseState.collectAsStateWithLifecycle()
     val themeName by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeName }
     val dynamic by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeDynamic }
     val random by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeRandom }
@@ -37,27 +31,15 @@ fun AppTheme(
     val contrastMode by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeContrast }
     val isSystemInDarkTheme by isSystemInDarkThemeNative()
 
-    if (licenseState == LicenseState.UNKNOWN || prefsVersion == 0)
+    if (prefsVersion == 0)
         return
 
     LaunchedEffect(Unit) {
         onInitDone()
     }
 
-    LaunchedEffect(licenseState) {
-        if (licenseState != LicenseState.VALID) {
-            PlatformStuff.mainPrefs.updateData { it.copy(themeDayNight = DayNightMode.DARK) }
-        }
-    }
-
-    val isDark by remember(dayNightMode, licenseState, isSystemInDarkTheme) {
-        mutableStateOf(
-            if (licenseState != LicenseState.VALID)
-                true
-            else
-                dayNightMode == DayNightMode.DARK || (dayNightMode == DayNightMode.SYSTEM && isSystemInDarkTheme)
-        )
-    }
+    val isDark = dayNightMode == DayNightMode.DARK ||
+            (dayNightMode == DayNightMode.SYSTEM && isSystemInDarkTheme)
 
     val themeAttributes = remember(isDark, contrastMode, themeName) {
         val otherColorSchemes = ThemeUtils.themesMap.values
@@ -79,10 +61,6 @@ fun AppTheme(
     }
 
     val colorScheme: ColorScheme = when {
-        licenseState != LicenseState.VALID -> {
-            ThemeUtils.defaultTheme.dark
-        }
-
         dynamic && PlatformStuff.supportsDynamicColors -> {
             getDynamicColorScheme(isDark)
         }
@@ -106,7 +84,6 @@ fun AppTheme(
     ) {
         CompositionLocalProvider(
             LocalThemeAttributes provides themeAttributes,
-            LocalLicenseValidState provides (licenseState == LicenseState.VALID),
         ) {
             AddAdditionalProviders {
                 content()

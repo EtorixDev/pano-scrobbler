@@ -19,7 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.arn.scrobble.billing.LocalLicenseValidState
 import com.arn.scrobble.db.BlockPlayerAction
 import com.arn.scrobble.db.BlockedMetadata
 import com.arn.scrobble.db.BlockedMetadataDao.Companion.insertLowerCase
@@ -61,7 +60,6 @@ private fun BlockedMetadataAddContent(
     blockedMetadata: BlockedMetadata?,
     ignoredArtist: String?,
     onSave: (BlockedMetadata) -> Unit,
-    onNavigateToBilling: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var artist by rememberSaveable(blockedMetadata) { mutableStateOf(blockedMetadata?.artist.orEmpty()) }
@@ -89,8 +87,6 @@ private fun BlockedMetadataAddContent(
     var errorText by rememberSaveable(blockedMetadata) { mutableStateOf<String?>(null) }
     val emptyText = stringResource(Res.string.required_fields_empty)
     val anythingText = "< " + stringResource(Res.string.any_value) + " >"
-
-    val isLicenseValid = LocalLicenseValidState.current
 
     LaunchedEffect(useChannel) {
         if (ignoredArtist != null) {
@@ -120,7 +116,7 @@ private fun BlockedMetadataAddContent(
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Next
             ),
-            enabled = isLicenseValid && hasTrack,
+            enabled = hasTrack,
             enabledOnTv = false,
             modifier = Modifier
                 .fillMaxWidth()
@@ -149,7 +145,7 @@ private fun BlockedMetadataAddContent(
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Next
             ),
-            enabled = isLicenseValid && hasArtist,
+            enabled = hasArtist,
             enabledOnTv = false,
             modifier = Modifier
                 .fillMaxWidth()
@@ -169,7 +165,7 @@ private fun BlockedMetadataAddContent(
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Next
             ),
-            enabled = isLicenseValid && hasAlbum,
+            enabled = hasAlbum,
             enabledOnTv = false,
             modifier = Modifier
                 .fillMaxWidth()
@@ -189,7 +185,7 @@ private fun BlockedMetadataAddContent(
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Done
             ),
-            enabled = isLicenseValid && hasAlbumArtist,
+            enabled = hasAlbumArtist,
             enabledOnTv = false,
             modifier = Modifier
                 .fillMaxWidth()
@@ -200,41 +196,37 @@ private fun BlockedMetadataAddContent(
                 text = stringResource(Res.string.use_channel),
                 checked = useChannel,
                 onCheckedChange = { useChannel = it },
-                enabled = isLicenseValid,
+                enabled = true,
             )
         }
 
         BlockPlayerActions(
             blockPlayerAction = blockPlayerAction,
             onChange = { blockPlayerAction = it },
-            enabled = isLicenseValid,
+            enabled = true,
         )
 
         ErrorText(errorText)
 
         OutlinedButton(
             onClick = {
-                if (!isLicenseValid) {
-                    onNavigateToBilling()
+                val newBlockedMetadata = BlockedMetadata(
+                    _id = blockedMetadata?._id ?: 0,
+                    artist = if (hasArtist) artist else "",
+                    albumArtist = if (hasAlbumArtist) albumArtist else "",
+                    album = if (hasAlbum) album else "",
+                    track = if (hasTrack) track else "",
+                    blockPlayerAction = blockPlayerAction,
+                )
+                if (listOf(artist, albumArtist, album, track).all { it.isEmpty() } ||
+                    hasArtist && artist.isEmpty() ||
+                    hasAlbumArtist && albumArtist.isEmpty() ||
+                    hasAlbum && album.isEmpty() ||
+                    hasTrack && track.isEmpty()
+                ) {
+                    errorText = emptyText
                 } else {
-                    val newBlockedMetadata = BlockedMetadata(
-                        _id = blockedMetadata?._id ?: 0,
-                        artist = if (hasArtist) artist else "",
-                        albumArtist = if (hasAlbumArtist) albumArtist else "",
-                        album = if (hasAlbum) album else "",
-                        track = if (hasTrack) track else "",
-                        blockPlayerAction = blockPlayerAction,
-                    )
-                    if (listOf(artist, albumArtist, album, track).all { it.isEmpty() } ||
-                        hasArtist && artist.isEmpty() ||
-                        hasAlbumArtist && albumArtist.isEmpty() ||
-                        hasAlbum && album.isEmpty() ||
-                        hasTrack && track.isEmpty()
-                    ) {
-                        errorText = emptyText
-                    } else {
-                        onSave(newBlockedMetadata)
-                    }
+                    onSave(newBlockedMetadata)
                 }
             },
             modifier = Modifier.align(Alignment.End)
@@ -282,7 +274,6 @@ fun BlockedMetadataAddDialog(
     ignoredArtist: String?,
     hash: Int?,
     onDismiss: () -> Unit,
-    onNavigateToBilling: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -308,7 +299,6 @@ fun BlockedMetadataAddDialog(
                 onDismiss()
             }
         },
-        onNavigateToBilling = onNavigateToBilling,
         modifier = modifier
     )
 }

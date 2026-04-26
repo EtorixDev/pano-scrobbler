@@ -48,7 +48,6 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.arn.scrobble.api.AccountType
 import com.arn.scrobble.api.UserCached
 import com.arn.scrobble.api.lastfm.Track
-import com.arn.scrobble.billing.LocalLicenseValidState
 import com.arn.scrobble.charts.DatePickerModal
 import com.arn.scrobble.charts.TimePeriodType
 import com.arn.scrobble.charts.TimePeriodsGenerator
@@ -138,10 +137,9 @@ fun ScrobblesScreen(
     val total by viewModel.total.collectAsStateWithLifecycle()
     val pkgMap by viewModel.pkgMap.collectAsStateWithLifecycle()
     val scrobblerState by scrobblerStateFlow.collectAsStateWithLifecycle()
-    val showScrobbleSources by if (LocalLicenseValidState.current)
-        PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.showScrobbleSources }
-    else
-        remember { mutableStateOf(false) }
+    val showScrobbleSources by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue {
+        it.showScrobbleSources
+    }
     val accountType by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.currentAccountType }
     val otherPlatformsLearnt by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.desktopAppLearnt }
     var pendingScrobblesExpanded by rememberSaveable { mutableStateOf(false) }
@@ -687,7 +685,7 @@ private fun ScrobblesTypeSelector(
     val firstDayOfWeek by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.firstDayOfWeek }
 
     Row(
-        modifier = modifier.padding(horizontal = 8.dp),
+        modifier = modifier.padding(horizontal = 8.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(
             ButtonGroupDefaults.ConnectedSpaceBetween,
             Alignment.CenterHorizontally

@@ -1,29 +1,32 @@
 ## Fork Details
-This is a fork of Pano Scrobbler.
+This is a fork of [Pano Scrobbler](https://github.com/kawaiiDango/pano-scrobbler) by [kawaiiDango](https://github.com/kawaiiDango/).
 
 Donate to the original developer here:
 - https://ko-fi.com/kawaiiDango
 - https://buymeacoffee.com/kawaiiDango
 
-Changes in this fork:
-- Premium features unlocked.
+Changes:
+- Premium features have been unlocked.
+- Billing routes & crash analytics have been removed.
 - Refresh recents on track change rather than on 30 second interval.
-  - For mobile, only refreshes when app opened.
-  - For desktop, refreshes regardless of focus.
-  - Will refresh up to 3 times after a track change at 3, 6, and 9 seconds post update until a refresh succeeds.
+  - Refreshes regardless of focus on desktop.
+  - Refreshes only while app opened for mobile.
+  - Will refresh up to 3 times after a track change at 3, 6, and 9 seconds post update until a refresh succeeds in receiving new data.
 - Edit the actively playing track.
   - Will scrobble immediately after an edit is saved.
   - If you need to edit it again, you must edit the scrobbled entry, as the active entry is now treated as no longer scrobble-pending.
 - More robust album art preservation when editing a track.
 - Mobile widget now supports more refresh intervals (1, 2, 4, 6, 12, 24) instead of always 4 hours.
-- Spotify support for covers is locked in releases from this repo.
+- Auto-focus settings search bar on desktop.
+- Adjust padding of various elements.
+
+Notes:
+- Spotify support for covers is blocked for releases from this repo.
   - Spotify Web API requires a premium subscription which I don't have.
   - You can build your own copy of the app if you want to use your own Spotify API key.
-  - Simply populate `spotify.refreshToken` in your `local.properties` file.
+  - See [instructions.md](./instructions.md) for building steps.
 
 ## <img src="composeApp/src/desktopMain/composeResources/drawable/ic_launcher_with_bg.svg" alt="app icon" width="32"/> Pano Scrobbler
-
-[\[repository\]](https://github.com/kawaiiDango/pano-scrobbler)
 
 <img src="desktop-screenshots/1-scrobbles-desktop.jpg" alt="scrobbles screen" width="250"/> <img src="desktop-screenshots/2-charts-desktop.jpg" alt="charts screen" width="250"/>
 
@@ -33,52 +36,16 @@ Changes in this fork:
 
 **Windows:**
 
-[![github-x64](img/github-x64.svg)](https://github.com/kawaiiDango/pano-scrobbler/releases/latest/download/pano-scrobbler-windows-x64.exe)
-[![winget](img/winget.svg)](https://winstall.app/apps/kawaiiDango.pano-scrobbler)
-
-```
-winget install -e --id kawaiiDango.pano-scrobbler
-```
+[![github-x64](img/github-x64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-windows-x64.exe)
 
 **Linux:**
 
-[![github-x64](img/github-x64.svg)](https://github.com/kawaiiDango/pano-scrobbler/releases/latest/download/pano-scrobbler-linux-x64.AppImage)
-[![github-arm64](img/github-arm64.svg)](https://github.com/kawaiiDango/pano-scrobbler/releases/latest/download/pano-scrobbler-liinux-arm64.AppImage)
-[![aur](img/aur.svg)](https://aur.archlinux.org/packages/pano-scrobbler-bin)
-
-```
-yay -S pano-scrobbler-bin
-```
-
-The desktop versions do not use any closed source libraries.
+[![github-x64](img/github-x64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-linux-x64.AppImage)
+[![github-arm64](img/github-arm64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-liinux-arm64.AppImage)
 
 **Android (phones, tablets, TVs and Chromebooks):**
 
-[![github](img/github.svg)](https://github.com/kawaiiDango/pano-scrobbler/releases)
-[![fdroid](img/fdroid.svg)](https://kawaiidango.github.io/pano-scrobbler/fdroid/repo?fingerprint=9954ECAB27F9FCE8290AC75A33F3DFE9FE5F6F5B8E6F33AD7F98307AC4D487BA)
-[![obtainium](img/obtainium.svg)](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/kawaiiDango/pano-scrobbler)
-[![IzzyOnDroid](img/izzyondroid.svg)](https://apt.izzysoft.de/fdroid/index/apk/com.arn.scrobble)
-[![play-store](img/play-store.svg)](https://play.google.com/store/apps/details?id=com.arn.scrobble)
-
-Since v4.0, the non-Play builds do not use Firebase Crashlytics, Google Play Services, or any closed
-source libraries.
-
-The non-Play variant can optionally display a persistent notification on Android 14+.
-This may or may not help prevent the system from killing the app in the background on devices from
-certain manufacturers.
-
-Installing the non-Play version from the F-Droid compatible repo, IzzyOnDroid or Obtainium will get
-you automatic updates.
-
-**APK SHA256 fingerprint for non-Play builds:**
-
-```
-9E:68:AB:6B:D6:11:CE:79:DD:5D:53:E3:5A:15:CF:93:CF:73:9A:4E:94:C4:9A:B1:BF:10:DD:12:65:F0:2E:6C
-```
-
-### Translate
-
-[![translate](img/crowdin.svg)](https://crowdin.com/project/pscrobbler)
+[![github](img/github.svg)](https://github.com/EtorixDev/pano-scrobbler/releases)
 
 ## [FAQ](faq.md) • [Privacy](privacy-policy.md) • [Compiling](instructions.md)
 

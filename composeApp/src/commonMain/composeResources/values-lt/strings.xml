@@ -300,7 +300,6 @@
     <string name="pref_now_playing">Pateikti dabar leidžiamą</string>
     <string name="pref_fetch_missing_album" formatted="true" comment="%1= the name of a service like last.fm, Deezer etc">Gauti trūkstamą albumą iš „%1$s“</string>
     <string name="pref_locale">Kalbos</string>
-    <string name="pref_crashlytics_enabled">Pranešti klaidas automatiškai</string>
     <string name="pref_misc">Kita</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Savaitė prasideda</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Importavimas ir eksportavimas</string>
@@ -419,26 +418,5 @@
     <string name="move_up" comment="Screen reader text for drag and drop reordering">Pakelti</string>
     <string name="move_down" comment="Screen reader text for drag and drop reordering">Nuleisti</string>
     <string name="at_least" formatted="true" comment="%1$s=some number">Bent %1$s</string>
-    <string name="code_will_be_sent" formatted="true" comment="%1$s is either Ko-Fi or BuyMeACoffee, %2$s is the donation amount">Kodas bus išsiųstas į el. pašto adresą, susietą su jūsų „%1$s“ paskyra, jei paaukojote %2$s.</string>
-    <string name="get_pro">Paremti šią programą</string>
-    <string name="one_time_purchase">Vienkartinis</string>
     <string name="help">Pagalba</string>
-    <string name="pro_support">Tai – paprastas ir spartus būdas nuostabiems naudotojams, kaip jūs, išreikšti paramą, pripažįstant šios programos teikiamą vertę.</string>
-    <string name="pro_also_get">Taip pat gausite nurodytas funkcijas:</string>
-    <string name="thank_you">Ačiū!</string>
-    <string name="purchase_pending">Jūsų mokėjimo teikėjas dar nepatvirtino pirkimo. Patikrinkite po kelių minučių.</string>
-    <string name="billing_troubleshoot">Jau nusipirkote?
-
-Jūsų pirkinius tvarko „Google Play“. Jie susieti su „Google Play“ paskyra, kurioje atliktas pirkimas. Įdiegus programą naujame įrenginyje su keliomis paskyromis, „Google Play“ gali susieti ją su netinkama paskyra. Geriausias sprendimas aiškiai pasirinkti paskyrą, kuriai priklauso pirkinys, yra įdiegti programą iš kompiuterio per „Google Play“ tinklalapį:
-
-• Išdiegkite šią programą.
-• Atverkite „Google Play“ tinklalapį iš kompiuterio.
-• Prisijunkite su paskyra, kuriai priklauso pirkinys.
-• Diegkite šią programą tiesiogiai iš „Google Play“ tinklalapio.</string>
-    <string name="billing_block">Blokuoti atlikėjus / takelius ir automatiškai praleisti arba nutildyti.</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Prisegti iki %1$d draugų ir pertvarkyti juos.</string>
-    <string name="billing_sharing">Šalinti programos pavadinimą bendrinant.</string>
-    <string name="billing_scrobble_source">Prisiminti ir matyti programas, kurias nuskrobolinote, ir tiesiogiai jose ieškoti.</string>
-    <string name="billing_regex_extract">Rašyti pasirinktines metaduomenų išskyrimo taisykles naudojant reguliarųjį reiškinį.</string>
-    <string name="billing_max_devices_reached" formatted="true">Šis kodas jau buvo panaudotas daugiausiuose (%1$d) įrenginiuose.</string>
 </resources>

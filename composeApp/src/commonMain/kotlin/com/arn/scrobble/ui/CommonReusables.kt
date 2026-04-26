@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -60,6 +61,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.ColorPainter
@@ -326,8 +329,18 @@ fun SearchField(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     label: String = stringResource(Res.string.search),
-    icon: ImageVector = Icons.Search
+    icon: ImageVector = Icons.Search,
+    autoFocus: Boolean = false,
+    contentPadding: PaddingValues = PaddingValues(8.dp),
 ) {
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(autoFocus) {
+        if (autoFocus) {
+            focusRequester.requestFocus()
+        }
+    }
+
     PanoOutlinedTextField(
         value = searchTerm,
         onValueChange = {
@@ -336,7 +349,11 @@ fun SearchField(
         label = { Text(label) },
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(contentPadding)
+            .then(
+                if (autoFocus) Modifier.focusRequester(focusRequester)
+                else Modifier
+            ),
         leadingIcon = { Icon(icon, contentDescription = null) },
         trailingIcon = if (!PlatformStuff.isTv) {
             {

@@ -16,8 +16,6 @@ import androidx.navigation3.runtime.entryProvider
 import com.arn.scrobble.api.AccountType
 import com.arn.scrobble.api.DrawerData
 import com.arn.scrobble.api.lastfm.LastfmPeriod
-import com.arn.scrobble.billing.BillingScreen
-import com.arn.scrobble.billing.BillingTroubleshootScreen
 import com.arn.scrobble.charts.ChartsPagerScreen
 import com.arn.scrobble.charts.RandomScreen
 import com.arn.scrobble.edits.ArtistsWithDelimitersScreen
@@ -233,7 +231,6 @@ object PanoNavGraph {
 
             onSetTitleRes(route, Res.string.pref_themes)
             ThemeChooserScreen(
-                onNavigateToBilling = { navigate(PanoRoute.Billing) },
                 modifier = modifier()
                     .verticalScroll(rememberScrollState())
                     .padding(panoContentPadding(mayHaveBottomFab = true))
@@ -244,24 +241,6 @@ object PanoNavGraph {
 
             onSetTitleRes(route, Res.string.delete_account)
             DeleteAccountScreen(
-                modifier = modifier().addColumnPadding()
-            )
-        }
-
-        entry<PanoRoute.BillingTroubleshoot> { route ->
-
-            onSetTitleRes(route, Res.string.help)
-            BillingTroubleshootScreen(
-                onBack = goBack,
-                modifier = modifier().addColumnPadding()
-            )
-        }
-
-        entry<PanoRoute.Billing> {
-            BillingScreen(
-                onBack = goBack,
-                onNavigateToTroubleshoot = { navigate(PanoRoute.BillingTroubleshoot) },
-                viewModel = mainViewModel,
                 modifier = modifier().addColumnPadding()
             )
         }

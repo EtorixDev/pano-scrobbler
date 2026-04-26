@@ -237,7 +237,6 @@
     <string name="server_url" comment="For self hosted scrobbling services">Server-URL</string>
     <string name="pref_now_playing">Nu aan het spelen doorgeven</string>
     <string name="pref_locale">Talen</string>
-    <string name="pref_crashlytics_enabled">Rapporteer fouten automatisch</string>
     <string name="pref_misc">Diversen</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Een week begint op</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Importeren &amp; Exporteren</string>
@@ -289,22 +288,5 @@
     <string name="from_gallery" comment="Pick an image for the artist or album from the device gallery">Uit galerij</string>
     <string name="scrobble_to_file">Bestand</string>
     <string name="password">Wachtwoord</string>
-    <string name="get_pro">Steun deze app</string>
     <string name="help">Help</string>
-    <string name="pro_support">Dit is een eenvoudige en snelle manier voor geweldige gebruikers zoals u om hun steun te betonen en de waarde van deze app te erkennen.</string>
-    <string name="pro_also_get">Je krijgt ook de volgende functies:</string>
-    <string name="thank_you">Bedankt!</string>
-    <string name="purchase_pending">Uw aankoop is nog niet bevestigd door uw betalingsprovider. Kom na een paar minuten nog eens terug.</string>
-    <string name="billing_troubleshoot">Al aangeschaft?
-
-Je aankopen worden beheerd door Google Play. Ze zijn gekoppeld met het Google Play-account dat de aankoop heeft gemaakt. Wanneer u de app op een nieuw apparaat met meerdere accounts installeert, kan Google Play deze aan het verkeerde account koppelen. De beste oplossing om expliciet een account te selecteren dat een aankoop bezit, is om de app te installeren vanaf een computer via Google Play webpagina:
-
-• Deïnstalleer deze app,
-• Open de Google Play webpagina vanaf uw computer,
-• Log in met het account die de aankoop bezit,
-• Installeer de app rechtstreeks vanuit de Google Play webpagina.</string>
-    <string name="billing_block">Blokkeer artiesten/nummers en sla ze over of negeer ze automatisch</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Pin tot %1$d vrienden en sorteer ze opnieuw</string>
-    <string name="billing_sharing">App-naam bij delen weg laten</string>
-    <string name="billing_scrobble_source">Onthou en laat apps zien waar scrobble van afkomstig is en zoek er rechtstreeks in</string>
 </resources>

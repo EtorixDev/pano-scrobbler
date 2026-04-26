@@ -10,11 +10,6 @@ plugins {
 
 val requestedTasks = gradle.startParameter.taskNames.map { it.lowercase() }
 
-if (requestedTasks.none { it.contains("releasegithub") }) {
-    apply(plugin = libs.plugins.google.services.get().pluginId)
-    apply(plugin = libs.plugins.crashlytics.get().pluginId)
-}
-
 val aboutLibrariesVariant = when {
     requestedTasks.any { it.contains("releasegithub") } -> "releaseGithub"
     requestedTasks.any { it.contains("release") } -> "release"

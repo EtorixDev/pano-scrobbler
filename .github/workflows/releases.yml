@@ -71,7 +71,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           RUN_ID=$(gh run list \
-            -R "kawaiiDango/pano-native-components" \
+            -R "EtorixDev/pano-native-components" \
             --workflow "build.yml" \
             --status success \
             -L 1 \
@@ -84,7 +84,7 @@ jobs:
           fi
 
           # Download artifacts from that run (filter by name if provided)
-          gh run download "$RUN_ID" -R "kawaiiDango/pano-native-components" -n "libs-${{ matrix.resources-dir }}" -D composeApp/resources/${{ matrix.resources-dir }}
+          gh run download "$RUN_ID" -R "EtorixDev/pano-native-components" -n "libs-${{ matrix.resources-dir }}" -D composeApp/resources/${{ matrix.resources-dir }}
 
       - name: Build desktop jar and native image
         shell: bash
@@ -160,5 +160,5 @@ jobs:
 
           wingetcreate update kawaiiDango.pano-scrobbler \
             --version ${{ steps.release_metadata.outputs.verName }} \
-            --urls "https://github.com/kawaiiDango/pano-scrobbler/releases/download/${{ steps.release_metadata.outputs.verCode }}/pano-scrobbler-windows-x64.exe" \
+            --urls "https://github.com/EtorixDev/pano-scrobbler/releases/download/${{ steps.release_metadata.outputs.verCode }}/pano-scrobbler-windows-x64.exe" \
             --submit

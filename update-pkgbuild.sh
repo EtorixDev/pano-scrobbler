@@ -22,7 +22,7 @@ fi
 
 # Update PKGBUILD (_pkgver, pkgver, sha256sums)
 if [ -f "$pkgbuildDir/PKGBUILD" ]; then
-    OWNER="kawaiiDango"
+  OWNER="EtorixDev"
     REPO="pano-scrobbler"
 
     ASSET_X64="pano-scrobbler-linux-x64.tar.gz"

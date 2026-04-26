@@ -7,6 +7,6 @@ assignees: ''
 
 ---
 
-- My question is not listed in the FAQ at [faq.md](https://github.com/kawaiiDango/pano-scrobbler/blob/main/faq.md)
+- My question is not listed in the FAQ at [faq.md](https://github.com/EtorixDev/pano-scrobbler/blob/main/faq.md)
 
 

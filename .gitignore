@@ -41,3 +41,4 @@ _site/
 .vscode/
 build-android.sh
 build-linux.sh
+.venv/

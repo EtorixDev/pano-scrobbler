@@ -1,11 +1,8 @@
 package com.arn.scrobble.automation
 
-import com.arn.scrobble.billing.LicenseState
 import com.arn.scrobble.media.PlayingTrackNotifyEvent
 import com.arn.scrobble.media.notifyPlayingTrackEvent
 import com.arn.scrobble.utils.PlatformStuff
-import com.arn.scrobble.utils.VariantStuff
-import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
@@ -31,14 +28,6 @@ object Automation {
         arg: String?,
         callingPackage: String?
     ): Boolean {
-        if (runBlocking {
-                VariantStuff.billingRepository.licenseState
-                    .filterNot { it == LicenseState.UNKNOWN }
-                    .first() != LicenseState.VALID
-            }) {
-            return false
-        }
-
         val mainPrefs = PlatformStuff.mainPrefs
 
         if (!PlatformStuff.isDesktop && callingPackage !in runBlocking {

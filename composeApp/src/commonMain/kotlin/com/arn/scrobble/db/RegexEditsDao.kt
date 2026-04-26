@@ -7,10 +7,8 @@ import androidx.room3.OnConflictStrategy
 import androidx.room3.Query
 import co.touchlab.kermit.Logger
 import com.arn.scrobble.api.lastfm.ScrobbleData
-import com.arn.scrobble.billing.LicenseState
 import com.arn.scrobble.utils.PlatformStuff
 import com.arn.scrobble.utils.Stuff
-import com.arn.scrobble.utils.VariantStuff
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
@@ -27,12 +25,7 @@ interface RegexEditsDao {
     LIMIT :limit
     """
     )
-    fun enabledFlow(
-        limit: Int = if (VariantStuff.billingRepository.licenseState.value == LicenseState.VALID)
-            Stuff.MAX_PATTERNS_HIGH
-        else
-            Stuff.MAX_PATTERNS
-    ): Flow<List<RegexEdit>>
+    fun enabledFlow(limit: Int = Stuff.MAX_PATTERNS_HIGH): Flow<List<RegexEdit>>
 
     @Query("SELECT count(1) FROM $tableName")
     fun count(): Flow<Int>
@@ -87,8 +80,6 @@ interface RegexEditsDao {
             scrobbleData: ScrobbleData,
             regexEdits: List<RegexEdit>,
         ): RegexResults {
-            val isLicenseValid =
-                VariantStuff.billingRepository.licenseState.value == LicenseState.VALID
             var scrobbleData = scrobbleData
             val cumulativeMatches = mutableSetOf<RegexEdit>()
 
@@ -129,16 +120,15 @@ interface RegexEditsDao {
                 if (allFieldDataMatched) {
                     when (regexEdit.mode()) {
                         RegexMode.Block -> {
-                            if (isLicenseValid)
-                                return RegexResults(
-                                    matches = setOf(regexEdit),
-                                    scrobbleData = null,
-                                    blockPlayerAction = regexEdit.blockPlayerAction,
-                                )
+                            return RegexResults(
+                                matches = setOf(regexEdit),
+                                scrobbleData = null,
+                                blockPlayerAction = regexEdit.blockPlayerAction,
+                            )
                         }
 
                         RegexMode.Extract -> {
-                            if (isLicenseValid && PlatformStuff.isJava8OrGreater) {
+                            if (PlatformStuff.isJava8OrGreater) {
                                 val newScrobbleData = extract(
                                     scrobbleData,
                                     scrobbleDataToMatches

@@ -271,7 +271,6 @@
     <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">Vous pouvez trouver votre jeton d&apos;authentification ici : %1$s</string>
     <string name="pref_now_playing">Soumettre la lecture en cours</string>
     <string name="pref_locale">Langues</string>
-    <string name="pref_crashlytics_enabled">Signaler les erreurs automatiquement</string>
     <string name="pref_misc">Divers</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">La semaine commence le</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Importer &amp; Exporter</string>
@@ -385,25 +384,5 @@
     <string name="edit_extract_track_example" formatted="true" comment="%1$s is the regex pattern">Par exemple, pour extraire les métadonnées du champ piste, si la piste contient « Artiste - Piste », définissez l'expression régulière de la piste sur %1$s</string>
     <string name="search_in_media_player" comment="This launches and searches in the media player app directly instead of opening a browser">Rechercher directement dans le lecteur multimédia</string>
     <string name="forget_unchecked_apps" comment="Shown in the 'Scrobble From' apps list on desktop">Oublier les applications non cochées</string>
-    <string name="get_pro">Soutenir cette application</string>
-    <string name="one_time_purchase">Achat unique</string>
     <string name="help">Aide</string>
-    <string name="pro_support">C&apos;est une façon simple et rapide pour les utilisateurs incroyables comme vous de montrer leur soutien en reconnaissant la valeur de cette application.</string>
-    <string name="pro_also_get">Vous obtiendrez également les fonctionnalités suivantes :</string>
-    <string name="thank_you">Merci !</string>
-    <string name="purchase_pending">Votre achat n'a pas encore été confirmé par votre fournisseur de paiement. Veuillez vérifier après quelques minutes.</string>
-    <string name="billing_troubleshoot">Déjà acheté?
-
-Vos achats sont gérés par Google Play. Ils sont liés au compte Google Play qui a fait l'achat. Lorsque vous installez l'application sur un nouvel appareil avec plusieurs comptes, Google Play peut l'associer à un mauvais appareil. La meilleure solution pour sélectionner explicitement le compte possédant un achat est d'installer l'application depuis un ordinateur via la page web Google Play :
-
-• Désinstaller cette application.
-• Ouvrez la page Web de Google Play depuis votre ordinateur.
-• Connectez-vous avec un compte propriétaire de l'achat.
-• Installez cette application directement depuis la page web de Google Play.</string>
-    <string name="billing_block">Bloquer cet artiste/ce titre et automatiquement passer la chanson ou couper le son</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Épingler jusqu'à %1$d amis et classer les</string>
-    <string name="billing_sharing">Supprimer le nom de l&apos;application lors du partage</string>
-    <string name="billing_scrobble_source">Enregistrer et montrer les applications depuis lesquelles vous avez scrobblé et recherchez directement depuis celles-ci</string>
-    <string name="billing_regex_extract">Écrire des règles d&apos;extraction de métadonnées personnalisées à l&apos;aide d&apos;expression régulières</string>
-    <string name="billing_max_devices_reached" formatted="true">Ce code a déjà été utilisé sur un maximum de (%1$d) appareils.</string>
 </resources>

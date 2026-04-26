@@ -72,12 +72,6 @@ sealed interface PanoRoute : NavKey {
     data object Translators : PanoRoute
 
     @Serializable
-    data object BillingTroubleshoot : PanoRoute
-
-    @Serializable
-    data object Billing : PanoRoute, DeepLinkable
-
-    @Serializable
     data object Import : PanoRoute
 
     @Serializable

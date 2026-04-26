@@ -190,12 +190,11 @@ object Stuff {
         "com.mrsep.musicrecognizer.enqueued_result",
     )
 
-    const val HOMEPAGE_URL = "https://kawaiidango.github.io"
-    const val REPO_URL = "https://github.com/kawaiiDango/pano-scrobbler"
+    const val HOMEPAGE_URL = "https://github.com/EtorixDev/pano-scrobbler"
+    const val REPO_URL = "https://github.com/EtorixDev/pano-scrobbler"
     const val CROWDIN_URL = "https://crowdin.com/project/pscrobbler"
-    const val DISCORD_CLIENT_ID = "1299386213114970172"
+    const val DISCORD_CLIENT_ID = "1497897746781311037"
     const val EMBEDDED_SERVER_KS = "Jjs5awQQB0YjN10vKCsWPC8AXW0"
-    const val BUG_REPORT_TO = "CA4aTwgbKk8dBB0vEhADEQwBAE8IHkBNHA4"
 
     val DEFAULT_IGNORE_ARTIST_META_WITHOUT_FALLBACK = setOf(
         "com.google.android.youtube",

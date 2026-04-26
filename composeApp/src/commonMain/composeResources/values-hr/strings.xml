@@ -288,7 +288,6 @@
     <string name="pref_now_playing">Dijeli što sada svira</string>
     <string name="pref_fetch_missing_album" formatted="true" comment="%1= the name of a service like last.fm, Deezer etc">Dohvati album koji nedostaje sa servisa %1$s</string>
     <string name="pref_locale">Jezici</string>
-    <string name="pref_crashlytics_enabled">Automatski prijavi greške</string>
     <string name="pref_misc">Razno</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Tjedan počinje u</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Uvoz i izvoz</string>
@@ -397,25 +396,5 @@
     <string name="album_art_now_playing_desc">Zahtijeva prijavu na last.fm</string>
     <string name="spotify_consent">Dohvatiti slike izvođača sa Spotifya?</string>
     <string name="discord_app_name" comment="usually the media player app name, shown in discord rich presence">Naziv aplikacije</string>
-    <string name="get_pro">Podrži ovu aplikaciju</string>
-    <string name="one_time_purchase">Jednom</string>
     <string name="help">Pomoć</string>
-    <string name="pro_support">Ovo je jednostavan i brzi način za nevjerojatne korisnike kao što ste Vi da daju podršku ovoj aplikaciji.</string>
-    <string name="pro_also_get">Dobit ćete i slijedeće značajke:</string>
-    <string name="thank_you">Hvala Vam!</string>
-    <string name="purchase_pending">Vašu kupovinu još nije potvrdio Vaš davatelj usluga plaćanja. Provjerite ponovno za nekoliko minuta.</string>
-    <string name="billing_troubleshoot">Već ste kupili?
-
-Vašim kupovinama upravlja Google Play. One su povezane s Google Play računom koji je obavio kupovinu. Kada instalirate aplikaciju na novom uređaju s više računa, Google Play može ju povezati s krivim računom. Najbolji način da izričito odaberete račun koji posjeduje tu kupovinu je da instalirate aplikaciju s računala pomoću Google Play web-stranice:
-
-• Deinstalirajte ovu aplikaciju.
-• Otvorite Google Play web-stranicu na Vašem računalu.
-• Prijaviti se s računom koji posjeduje kupovinu ove aplikacije.
-• Instalirajte aplikaciju s Google Play web-stranice.</string>
-    <string name="billing_block">Blokiranje izvođača/pjesama i automatsko preskakanje ili utišavanje</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Prikvačivanje do %1$d prijatelja i mijenjanje njihovog poretka</string>
-    <string name="billing_sharing">Uklanjanje naziva aplikacija kod dijeljenja</string>
-    <string name="billing_scrobble_source">Zapamtite i pregledajte aplikacije iz kojih ste scrobblali i direktno pretražujte u njima</string>
-    <string name="billing_regex_extract">Pisanje vlastitih pravila za izvlačenje metapodataka pomoću regexa</string>
-    <string name="billing_max_devices_reached" formatted="true">Ovaj kôd već je korišten na maksimalnom broju uređaja (%1$d).</string>
 </resources>

@@ -290,7 +290,6 @@
     <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">Ви можете знайти ваш токен автентифікації на: %1$s</string>
     <string name="pref_now_playing">Показати, що зараз грає</string>
     <string name="pref_locale">Мови</string>
-    <string name="pref_crashlytics_enabled">Автоматично повідомляти про помилки</string>
     <string name="pref_misc">Інше.</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Тиждень починається з</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Імпорт &amp; Експорт</string>
@@ -382,25 +381,5 @@
     <string name="also_available_on" formatted="true" comment="%1$s is the platform name, like Android, PC">Отримайте цей застосунок на %1$s</string>
     <string name="first_artist">Використовувати лише першого виконавця</string>
     <string name="external_metadata">Зовнішні джерела метаданих</string>
-    <string name="get_pro">Підтримати проєкт</string>
-    <string name="one_time_purchase">Одноразова</string>
     <string name="help">Допомога</string>
-    <string name="pro_support">Це простий і швидкий спосіб для таких дивовижних користувачів, як ви, показати підтримку, та важливість, яке надає ця програма.</string>
-    <string name="pro_also_get">Ви також отримаєте наступні функції:</string>
-    <string name="thank_you">Дякую!</string>
-    <string name="purchase_pending">Ваша покупка ще не підтверджена Вашим провайдером платежу. Перегляньте її через кілька хвилин.</string>
-    <string name="billing_troubleshoot">Вже придбано?
-
-Ваші покупки здійснюються в Google Play. Вони пов'язані з обліковим записом Google Play, який здійснив покупку. При встановленні додатку на новому пристрої з декількома обліковими записами, Google Play може пов’язати їх із неправильним. Найкращим рішенням для явного вибору облікового запису є встановлення програми з комп'ютера через веб-сторінку Google Play:
-
-• Видалення цього додатку.
-• Відкрити веб-сторінку Google Play з вашого комп'ютера.
-• Увійти через обліковий запис, на якому відбулась покупка.
-• Встановити цю програму безпосередньо з веб-сторінки Google Play.</string>
-    <string name="billing_block">Блокувати виконавців/пісні і автоматично пропустити або вимкнути звук</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Закріпити до %1$d друзів і змінити їх порядок</string>
-    <string name="billing_sharing">Видаляти ім'я застосунку при поширенні</string>
-    <string name="billing_scrobble_source">Запам'ятати та переглянути програми, з яких ви скробблили, і шукати прямо в них</string>
-    <string name="billing_regex_extract">Записати правила вилучення користувацьких метаданих використовуючи regex</string>
-    <string name="billing_max_devices_reached" formatted="true">Цей код вже використовується на максимальній кількості пристроїв (%1$d).</string>
 </resources>

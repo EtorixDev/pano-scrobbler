@@ -262,7 +262,6 @@
     <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">شما میتونید توکن دسترسی‌تون تواینجا پیداکنید: %1$s</string>
     <string name="pref_now_playing">ثبت آهنگ درحال پخش</string>
     <string name="pref_locale">زبان</string>
-    <string name="pref_crashlytics_enabled">خطاها رو خودکار گزارش کن</string>
     <string name="pref_misc">متفرقه</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">شروع هفته از روز</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">واردکردن &amp; صادرکردن</string>
@@ -355,25 +354,5 @@
     <string name="also_available_on" formatted="true" comment="%1$s is the platform name, like Android, PC">این برنامه رو از %1$s دریافت کن</string>
     <string name="first_artist">فقط ار هنرمند اول استفاده کن</string>
     <string name="external_metadata">منابع خارجی فراداده</string>
-    <string name="get_pro">به این برنامه کمک کنید</string>
-    <string name="one_time_purchase">پرداخت یک باره</string>
     <string name="help">کمک</string>
-    <string name="pro_support">این یک راه ساده و سریع برای کاربران فوق‌العاده‌ای مثل شماست تا حمایت خود را از ارزش این برنامه نشان دهند.</string>
-    <string name="pro_also_get">همچنین از ویژگی‌های زیر بهره‌مند می‌شید:</string>
-    <string name="thank_you">خ</string>
-    <string name="purchase_pending">خرید شما هنوز توسط خدمات دهنده پرداخت شما تأیید نشده است. لطفاً پس از چند دقیقه دوباره مراجعه کنید.</string>
-    <string name="billing_troubleshoot">قبلاً خریدید؟
-
-خریدهای شما توسط گوگل پلی مدیریت می‌شوند. آن‌ها به یک حساب گوگل پلی که خرید را انجام داده است، مرتبط هستند. وقتی برنامه را روی دستگاه جدیدی با چندین حساب نصب می‌کنید، گوگل پلی می‌تواند آن را به یک حساب اشتباه مرتبط کند. بهترین راه حل برای انتخاب صریح حساب صاحب خرید، نصب برنامه از طریق رایانه از طریق صفحه وب گوگل پلی است:
-
-• این برنامه رو حذف نصب کنید.
-• صفحه وب گوگل پلی را از رایانه خود باز کنید.
-• با حسابی که خریدید وارد شوید.
-• این برنامه رو مستقیماً از صفحه وب گوگل پلی نصب کنید.</string>
-    <string name="billing_block">مسدود کردن هنرمندان/آهنگ‌ها و رد یا بی‌صدا کردن خودکار</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">تا %1$d دوست را پین کنید و آنها را دوباره مرتب کنید</string>
-    <string name="billing_sharing">حذف نام برنامه هنگام اشتراک‌گذاری</string>
-    <string name="billing_scrobble_source">برنامه‌هایی را که از آنها اسکرابل کرده‌اید به خاطر بسپارید و ببینید و مستقیماً در آنها جستجو کنید</string>
-    <string name="billing_regex_extract">نوشتن قوانین سفارشی استخراج فراداده با استفاده از ریجکس</string>
-    <string name="billing_max_devices_reached" formatted="true">این کد قبلاً روی حداکثر (%1$d) دستگاه استفاده شده است.</string>
 </resources>

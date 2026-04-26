@@ -240,7 +240,6 @@
     <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">Löydät todennustunnuksen osoitteesta: %1$s</string>
     <string name="pref_now_playing">Lähetä nyt soiva</string>
     <string name="pref_locale">Kielet</string>
-    <string name="pref_crashlytics_enabled">Ilmoita virheistä automaattisesti</string>
     <string name="pref_misc">Sekalaista</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Viikko alkaa</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Tuonti &amp; vienti</string>
@@ -298,22 +297,5 @@
     <string name="password">Salasana</string>
     <string name="open_existing" comment="Append to an existing file">Lisää olemassaolevaan</string>
     <string name="create" comment="Create a new file">Luo</string>
-    <string name="get_pro">Tue tätä sovellusta</string>
     <string name="help">Tuki</string>
-    <string name="pro_support">Tämä on sinun kaltaisillesi mahtaville käyttäjille helppo ja nopea tapa näyttää tukesi ja tunnistaa tämän sovelluksen tuoma arvo.</string>
-    <string name="pro_also_get">Saat myös seuraavat ominaisuudet:</string>
-    <string name="thank_you">Kiitos!</string>
-    <string name="purchase_pending">Maksuntarjoaja ei ole vielä vahvistanut ostostasi. Tarkista uudestaan muutaman minuutin kuluttua.</string>
-    <string name="billing_troubleshoot">Joko ostit?
-
-Ostojasi hallinnoi Google Play. Ne on yhdistetty Google Play -tiliin, joka teki ostoksen. Kun asennat sovelluksen uudelle laitteelle, jolla on monta tiliä, Google Play voi liittää laitteen väärään tiliin. Paras tapa valita juuri oston omistava tili on asentaa sovellus tietokoneella Google Playn nettisivun kautta:
-
-• Poista tämän sovelluksen asennus.
-• Avaa Google Playn nettisivu koneellasi.
-• Kirjaudu sisään oston omistavalla tilillä.
-• Asenna tämä sovellus suoraan Google Playn nettisivulta.</string>
-    <string name="billing_block">Estä esittäjiä/kappaleita ja ohita tai mykistä automaattisesti</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Kiinnitä enintään %1$d ystävää ja järjestele heidät uudelleen</string>
-    <string name="billing_sharing">Poista sovelluksen nimi jaettaessa</string>
-    <string name="billing_scrobble_source">Muista ja näytä sovellukset, joista scrobblasit ja hae suoraan niistä</string>
 </resources>

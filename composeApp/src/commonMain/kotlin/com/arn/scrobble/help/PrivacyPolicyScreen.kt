@@ -16,7 +16,7 @@ fun PrivacyPolicyScreen(
     modifier: Modifier = Modifier,
     viewModel: MdViewerVM = viewModel {
         MdViewerVM(
-            "https://kawaiidango.github.io/pano-scrobbler/privacy-policy.md",
+            "https://raw.githubusercontent.com/EtorixDev/pano-scrobbler/main/privacy-policy.md",
         )
     }
 ) {

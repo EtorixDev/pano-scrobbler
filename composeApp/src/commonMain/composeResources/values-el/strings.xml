@@ -235,7 +235,6 @@
     <string name="api_url" comment="For Listenbrainz">Διεύθυνση URL API</string>
     <string name="pref_now_playing">Υποβολή του τραγουδιού που παίζει τώρα</string>
     <string name="pref_locale">Γλώσσες</string>
-    <string name="pref_crashlytics_enabled">Αυτόματη αναφορά σφαλμάτων</string>
     <string name="pref_misc">Διάφορα.</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Αρχή της εβδομάδας</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Εισαγωγή &amp; εξαγωγή</string>
@@ -304,22 +303,5 @@
     <string name="low" comment="As in high/medium/low">Χαμηλό</string>
     <string name="line_n" formatted="true" comment="%1$s is the line number, currently used in the context of Discord Rich Presence">Γραμμή %1$s</string>
     <string name="as_text" comment="Like copy as text, but in short">Σαν κείμενο</string>
-    <string name="get_pro">Υποστήριξη αυτής της εφαρμογής</string>
-    <string name="one_time_purchase">Μια φορά</string>
     <string name="help">Βοήθεια</string>
-    <string name="pro_support">Αυτός είναι ένας απλός και γρήγορος τρόπος για καταπληκτικούς χρήστες, όπως εσείς για να κάνετε μια επίδειξη υποστήριξης αναγνωρίζοντας την αξία που παρέχει αυτή η εφαρμογή.</string>
-    <string name="pro_also_get">Θα λάβετε επίσης τα ακόλουθα προνόμια:</string>
-    <string name="thank_you">Σας ευχαριστούμε!</string>
-    <string name="purchase_pending">Η αγορά σας δεν έχει επιβεβαιωθεί ακόμα από τον πάροχο πληρωμών σας. Παρακαλώ ελέγξτε ξανά μετά από μερικά λεπτά.</string>
-    <string name="billing_troubleshoot">Ήδη αγοράστηκε?
-
-Οι αγορές σας διαχειρίζονται από το Google Play. Έχουν συνδεθεί με έναν λογαριασμό Google Play που έκανε μια αγορά. Όταν εγκαθιστάτε την εφαρμογή σε μια νέα συσκευή με πολλαπλούς λογαριασμούς, το Google Play μπορεί να συσχετίσει με έναν λάθος λογαριασμό. Η καλύτερη λύση για να επιλέξετε ρητά τον λογαριασμό που κατέχει μια αγορά είναι να εγκαταστήσετε την εφαρμογή από έναν υπολογιστή μέσω της ιστοσελίδας Google Play:
-
-• Κάντε απεγκατάσταση αυτής της εφαρμογής.
-• Ανοίξτε την ιστοσελίδα του Google Play από τον υπολογιστή σας.
-• Συνδεθείτε με τον λογαριασμό που κατέχει την αγορά.
-• Εγκαταστήστε αυτή την εφαρμογή απευθείας από την ιστοσελίδα του Google Play.</string>
-    <string name="billing_block">Αποκλεισμός καλλιτεχνών/κομματιών και αυτόματη παράλειψη ή σίγαση</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Καρφίτσωσε έως %1$d φίλους και αναδιάταξε τους</string>
-    <string name="billing_sharing">Αφαίρεση ονόματος εφαρμογής κατά την κοινή χρήση</string>
 </resources>

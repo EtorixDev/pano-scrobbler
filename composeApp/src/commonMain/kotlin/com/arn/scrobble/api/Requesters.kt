@@ -303,7 +303,7 @@ object Requesters {
 
 
     fun reportRateLimitErrors(e: ApiException) {
-        // report rate limit errors to crashlytics
+        // surface rate limit failures in logs so they can be included in manual bug reports
         if (e.code in arrayOf(29, 9, 429)) {
             Logger.w(e) { e.description }
         }

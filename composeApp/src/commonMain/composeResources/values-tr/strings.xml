@@ -276,7 +276,6 @@
     <string name="pref_now_playing">Şimdi oynatılanı gönder</string>
     <string name="pref_fetch_missing_album" formatted="true" comment="%1= the name of a service like last.fm, Deezer etc">Eksik albümü %1$s üzerinden getir</string>
     <string name="pref_locale">Diller</string>
-    <string name="pref_crashlytics_enabled">Hataları otomatik olarak bildir</string>
     <string name="pref_misc">Çeşitli</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Haftanın ilk günü</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">İçe Aktar &amp; Dışa Aktar</string>
@@ -395,26 +394,5 @@
     <string name="move_up" comment="Screen reader text for drag and drop reordering">Yukarı taşı</string>
     <string name="move_down" comment="Screen reader text for drag and drop reordering">Aşağı taşı</string>
     <string name="at_least" formatted="true" comment="%1$s=some number">En az %1$s</string>
-    <string name="code_will_be_sent" formatted="true" comment="%1$s is either Ko-Fi or BuyMeACoffee, %2$s is the donation amount">Bağış yaptıysanız (%2$s), kod %1$s hesabınızla ilişkili e-posta adresine gönderilecektir.</string>
-    <string name="get_pro">Uygulamayı destekle</string>
-    <string name="one_time_purchase">Bir kez</string>
     <string name="help">Yardım</string>
-    <string name="pro_support">Bu, sizin gibi harika kullanıcılarımızın, bu uygulamanın sağladığı hizmetlerin hatırına desteklerini göstermeleri için hızlı ve basit bir yoldur.</string>
-    <string name="pro_also_get">Ayrıca aşağıdaki özelliklere sahip olacaksın:</string>
-    <string name="thank_you">Teşekkürler!</string>
-    <string name="purchase_pending">Satın alma işleminiz henüz ödeme sağlayıcınız tarafından onaylanmadı. Lütfen birkaç dakika sonra tekrar kontrol edin.</string>
-    <string name="billing_troubleshoot">Çoktan satın aldınız mı?
-
-Satın alma işlemleriniz Google Play tarafından yönetilir ve satın almayı gerçekleştiren Google Play hesabıyla bağlantılıdır. Uygulamayı birden fazla hesaba sahip yeni bir cihaza yüklediğinizde, Google Play bunu yanlış hesapla ilişkilendirebilir. Satın alma gerçekleştirilen hesabı açıkça seçmenin en iyi yolu, uygulamayı Google Play web sayfası aracılığıyla bir bilgisayardan yüklemektir:
-
-• Uygulamayı kaldırın.
-• Bilgisayarınızdan Google Play web sayfasını açın.
-• Satın alma işlemi gerçekleştirilen hesapla oturum açın.
-• Uygulamayı direkt Google Play web sayfasından kurun.</string>
-    <string name="billing_block">Sanatçıları/parçaları engelleyip otomatik olarak atla/sustur</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Arkadaşlarınızı sabitleyip yeniden sıralayın (en fazla %1$d)</string>
-    <string name="billing_sharing">Paylaşımlarda uygulama ismini kaldır</string>
-    <string name="billing_scrobble_source">Skropladığın uygulamları hatırla, göster ve doğrudan onlarda arama yap</string>
-    <string name="billing_regex_extract">Düzenli ifade kullanarak özel meta veri çıkarma kuralları yazma</string>
-    <string name="billing_max_devices_reached" formatted="true">Bu kod halihazırda maksimum (%1$d) cihazda kullanıldı.</string>
 </resources>

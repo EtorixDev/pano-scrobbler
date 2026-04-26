@@ -6,7 +6,6 @@ import com.arn.scrobble.BuildKonfig
 import com.arn.scrobble.api.Requesters
 import com.arn.scrobble.api.Requesters.getResult
 import com.arn.scrobble.utils.PlatformStuff
-import com.arn.scrobble.utils.VariantStuff
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -35,10 +34,7 @@ class MdViewerVM(
         else -> MdTag.android
     }
 
-    private val nonPlayTag = if (VariantStuff.billingRepository.needsActivationCode)
-        MdTag.nonplay
-    else
-        null
+    private val nonPlayTag: MdTag? = null
 
     val mdBlocks = flow {
         val embeddedVersion = embeddedPath

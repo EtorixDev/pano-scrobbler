@@ -260,7 +260,6 @@
     <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">Anda dapat menemukan token autentikasi Anda di: %1$s</string>
     <string name="pref_now_playing">Kirim sekarang sedang diputar</string>
     <string name="pref_locale">Bahasa</string>
-    <string name="pref_crashlytics_enabled">Laporkan kesalahan secara otomatis</string>
     <string name="pref_misc">Lainnya.</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Seminggu dimulai</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Impor &amp; ekspor</string>
@@ -347,23 +346,5 @@
     <string name="pref_tray_icon_theme">Tema ikon tray</string>
     <string name="min_track_duration">Scrobble lagu yang lebih panjang dari</string>
     <string name="automation">Kontrol Pano Scrobbler dari aplikasi otomatisasi</string>
-    <string name="get_pro">Dukung aplikasi ini</string>
     <string name="help">Bantuan</string>
-    <string name="pro_support">Ini adalah cara sederhana dan cepat bagi pengguna luar biasa seperti Anda untuk menunjukkan dukungan atas nilai yang diberikan aplikasi ini.</string>
-    <string name="pro_also_get">Anda juga akan mendapatkan fitur-fitur berikut:</string>
-    <string name="thank_you">Terima kasih!</string>
-    <string name="purchase_pending">Pembelian Anda belum dikonfirmasi oleh penyedia pembayaran Anda. Silakan periksa kembali setelah beberapa menit.</string>
-    <string name="billing_troubleshoot">Telah dibeli?
-
-Pembelian Anda dikelola oleh Google play. Mereka ditautkan dengan akun Google Play yang melakukan pembelian. Saat Anda memasang aplikasi di perangkat baru dengan banyak akun, Google Play dapat mengaitkannya dengan akun yang salah. solusi terbaik untuk secara eksplisit memilih akun yang memiliki pembelian adalah dengan menginstal aplikasi dari komputer melalui halaman web Google Play:
-
-• Copot pemasangan aplikasi ini.
-• Buka halaman web Google Play dari komputer Anda.
-• Login dengan akun pemilik pembelian.
-• Instal aplikasi ini langsung dari halaman web Google Play.</string>
-    <string name="billing_block">Blokir artis/trek dan lewati atau bisukan otomatis</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Sematkan hingga %1$d teman dan susun ulang mereka</string>
-    <string name="billing_sharing">Hapus nama aplikasi saat berbagi</string>
-    <string name="billing_scrobble_source">Ingat dan lihat aplikasi yang Anda gunakan untuk scrobble dan cari langsung di dalamnya</string>
-    <string name="billing_regex_extract">Tulis aturan ekstraksi metadata khusus menggunakan regex</string>
 </resources>

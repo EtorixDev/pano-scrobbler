@@ -67,10 +67,8 @@ fun SwitchPref(
     modifier: Modifier = Modifier,
     summary: String? = null,
     enabled: Boolean = true,
-    onNavigateToBilling: (() -> Unit)? = null,
 ) {
     val scope = rememberCoroutineScope()
-    val locked = onNavigateToBilling != null
 
     Row(
         modifier = modifier
@@ -78,10 +76,7 @@ fun SwitchPref(
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
             .then(
-                if (locked)
-                    Modifier.clickable {
-                        onNavigateToBilling()
-                    } else if (enabled)
+                if (enabled)
                     Modifier.toggleable(
                         value = value,
                         onValueChange = { newValue ->
@@ -93,16 +88,9 @@ fun SwitchPref(
                     Modifier
             )
             .padding(vertical = 16.dp, horizontal = horizontalOverscanPadding())
-            .alpha(if (enabled && !locked) 1f else 0.5f),
+            .alpha(if (enabled) 1f else 0.5f),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (locked)
-            Icon(
-                imageVector = Icons.Lock,
-                contentDescription = null,
-                modifier = Modifier.padding(end = 8.dp)
-            )
-
         Column(
             modifier = Modifier.weight(1f)
         ) {

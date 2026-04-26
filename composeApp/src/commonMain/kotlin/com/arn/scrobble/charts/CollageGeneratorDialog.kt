@@ -33,7 +33,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.LocalPlatformContext
 import com.arn.scrobble.api.UserCached
-import com.arn.scrobble.billing.LocalLicenseValidState
 import com.arn.scrobble.icons.Album
 import com.arn.scrobble.icons.ContentCopy
 import com.arn.scrobble.icons.Download
@@ -90,8 +89,7 @@ fun CollageGeneratorDialog(
     user: UserCached,
     onAskForReview: suspend () -> Unit,
     modifier: Modifier = Modifier,
-    isLicenseValid: Boolean = LocalLicenseValidState.current,
-    viewModel: CollageGeneratorVM = viewModel { CollageGeneratorVM(isLicenseValid) },
+    viewModel: CollageGeneratorVM = viewModel { CollageGeneratorVM() },
 ) {
     var collageType by rememberSaveable(collageType) { mutableIntStateOf(collageType) }
     val collageSize by PlatformStuff.mainPrefs.data

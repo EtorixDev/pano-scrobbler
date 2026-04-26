@@ -13,13 +13,13 @@ cat <<EOL > $output_file
 AuthorName: 'kawaiiDango'
 Categories:
   - Multimedia
-IssueTracker: 'https://github.com/kawaiiDango/pano-scrobbler/issues'
+IssueTracker: 'https://github.com/EtorixDev/pano-scrobbler/issues'
 Name: Pano Scrobbler
-SourceCode: https://github.com/kawaiiDango/pano-scrobbler
+SourceCode: https://github.com/EtorixDev/pano-scrobbler
 Summary: 'Feature packed cross-platform music tracker for Last.fm, ListenBrainz, Libre.fm, Pleroma and other compatible services'
 Description: |
 $features
-WebSite: https://kawaiiDango.github.io/pano-scrobbler
+WebSite: https://github.com/EtorixDev/pano-scrobbler
 Translation: https://crowdin.com/project/pscrobbler
 Donate: https://ko-fi.com/kawaiiDango
 AuthorEmail: kawaiiDango@pm.me

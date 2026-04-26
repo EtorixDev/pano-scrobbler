@@ -60,13 +60,13 @@ minima:
   social_links:
     - title: GitHub Repository
       icon: github
-      url: "https://github.com/kawaiiDango/pano-scrobbler"
+      url: "https://github.com/EtorixDev/pano-scrobbler"
   hide_site_feed_link: true
   nav_pages:
     - faq.md
 
 author:
-  name: kawaiiDango
+  name: EtorixDev
 
 optional_front_matter:
   remove_originals: true

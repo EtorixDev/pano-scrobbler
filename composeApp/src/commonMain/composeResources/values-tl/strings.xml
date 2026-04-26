@@ -152,7 +152,6 @@
     <string name="sure_tap_again">Sigurado? Pindutin ulit</string>
     <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">Pwede mong hanapin ang iyong authentication token sa: %1$s</string>
     <string name="pref_locale">Mga wika</string>
-    <string name="pref_crashlytics_enabled">Awtomatikong i-report Ang mga error</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Ang linggo ay nagsisimula sa</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Import at export</string>
     <string name="pref_export_desc">Iba-backup ang mga setting, mga edit at mga blocklist. Hindi nito sinasave ang mga login para sa seguridad. Nakakatulong ito pag nagpapalit ng device o i-share sa mga kaibigan.</string>
@@ -182,5 +181,4 @@
     <string name="min_track_duration">I-scrobble ang mga kanta na mas mahaba sa</string>
     <string name="login_in_browser">Kompletuhin ang login sa browser window</string>
     <string name="edit_no_save">Ito ay hindi ma-sasave sa mga susunod na mga scrobble</string>
-    <string name="get_pro">Suportahan ang app</string>
 </resources>

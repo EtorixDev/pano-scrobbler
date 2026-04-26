@@ -23,8 +23,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arn.scrobble.BuildKonfig
 import com.arn.scrobble.api.AccountType
 import com.arn.scrobble.api.Requesters
-import com.arn.scrobble.billing.LocalLicenseValidState
-import com.arn.scrobble.crashreporter.CrashReporterConfig
 import com.arn.scrobble.db.PanoDb
 import com.arn.scrobble.icons.Api
 import com.arn.scrobble.icons.BugReport
@@ -95,7 +93,6 @@ import pano_scrobbler.composeapp.generated.resources.pref_about
 import pano_scrobbler.composeapp.generated.resources.pref_auto_detect
 import pano_scrobbler.composeapp.generated.resources.pref_blocked_metadata
 import pano_scrobbler.composeapp.generated.resources.pref_check_updates
-import pano_scrobbler.composeapp.generated.resources.pref_crashlytics_enabled
 import pano_scrobbler.composeapp.generated.resources.pref_delay
 import pano_scrobbler.composeapp.generated.resources.pref_delay_mins
 import pano_scrobbler.composeapp.generated.resources.pref_delay_per
@@ -146,8 +143,6 @@ fun PrefsScreen(
     mainViewModel: MainViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val onNavigateToBilling = { onNavigate(PanoRoute.Billing) }
-
     val mainPrefs = remember { PlatformStuff.mainPrefs }
     val scrobblerState by mainViewModel.scrobblerStateFlow.collectAsStateWithLifecycle()
 
@@ -214,9 +209,6 @@ fun PrefsScreen(
     } else {
         PanoDb.db.getBlockedMetadataDao().count().collectAsStateWithLifecycle(0)
     }
-    var crashReporterEnabled by remember { mutableStateOf(CrashReporterConfig.isEnabled) }
-    val isLicenseValid = LocalLicenseValidState.current
-
     val maybeActivity = getActivityOrNull()
 
     var searchTerm by rememberSaveable { mutableStateOf("") }
@@ -335,7 +327,12 @@ fun PrefsScreen(
                 SearchField(
                     searchTerm,
                     onSearchTermChange = { searchTerm = it },
-                    modifier = Modifier.padding(horizontal = horizontalOverscanPadding())
+                    modifier = Modifier.padding(
+                        horizontal = horizontalOverscanPadding(),
+                        vertical = 8.dp,
+                    ),
+                    autoFocus = PlatformStuff.isDesktop,
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                 )
             }
         }
@@ -481,7 +478,6 @@ fun PrefsScreen(
         filteredItem(MainPrefs::themeName.name, Res.string.pref_themes) { title ->
             TextPref(
                 text = title,
-                locked = !isLicenseValid,
                 onClick = {
                     onNavigate(PanoRoute.ThemeChooser)
                 }
@@ -521,7 +517,6 @@ fun PrefsScreen(
                 text = title,
                 summary = stringResource(Res.string.pref_show_scrobble_sources_desc),
                 value = showScrobbleSources,
-                onNavigateToBilling = onNavigateToBilling.takeIf { !isLicenseValid },
                 copyToSave = { copy(showScrobbleSources = it) }
             )
         }
@@ -535,7 +530,6 @@ fun PrefsScreen(
                     text = title,
                     summary = stringResource(Res.string.pref_search_in_source_desc),
                     value = searchInSource,
-                    onNavigateToBilling = onNavigateToBilling.takeIf { !isLicenseValid },
                     enabled = showScrobbleSources,
                     copyToSave = { copy(searchInSource = it) }
                 )
@@ -566,7 +560,6 @@ fun PrefsScreen(
                     text = title,
                     summary = stringResource(Res.string.pref_search_in_source_desc),
                     value = linkHeartButtonToRating,
-                    onNavigateToBilling = onNavigateToBilling.takeIf { !isLicenseValid },
                     copyToSave = { copy(linkHeartButtonToRating = it) }
                 )
             }
@@ -634,8 +627,7 @@ fun PrefsScreen(
                 text = title + ": " + numBlockedMetadata.format(),
                 onClick = {
                     onNavigate(PanoRoute.BlockedMetadatas)
-                },
-                locked = !isLicenseValid,
+                }
             )
         }
 
@@ -873,24 +865,6 @@ fun PrefsScreen(
                     text = title,
                     onClick = {
                         onNavigate(PanoRoute.AutomationInfo)
-                    },
-                    locked = !isLicenseValid,
-                )
-            }
-        }
-
-        if (CrashReporterConfig.isAvailable) {
-            filteredItem(
-                "crash_reporter",
-                Res.string.pref_crashlytics_enabled
-            ) { title ->
-                SwitchPref(
-                    text = title,
-                    value = crashReporterEnabled,
-                    copyToSave = {
-                        crashReporterEnabled = it
-                        CrashReporterConfig.isEnabled = it
-                        this
                     }
                 )
             }

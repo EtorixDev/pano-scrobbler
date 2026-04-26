@@ -2,23 +2,25 @@
 
 #### Last updated
 
-2026, March 15 UTC
+2026, April 26 UTC
 
 ### Introduction
 
-kawaiiDango built the Pano Scrobbler app as a Free and Open Source app licensed under GPLv3 or
-later. This app is provided by kawaiiDango at no cost and is intended for use as is, without any
-warranty or fitness for a particular purpose. One may freely obtain its complete source code at:
-[github.com/kawaiiDango/pano-scrobbler](https://github.com/kawaiiDango/pano-scrobbler)
+This fork of Pano Scrobbler is maintained by EtorixDev and is based on the original app by
+kawaiiDango. It is a Free and Open Source app licensed under GPLv3 or later, provided at no cost
+and intended for use as is, without any warranty or fitness for a particular purpose. One may
+freely obtain its complete source code at:
+[EtorixDev/pano-scrobbler](https://github.com/EtorixDev/pano-scrobbler)
 
-If you choose to use my app, then you agree to the collection and use of information in relation to
-this policy. I will not use or share your information with anyone except as described in this
+If you choose to use this fork, then you agree to the collection and use of information in relation
+to this policy. I will not use or share your information with anyone except as described in this
 Privacy Policy.
 
 ### Personal Information Collected
 
-User identifiable information such as a username or API token is used for logging in to music
-tracking services of your choice such as Last.fm, Libre.fm, ListenBrainz and self-hosted instances.
+User-identifiable information such as usernames, session keys, and API tokens is stored locally on
+your device and used to log in to music tracking services you choose, such as Last.fm, Libre.fm,
+ListenBrainz, and self-hosted instances.
 
 ### Non-Personal Information Collected
 
@@ -28,18 +30,13 @@ tracking services of your choice such as Last.fm, Libre.fm, ListenBrainz and sel
 - To fetch images of artists and albums, the name of the artist and album is sent to Spotify. This
   is functionality disabled by default for fresh installations.
 - To fetch the missing metadata while scrobbling Deezer on Windows, the app uses the Deezer API.
-- If you are using the Google Play version and automatic error reporting is enabled, an anonymous,
-  resettable device identifier is sent to Firebase Crashlytics, along with stack traces of the
-  error.
-- If you are using the non-Google Play version and have entered the unlock key, a truncated hash of
-  a device identifier as well as the unlock key is sent to my backend server to check its validity
-  and to limit the number of devices it can be used on. Since hashing is a one-way function, the
-  real identifier cannot be recovered from the hash.
+- If desktop update checks are enabled for this fork, the app requests release metadata from GitHub
+  for the `EtorixDev/pano-scrobbler` repository.
 
 ### Third Party Services
 
-The app uses third party services for its core functionality and analytics that may already have
-information used to identify you.
+The app uses third party services for optional features and core scrobbling functionality. Those
+services may already have information used to identify you according to their own policies.
 
 Link to privacy policies of third party service providers used by the app
 
@@ -47,17 +44,15 @@ Link to privacy policies of third party service providers used by the app
 - [Libre.fm](https://libre.fm/privacy)
 - [ListenBrainz](https://metabrainz.org/privacy)
 - [Spotify](https://www.spotify.com/legal/privacy-policy)
-- [Firebase Crashlytics](https://firebase.google.com/support/privacy) (for the Google Play version
-  only)
+- [GitHub](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement)
 
 ### Log Data
 
-If automatic error reporting is enabled (for the Google Play version only) and an error occurs in
-my app or if you choose to send logs for a bug report via email, non-personal information such as
-logs for events that led to the error, stack traces for the error, device information such as model
-name, manufacturer name, OS name and version, amount of RAM used etc. are collected and sent to me
-through third party services namely Firebase Crashlytics or your email provider. This information is
-used to identify and fix bugs.
+The app does not send logs or crash reports automatically.
+
+If you choose to export logs or send a bug report manually, the information you include is shared
+only through the destination you choose, such as your email provider or a GitHub issue. That
+information is used only to diagnose and fix bugs you report.
 
 ### Cookies
 
@@ -94,11 +89,10 @@ party [Last.fm's children's privacy policy](https://privacy.paramount.com/en/chi
 
 ### Changes to This Privacy Policy
 
-I may update this Privacy Policy from time to time. Thus, you are advised to review this page
-periodically for any changes. These changes are effective immediately after they are posted on this
-page.
+This Privacy Policy may be updated from time to time. Changes are effective immediately after they
+are posted on this page.
 
 ### Contact Us
 
-If you have any questions or suggestions about my Privacy Policy, do not hesitate to contact me at
-kawaiiDango (at) pm.me.
+If you have any questions or suggestions about this Privacy Policy, please open an issue at
+[EtorixDev/pano-scrobbler](https://github.com/EtorixDev/pano-scrobbler/issues).

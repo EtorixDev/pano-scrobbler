@@ -6,11 +6,7 @@ import androidx.room3.Insert
 import androidx.room3.OnConflictStrategy
 import androidx.room3.Query
 import com.arn.scrobble.api.lastfm.ScrobbleData
-import com.arn.scrobble.billing.LicenseState
-import com.arn.scrobble.utils.VariantStuff
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterNot
-import kotlinx.coroutines.flow.first
 
 @Dao
 interface BlockedMetadataDao {
@@ -90,13 +86,6 @@ interface BlockedMetadataDao {
         suspend fun BlockedMetadataDao.getBlockedEntry(
             scrobbleData: ScrobbleData,
         ): BlockedMetadata? {
-            if (VariantStuff.billingRepository.licenseState
-                    .filterNot { it == LicenseState.UNKNOWN }
-                    .first() != LicenseState.VALID
-            ) {
-                return null
-            }
-
             val entries = getBlockedEntries(
                 scrobbleData.artist.lowercase(),
                 scrobbleData.album?.lowercase() ?: "",

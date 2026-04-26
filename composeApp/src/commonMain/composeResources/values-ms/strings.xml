@@ -258,7 +258,6 @@
     <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">Anda boleh mendapatkan token pengesahan di: %1$s</string>
     <string name="pref_now_playing">Hantar main sekarang</string>
     <string name="pref_locale">Bahasa</string>
-    <string name="pref_crashlytics_enabled">Automatik lapor masalah</string>
     <string name="pref_misc">Misc.</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Minggu bermula dari</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Import &amp; eksport</string>
@@ -352,25 +351,5 @@
     <string name="also_available_on" formatted="true" comment="%1$s is the platform name, like Android, PC">Dapatkan app ini dari  %1$s</string>
     <string name="first_artist">Guna artis utama sahaja</string>
     <string name="external_metadata">Sumber metadata luaran</string>
-    <string name="get_pro">Sokong aplikasi ini</string>
-    <string name="one_time_purchase">Sekali sahaja</string>
     <string name="help">Bantuan</string>
-    <string name="pro_support">Cara ini adalah untuk pengguna hebat seperti anda untuk terus menyokong jangkahayat aplikasi ini.</string>
-    <string name="pro_also_get">Anda juga bakal menikmati ciri-ciri istimewa seperti:</string>
-    <string name="thank_you">Terima kasih!</string>
-    <string name="purchase_pending">Pembelian anda masih lagi belum disahkan. Sila tunggu sebentar.</string>
-    <string name="billing_troubleshoot">Sudah membuat pembayaran?
-
-Pembelian anda diuruskan oleh Google Play. Pembelian ini akan dipautkan dengan akaun anda. Bila anda memuat turun aplikasi ini diperanti yang lain, Google Play akan menyalahtafsirkan sebagai akaun palsu. Untuk mengelakkan masalah ini, sila muat turun aplikasi ini dari pelayar web Google Play:
-
-- Padam aplikasi ini.
-- Buka pelayar web Google Play dari komputer.
-- Log masuk akaun pembeli.
-- Muat turun dari pelayar web.</string>
-    <string name="billing_block">Blok artis/lagu dan auto langkau ataupun tutup audio</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Tandakan %1$d kawan dan susun balik</string>
-    <string name="billing_sharing">Buang nama aplikasi bila berkongsi</string>
-    <string name="billing_scrobble_source">Ingat aplikasi yang di-scrobble dan terus membuat carian di situ</string>
-    <string name="billing_regex_extract">Tulis aturan ekstrak metada menggunakan kod</string>
-    <string name="billing_max_devices_reached" formatted="true">Kod ini telahpun digunakan (%1$d) peranti semaksima.</string>
 </resources>

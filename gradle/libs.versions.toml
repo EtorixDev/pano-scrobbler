@@ -13,18 +13,14 @@ activity = "1.13.0"
 adaptive = "1.3.0-alpha06"
 test-junit = "1.3.0"
 benchmark = "1.5.0-alpha05"
-billing = "8.3.0"
 buildkonfig = "0.18.0"
 coil = "3.4.0"
 core = "1.18.0"
 core-remoteviews = "1.1.0"
 coroutines = "1.10.2"
-crashlytics = "3.0.7"
 cryptohash = "1.0.2"
 datastore = "1.3.0-alpha07"
 espresso-core = "3.7.0"
-firebase-bom = "34.12.0"
-google-services = "4.4.4"
 jmdns = "3.6.3"
 kermit = "2.1.0"
 koalaplot = "0.11.0"
@@ -37,10 +33,8 @@ nanohttpd = "2.3.1"
 nav3 = "1.1.0-rc01"
 okhttp = "5.3.2"
 paging = "3.5.0-beta01"
-play-publisher = "4.0.0"
 profileinstaller = "1.4.1"
 qrcode = "4.5.0"
-review = "2.0.2"
 room3 = "3.0.0-alpha03"
 runner = "1.7.0"
 serialization-json = "1.11.0"
@@ -83,14 +77,11 @@ room-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room3
 room-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room3" }
 sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 test-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "uiautomator" }
-billing = { module = "com.android.billingclient:billing", version.ref = "billing" }
 work-runtime = { module = "androidx.work:work-runtime", version.ref = "work" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-gif = { module = "io.coil-kt.coil3:coil-gif", version.ref = "coil" }
 coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
 core = { module = "androidx.core:core", version.ref = "core" }
-firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization-json" }
 lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 lifecycle-viewmodel-nav3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycle" }
@@ -100,7 +91,6 @@ okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 qrcode = { module = "io.github.g0dkar:qrcode-kotlin", version.ref = "qrcode" }
-review = { module = "com.google.android.play:review", version.ref = "review" }
 benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmark" }
 datastore-core = { module = "androidx.datastore:datastore-core", version.ref = "datastore" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
@@ -114,13 +104,10 @@ startup = { group = "androidx.startup", name = "startup-runtime", version.ref = 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-application" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlytics" }
 test = { id = "com.android.test", version.ref = "android-application" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 aboutlibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutlibraries" }
 baselineprofile = { id = "androidx.baselineprofile", version.ref = "benchmark" }
-play-publisher = { id = "com.github.triplet.play", version.ref = "play-publisher" }
 android-library = { id = "com.android.library", version.ref = "android-application" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

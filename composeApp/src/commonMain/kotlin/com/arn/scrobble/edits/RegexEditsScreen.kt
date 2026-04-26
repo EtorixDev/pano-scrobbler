@@ -38,7 +38,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.arn.scrobble.billing.LocalLicenseValidState
 import com.arn.scrobble.db.RegexEdit
 import com.arn.scrobble.icons.Block
 import com.arn.scrobble.icons.Delete
@@ -170,8 +169,7 @@ private fun RegexEditsList(
     onImport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isLicenseValid = LocalLicenseValidState.current
-    val maxPatterns = if (isLicenseValid) Stuff.MAX_PATTERNS_HIGH else Stuff.MAX_PATTERNS
+    val maxPatterns = Stuff.MAX_PATTERNS_HIGH
     val scope = rememberCoroutineScope()
     val nonRegexItemsCount = remember {
         RegexPresets.filteredPresets.size + listOfNotNull(
@@ -280,19 +278,10 @@ private fun RegexEditsList(
                 else
                     stringResource(Res.string.upto_n, maxPatterns)
 
-                if (isLicenseValid)
-                    Text(
-                        maxPatternsText,
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                else
-                    TextButton(
-                        onClick = {
-                            onNavigate(PanoRoute.Billing)
-                        },
-                    ) {
-                        Text(maxPatternsText)
-                    }
+                Text(
+                    maxPatternsText,
+                    style = MaterialTheme.typography.titleMedium,
+                )
             }
         }
 

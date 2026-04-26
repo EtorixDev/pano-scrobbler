@@ -3,12 +3,9 @@ package com.arn.scrobble.navigation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.PlainTooltip
@@ -27,17 +24,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.arn.scrobble.api.DrawerData
 import com.arn.scrobble.api.UserCached
-import com.arn.scrobble.billing.LocalLicenseValidState
 import com.arn.scrobble.icons.Icons
 import com.arn.scrobble.icons.Search
 import com.arn.scrobble.icons.Settings
-import com.arn.scrobble.icons.WorkspacePremium
 import com.arn.scrobble.icons.automirrored.Help
 import com.arn.scrobble.ui.ButtonWithIcon
 import com.arn.scrobble.utils.PlatformStuff
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
-import pano_scrobbler.composeapp.generated.resources.get_pro
 import pano_scrobbler.composeapp.generated.resources.help
 import pano_scrobbler.composeapp.generated.resources.search
 import pano_scrobbler.composeapp.generated.resources.settings
@@ -57,8 +51,6 @@ fun NavPopupDialog(
 ) {
     val drawerData by viewModel.drawerData.collectAsStateWithLifecycle()
 
-    val isLicenseValid = LocalLicenseValidState.current
-
     LaunchedEffect(drawerData) {
         if (drawerData != initialDrawerData)
             onSetDrawerData(drawerData)
@@ -75,28 +67,6 @@ fun NavPopupDialog(
             onNavigate = onNavigate,
             drawSnowfall = drawSnowfall,
         )
-
-        if (!isLicenseValid) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth(1f)
-            ) {
-                FilledTonalButton(
-                    onClick = {
-                        onNavigate(PanoRoute.Billing)
-                    },
-                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
-                ) {
-                    Icon(
-                        Icons.WorkspacePremium,
-                        contentDescription = null,
-                        modifier = Modifier.size(ButtonDefaults.IconSize)
-                    )
-                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                    Text(stringResource(Res.string.get_pro), maxLines = 1)
-                }
-            }
-        }
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),

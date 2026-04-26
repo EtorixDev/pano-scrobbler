@@ -33,7 +33,6 @@ dependencyResolutionManagement {
 }
 
 include(":composeApp")
-include(":extras-play")
 include(":extras-common")
 include(":extras-nonplay")
 //include(":baselineprofile")

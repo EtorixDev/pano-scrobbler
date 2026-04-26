@@ -25,7 +25,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.arn.scrobble.api.UserCached
 import com.arn.scrobble.api.lastfm.Track
-import com.arn.scrobble.billing.LocalLicenseValidState
 import com.arn.scrobble.icons.Cake
 import com.arn.scrobble.icons.Icons
 import com.arn.scrobble.navigation.PanoRoute
@@ -58,10 +57,9 @@ fun TrackHistoryScreen(
     val deletedTracksCount by viewModel.deletedTracksCount.collectAsStateWithLifecycle()
     val pkgMap by viewModel.pkgMap.collectAsStateWithLifecycle()
     var expandedKey by rememberSaveable { mutableStateOf<String?>(null) }
-    val showScrobbleSources by if (LocalLicenseValidState.current)
-        PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.showScrobbleSources }
-    else
-        remember { mutableStateOf(false) }
+    val showScrobbleSources by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue {
+        it.showScrobbleSources
+    }
     val myScrobblesStr = stringResource(Res.string.my_scrobbles)
     val density = LocalDensity.current
     val listViewportHeight = remember {

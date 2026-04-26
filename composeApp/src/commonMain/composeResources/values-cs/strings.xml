@@ -291,7 +291,6 @@
     <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">Váš ověřovací token můžete najít na: %1$s</string>
     <string name="pref_now_playing">Odeslat právě přehrávané</string>
     <string name="pref_locale">Jazyky</string>
-    <string name="pref_crashlytics_enabled">Automaticky hlásit chyby</string>
     <string name="pref_misc">Ostatní</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Začátek týdne</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Import a export</string>
@@ -394,25 +393,5 @@
     <string name="when_using" formatted="true" comment="%1$s is the web service or media player name">Při použití %1$s</string>
     <string name="when_not_using" formatted="true" comment="%1$s is the web service or media player name">Pokud nepoužívám %1$s</string>
     <string name="as_text" comment="Like copy as text, but in short">Jako text</string>
-    <string name="get_pro">Podpořit aplikaci</string>
-    <string name="one_time_purchase">Jednorázově</string>
     <string name="help">Pomoc</string>
-    <string name="pro_support">Tohle je jednoduchý a rychly způsob jak úžasní uživatelé, jako vy, mohou ukázat svou podporu, uznávajíc hodnotu, kterou tato aplikace má.</string>
-    <string name="pro_also_get">Také získáte následující funkce:</string>
-    <string name="thank_you">Díky!</string>
-    <string name="purchase_pending">Váš nákup zatím nebyl potvrzen vašim poskytovatelem platebních služeb. Zkontrolujte nákup za pár minut.</string>
-    <string name="billing_troubleshoot">Již jste někdy aplikaci podpořili?
-
-Vaše nákupy spravuje Google Play, jsou vázané na účet Google Play, který nákup provedl. Když aplikaci nainstalujete na nové zařízení s více účty, Google Play může zařízení spojit se špatným účtem. Nejlepší řešení je přímo vybrat účet, který provedl nákup, aby aplikaci nainstaloval na zařízení skrz webovou verzi Google Play na počítači:
-
-• Odinstalujte tuto aplikaci
-• Otevřte webovou stránku Google Play na svém počítači
-• Přihlaste se účtem, který provedl nákup
-• Nainstalujte aplikaci na zařízení přímo z webu.</string>
-    <string name="billing_block">Blokování umělců/skladeb a automatické přeskakování nebo ztlumení</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Připněte až %1$d přátel a seřaďte si je</string>
-    <string name="billing_sharing">Odstranit název aplikace při sdílení</string>
-    <string name="billing_scrobble_source">Zapamatování a zobrazení aplikací, ze kterých je scrobblováno, a mít možnost v nich hledat</string>
-    <string name="billing_regex_extract">Pomocí regexu můžete vytvářet vlastní pravidla pro extrakci metadat</string>
-    <string name="billing_max_devices_reached" formatted="true">Tento kód dosáhl maximálního počtu použití (%1$d).</string>
 </resources>

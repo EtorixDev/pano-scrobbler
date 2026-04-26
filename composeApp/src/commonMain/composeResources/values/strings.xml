@@ -52,7 +52,7 @@
     <string name="no">No</string>
     <string name="reset">Reset</string>
     <string name="settings">Configure</string>
-    <string name="bug_report">Bug report</string>
+    <string name="bug_report">Bug Report</string>
     <string name="faq">FAQ</string>
     <string name="album_art">Album art</string>
     <string name="artist_image">Artist image</string>
@@ -283,7 +283,6 @@
     <string name="pref_now_playing">Submit now playing</string>
     <string name="pref_fetch_missing_album" formatted="true" comment="%1= the name of a service like last.fm, Deezer etc">Fetch missing album from %1$s</string>
     <string name="pref_locale">Languages</string>
-    <string name="pref_crashlytics_enabled">Report errors automatically</string>
     <string name="pref_misc">Misc.</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">A week starts on</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Import &amp; export</string>
@@ -366,7 +365,7 @@
     <string name="done">Done</string>
     <string name="retry" comment="Retry loading data from network after it has failed">Retry</string>
     <string name="run_on_start">Run when the computer starts</string>
-    <string name="save_logs" comment="Debug logs to be saved to a text file">Save logs</string>
+    <string name="save_logs" comment="Debug logs to be saved to a text file">Save Logs</string>
     <string name="contrast" comment="Color contrast, used in the themes screen">Contrast</string>
     <string name="high" comment="As in high/medium/low">High</string>
     <string name="medium" comment="As in high/medium/low">Medium</string>
@@ -405,7 +404,6 @@
     <string name="move_up" comment="Screen reader text for drag and drop reordering">Move up</string>
     <string name="move_down" comment="Screen reader text for drag and drop reordering">Move down</string>
     <string name="at_least" formatted="true" comment="%1$s=some number">At least %1$s</string>
-    <string name="code_will_be_sent" formatted="true" comment="%1$s is either Ko-Fi or BuyMeACoffee, %2$s is the donation amount">The code will be sent to the email address associated with your %1$s account, if you have donated %2$s</string>
     <string name="proxy" comment="network proxy">Proxy</string>
     <string name="system" comment="system default settings">System</string>
     <string name="host" comment="proxy host">Host</string>
@@ -416,27 +414,6 @@
     <string name="add_exception" comment="as in adding an exception to a rule or setting">Add an exception</string>
     <string name="upto_n" formatted="true">Up to %1$d</string>
 
-    <string name="get_pro">Support this app</string>
-    <string name="one_time_purchase">One time</string>
     <string name="help">Help</string>
-    <string name="pro_support">This is a simple and quick way for amazing users like you to make a show of support recognizing the value this app provides.</string>
-    <string name="pro_also_get">You will also get the following features:</string>
-    <string name="thank_you">Thank you!</string>
-    <string name="purchase_pending">Your purchase has not been confirmed by your payment provider yet. Please check back after a few minutes.</string>
-    <string name="billing_troubleshoot">Already purchased?
-
-Your purchases are managed by Google Play. They are linked with a Google Play account that did a purchase. When you install the app on a new device with multiple accounts, Google Play can associate it with a wrong one. The best solution to explicitly select the account owning a purchase is to install the app from a computer via Google Play web page:
-
-• Uninstall this app.
-• Open Google Play web page from your computer.
-• Login with an account owning the purchase.
-• Install this app directly from the Google Play web page.
-</string>
-    <string name="billing_block">Block artists/tracks and auto skip or mute</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Pin up to %1$d friends and reorder them</string>
-    <string name="billing_sharing">Remove app name when sharing</string>
-    <string name="billing_scrobble_source">Remember and see apps you scrobbled from and search directly in them</string>
-    <string name="billing_regex_extract">Write custom metadata extraction rules using regex</string>
-    <string name="billing_max_devices_reached" formatted="true">This code has already been used on maximum (%1$d) devices.</string>
 
 </resources>

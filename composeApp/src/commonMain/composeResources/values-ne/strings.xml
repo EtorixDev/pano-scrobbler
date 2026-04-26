@@ -232,7 +232,6 @@
     <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">तपाईंले अथेन्टिकसन टोकन: %1$s यहाँ भेटाउन सक्नुहुन्छ</string>
     <string name="pref_now_playing">आहिले बजिरहेको लाई सबमिट गर्नुहोस्</string>
     <string name="pref_locale">भाषाहरु</string>
-    <string name="pref_crashlytics_enabled">एरोर स्वचीलत रूपमा रिपोर्ट गर्नुहोस्</string>
     <string name="pref_misc">मिस्क.</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">हप्ता सुरु हुन्छ</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">आयात &amp; निर्यात</string>
@@ -244,6 +243,5 @@
     <string name="pref_imexport_network_notice">नेटवर्क मोड को लागि दुवै डिभाइस एउटै नेटवर्क मा कनेक्ट हुनुपर्छ।</string>
     <string name="pref_personalization" comment="Such as themes, widgets and some appearance settings">पर्सनलआईजेसन</string>
     <string name="pref_themes" comment="Color themes">थीम</string>
-    <string name="get_pro">एपलाई समर्थन गर्नुहोस्</string>
     <string name="help">मद्दत</string>
 </resources>

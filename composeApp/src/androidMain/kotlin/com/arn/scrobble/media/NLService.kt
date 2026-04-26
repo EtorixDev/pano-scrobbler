@@ -147,7 +147,7 @@ class NLService : NotificationListenerService() {
             // Media controller needs notification listener service permissions.
         }
 
-//      Don't instantiate BillingRepository in this service, it causes unexplained ANRs
+//      Keep heavyweight app-level integrations out of this service to avoid unexplained ANRs
 
         if (BuildKonfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             AndroidStuff.getScrobblerExitReasons().let {

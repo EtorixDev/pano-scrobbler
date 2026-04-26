@@ -57,7 +57,6 @@ import androidx.paging.compose.itemKey
 import co.touchlab.kermit.Logger
 import com.arn.scrobble.api.UserCached
 import com.arn.scrobble.api.lastfm.Track
-import com.arn.scrobble.billing.LocalLicenseValidState
 import com.arn.scrobble.icons.DragHandle
 import com.arn.scrobble.icons.Error
 import com.arn.scrobble.icons.History
@@ -120,7 +119,7 @@ fun FriendsScreen(
     onNavigate: (PanoRoute) -> Unit,
     onTitleChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    showPinned: Boolean = LocalLicenseValidState.current && user.isSelf,
+    showPinned: Boolean = user.isSelf,
     viewModel: FriendsVM = viewModel(key = user.key<FriendsVM>()) { FriendsVM(user, showPinned) },
 ) {
     val scope = rememberCoroutineScope()
@@ -347,14 +346,10 @@ fun FriendsScreen(
                         extraData = friendsExtraDataMapState[friend.name],
                         canPinUnpin = user.isSelf,
                         onPinUnpin = { pin ->
-                            if (showPinned) {
-                                if (pin && friend.name !in pinnedUsernamesSet)
-                                    viewModel.addPinAndSave(friend)
-                                else if (!pin && friend.name in pinnedUsernamesSet)
-                                    viewModel.removePinAndSave(friend)
-                            } else {
-                                onNavigate(PanoRoute.Billing)
-                            }
+                            if (pin && friend.name !in pinnedUsernamesSet)
+                                viewModel.addPinAndSave(friend)
+                            else if (!pin && friend.name in pinnedUsernamesSet)
+                                viewModel.removePinAndSave(friend)
                         },
                         onNavigateToScrobbles = {
                             onNavigate(PanoRoute.OthersHomePager(it))

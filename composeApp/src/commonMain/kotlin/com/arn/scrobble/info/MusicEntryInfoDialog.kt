@@ -59,7 +59,6 @@ import com.arn.scrobble.api.lastfm.Artist
 import com.arn.scrobble.api.lastfm.MusicEntry
 import com.arn.scrobble.api.lastfm.Tag
 import com.arn.scrobble.api.lastfm.Track
-import com.arn.scrobble.billing.LocalLicenseValidState
 import com.arn.scrobble.icons.AddPhotoAlternate
 import com.arn.scrobble.icons.Album
 import com.arn.scrobble.icons.BrokenImage
@@ -446,9 +445,8 @@ private fun InfoActionsRow(
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
-    val isLicenseValid = LocalLicenseValidState.current
     val searchInSource by
-    PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.searchInSource && isLicenseValid }
+    PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.searchInSource }
 
     Row(modifier = modifier.fillMaxWidth()) {
         if (onUserTagsClick != null) {

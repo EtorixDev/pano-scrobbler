@@ -276,7 +276,6 @@
     <string name="pref_now_playing">Submeter em reprodução</string>
     <string name="pref_fetch_missing_album" formatted="true" comment="%1= the name of a service like last.fm, Deezer etc">Obter álbum em falta a partir de %1$s</string>
     <string name="pref_locale">Idiomas</string>
-    <string name="pref_crashlytics_enabled">Reportar erros automaticamente</string>
     <string name="pref_misc">Diversos.</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Primeiro dia da semana</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">Importar &amp; exportar</string>
@@ -395,26 +394,5 @@
     <string name="move_up" comment="Screen reader text for drag and drop reordering">Mover para cima</string>
     <string name="move_down" comment="Screen reader text for drag and drop reordering">Mover para baixo</string>
     <string name="at_least" formatted="true" comment="%1$s=some number">Pelo menos %1$s</string>
-    <string name="code_will_be_sent" formatted="true" comment="%1$s is either Ko-Fi or BuyMeACoffee, %2$s is the donation amount">O código será enviado para o endereço de correio eletrónico associado à sua conta %1$s, se doou %2$s</string>
-    <string name="get_pro">Apoiar a aplicação</string>
-    <string name="one_time_purchase">Compra única</string>
     <string name="help">Ajuda</string>
-    <string name="pro_support">Esta é uma maneira simples e rápida para que utilizadores incríveis como você demonstrem o seu apoio e reconhecimento pelo valor desta aplicação.</string>
-    <string name="pro_also_get">Também terá acesso às seguintes funcionalidades:</string>
-    <string name="thank_you">Obrigado!</string>
-    <string name="purchase_pending">A sua compra ainda não foi confirmada pelo seu provedor de pagamento. Por favor, verifique novamente daqui a alguns minutos.</string>
-    <string name="billing_troubleshoot">Já comprou?
-
-As suas compras são administradas pelo Google Play. Estas estão vinculadas a uma conta do Google Play que fez uma compra. Quando instala a aplicação num novo dispositivo com várias contas, o Google Play pode associá-la com uma errada. A melhor solução para selecionar explicitamente a conta que possui uma compra é instalar a aplicação a partir de um computador, através da página web do Google Play:
-
-• Desinstale esta aplicação.
-• Abra a página da Web do Google Play no seu computador.
-• Inicie sessão com a conta que fez a compra.
-• Instale este aplicativo diretamente a partir da página web do Google Play.</string>
-    <string name="billing_block">Bloquear, saltar ou silenciar artistas/faixas automaticamente</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">Afixe até %1$d amigos e reordene-os</string>
-    <string name="billing_sharing">Remover nome da aplicação ao partilhar</string>
-    <string name="billing_scrobble_source">Lembrar e ver aplicações com scrobbles seus e pesquisar diretamente nelas</string>
-    <string name="billing_regex_extract">Escrevea regras personalizadas de extração de metadados usando regex</string>
-    <string name="billing_max_devices_reached" formatted="true">Este código já foi usado no máximo de dispositivos (%1$d).</string>
 </resources>

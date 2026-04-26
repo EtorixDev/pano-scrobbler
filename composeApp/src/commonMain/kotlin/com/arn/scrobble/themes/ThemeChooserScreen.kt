@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.arn.scrobble.billing.LocalLicenseValidState
 import com.arn.scrobble.icons.Check
 import com.arn.scrobble.icons.Icons
 import com.arn.scrobble.themes.colors.ThemeVariants
@@ -56,10 +55,8 @@ import pano_scrobbler.composeapp.generated.resources.system_colors
 
 @Composable
 fun ThemeChooserScreen(
-    onNavigateToBilling: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isLicenseValid = LocalLicenseValidState.current
     var themeName: String? by rememberSaveable { mutableStateOf(null) }
     var dynamic: Boolean? by rememberSaveable { mutableStateOf(null) }
     var dayNightMode: DayNightMode? by rememberSaveable { mutableStateOf(null) }
@@ -70,20 +67,17 @@ fun ThemeChooserScreen(
     DisposableEffect(Unit) {
         onDispose {
             if (themeName != null && dynamic != null && dayNightMode != null && contrastMode != null) {
-                if (isLicenseValid) {
-                    Stuff.appScope.launch {
-                        PlatformStuff.mainPrefs.updateData {
-                            it.copy(
-                                themeName = themeName!!,
-                                themeDynamic = dynamic!!,
-                                themeDayNight = dayNightMode!!,
-                                themeRandom = random!!,
-                                themeContrast = contrastMode!!
-                            )
-                        }
+                Stuff.appScope.launch {
+                    PlatformStuff.mainPrefs.updateData {
+                        it.copy(
+                            themeName = themeName!!,
+                            themeDynamic = dynamic!!,
+                            themeDayNight = dayNightMode!!,
+                            themeRandom = random!!,
+                            themeContrast = contrastMode!!
+                        )
                     }
-                } else
-                    onNavigateToBilling()
+                }
             }
         }
     }
@@ -115,7 +109,7 @@ fun ThemeChooserScreen(
                     onClick = {
                         themeName = themeObj.name
                     },
-                    enabled = isLicenseValid && dynamic != true && random != true,
+                    enabled = dynamic != true && random != true,
                 )
             }
         }
@@ -127,7 +121,7 @@ fun ThemeChooserScreen(
                 FilterChip(
                     label = { it.Label() },
                     selected = dayNightMode == it,
-                    enabled = isLicenseValid,
+                    enabled = true,
                     onClick = {
                         dayNightMode = it
                     }
@@ -149,7 +143,7 @@ fun ThemeChooserScreen(
             ContrastMode.entries.forEach {
                 FilterChip(
                     label = { it.Label() },
-                    enabled = isLicenseValid && dynamic != true,
+                    enabled = dynamic != true,
                     selected = contrastMode == it,
                     onClick = {
                         contrastMode = it
@@ -162,7 +156,7 @@ fun ThemeChooserScreen(
             LabeledCheckbox(
                 text = stringResource(Res.string.system_colors),
                 checked = dynamic == true,
-                enabled = isLicenseValid,
+                enabled = true,
                 onCheckedChange = { dynamic = it }
             )
         }
@@ -170,7 +164,7 @@ fun ThemeChooserScreen(
         LabeledCheckbox(
             text = stringResource(Res.string.random_on_start),
             checked = random == true,
-            enabled = isLicenseValid,
+            enabled = true,
             onCheckedChange = { random = it }
         )
     }

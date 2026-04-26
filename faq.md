@@ -18,9 +18,8 @@ The location of these settings will depend on your MIUI / HyperOS version
 For other devices, check [dontkillmyapp.com](https://dontkillmyapp.com) and follow all the
 steps in there, for your manufacturer.
 
-The non-Play version of this app can optionally display a persistent notification at all times,
-which may help. It may be impossible to use this app on a stock ROM from certain manufacturers, due
-to the said restrictions.
+This app can optionally display a persistent notification at all times, which may help. It may be
+impossible to use this app on a stock ROM from certain manufacturers, due to the said restrictions.
 
 ### [android] The app says that scrobbling is disabled
 
@@ -118,7 +117,7 @@ This may also work on devices that do not have a UI to enable notification acces
 old versions of Android Go.
 
 - Open this page on a computer.
-  URL: [kawaiidango.github.io/pano-scrobbler/faq](https://kawaiidango.github.io/pano-scrobbler/faq)
+  URL: [EtorixDev/pano-scrobbler/faq.md](https://github.com/EtorixDev/pano-scrobbler/blob/main/faq.md)
 - Enable Developer Options, if you haven't (Settings > About > (Tap on Build Number 5 times))
 - Enable ADB/USB debugging (Settings > Developer Options)
 - On your PC, download ADB, if you haven't:
@@ -188,14 +187,3 @@ sudo dnf install webkit2gtk4.1
 - Windows: WebView2 provided by Microsoft Edge Chromium
 
 - Android: Android System WebView
-
-### How do I get a refund for a 'Support this app' payment made through Google Play? [FAQ-rp]
-
-You can request a refund within a 48-hour window, from
-the [Google Play website](https://support.google.com/googleplay/answer/15574897).
-
-### [nonplay] How do I get a refund for a 'Support this app' payment made through Ko-Fi or BuyMeACoffee? [FAQ-rn]
-
-For voluntary donations of arbitrary amounts made through Ko-Fi or BuyMeACoffee, there are no
-refunds, as these are donations for supporting the development of this free and open source project,
-and not purchases.

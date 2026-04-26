@@ -9,14 +9,12 @@ import com.arn.scrobble.BuildKonfig
 import com.arn.scrobble.api.DrawerData
 import com.arn.scrobble.api.UserCached
 import com.arn.scrobble.api.lastfm.ApiException
-import com.arn.scrobble.billing.PurchaseMethod
 import com.arn.scrobble.db.PanoDb
 import com.arn.scrobble.edits.EditScrobbleUtils
 import com.arn.scrobble.pref.AppItem
 import com.arn.scrobble.ui.PanoSnackbarVisuals
 import com.arn.scrobble.utils.PlatformStuff
 import com.arn.scrobble.utils.Stuff
-import com.arn.scrobble.utils.VariantStuff
 import com.arn.scrobble.utils.redactedMessage
 import com.arn.scrobble.work.CommonWorkState
 import com.arn.scrobble.work.DigestWork
@@ -41,10 +39,6 @@ class MainViewModel : ViewModel() {
     val drawerDataMap = mutableStateMapOf<UserCached, DrawerData>()
 
     private val _pullToRefreshTriggered = MutableSharedFlow<Int>()
-
-    private val repository = VariantStuff.billingRepository
-
-    val formattedPrice = repository.formattedPrice
 
     private val _selectedPackages = MutableSharedFlow<Pair<List<AppItem>, List<AppItem>>>()
     val selectedPackages = _selectedPackages.asSharedFlow()
@@ -79,11 +73,6 @@ class MainViewModel : ViewModel() {
                 Logger.w(e.cause) { "SerializationException" }
             }
         }.launchIn(viewModelScope)
-
-        repository.initBillingClient()
-        repository.startDataSourceConnections()
-
-        queryPurchasesAsync()
 
         if (!PlatformStuff.isDesktop && !PlatformStuff.isTv)
             viewModelScope.launch {
@@ -132,25 +121,7 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun checkAndStoreLicense(receipt: String) {
-        viewModelScope.launch {
-            repository.checkAndStoreLicense(receipt)
-        }
-    }
-
-    fun queryPurchasesAsync() {
-        viewModelScope.launch {
-            delay(2000)
-            repository.queryPurchasesAsync()
-        }
-    }
-
-    fun makePurchase(purchaseMethod: PurchaseMethod, activity: Any?) {
-        repository.launchBillingFlow(purchaseMethod, activity)
-    }
-
     override fun onCleared() {
-        repository.endDataSourceConnections()
     }
 
 

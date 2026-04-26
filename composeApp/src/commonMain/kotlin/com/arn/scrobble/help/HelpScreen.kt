@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,7 +52,7 @@ fun HelpScreen(
     scrobblerStateFlow: StateFlow<ScrobblerState>,
     viewModel: MdViewerVM = viewModel {
         MdViewerVM(
-            "https://kawaiidango.github.io/pano-scrobbler/faq.md",
+            "https://raw.githubusercontent.com/EtorixDev/pano-scrobbler/main/faq.md",
             "files/faq.md"
         )
     }
@@ -94,7 +95,9 @@ fun HelpScreen(
                         8.dp,
                         Alignment.CenterHorizontally
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
                 ) {
                     HelpSaveLogsButton({
                         filePickerShown = true
@@ -103,7 +106,7 @@ fun HelpScreen(
                     ButtonWithIcon(
                         text = stringResource(Res.string.bug_report),
                         onClick = {
-                            BugReportUtils.mail(scrobblerStateFlow.value)
+                            PlatformStuff.openInBrowser(Stuff.REPO_URL + "/issues")
                         },
                         icon = Icons.BugReport,
                     )

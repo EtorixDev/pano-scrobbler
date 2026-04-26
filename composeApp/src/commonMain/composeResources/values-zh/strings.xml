@@ -264,7 +264,6 @@
     <string name="pref_now_playing">提交当前播放的音乐</string>
     <string name="pref_fetch_missing_album" formatted="true" comment="%1= the name of a service like last.fm, Deezer etc">从 %1$s 获取缺失专辑</string>
     <string name="pref_locale">语言</string>
-    <string name="pref_crashlytics_enabled">自动上报错误</string>
     <string name="pref_misc">杂项</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">每周起始于</string>
     <string name="pref_imexport" comment="As in backup or restore the settings">导入 &amp; 导出</string>
@@ -383,26 +382,5 @@
     <string name="move_up" comment="Screen reader text for drag and drop reordering">上移</string>
     <string name="move_down" comment="Screen reader text for drag and drop reordering">下移</string>
     <string name="at_least" formatted="true" comment="%1$s=some number">至少 %1$s</string>
-    <string name="code_will_be_sent" formatted="true" comment="%1$s is either Ko-Fi or BuyMeACoffee, %2$s is the donation amount">如果您捐赠了 %2$s，代码将会被发送到与您 %1$s 帐户关联的电子邮件地址</string>
-    <string name="get_pro">支持本应用</string>
-    <string name="one_time_purchase">1次</string>
     <string name="help">帮助</string>
-    <string name="pro_support">下面向您这样的宝贵用户提供一种简单、直接的方式，如果您觉得这款应用有价值，不妨以此对其表示支持。</string>
-    <string name="pro_also_get">您同时也将解锁以下功能：</string>
-    <string name="thank_you">感谢！</string>
-    <string name="purchase_pending">您的购买尚未被付款提供商确认，请稍后再试</string>
-    <string name="billing_troubleshoot">已经购买？
-
-您的购买记录由 Google Play 管理，并与进行购买的 Google Play 账户关联。当您在一台同时登录了多个账户的新设备上安装应用时，Google Play 可能会将其关联至错误的账户。最佳解决方案是在电脑上访问网页端 Google Play 页面，然后选择关联了购买记录的账户进行安装：
-
-• 首先请卸载此应用程序
-• 在电脑上打开 Google Play 页面
-• 登录关联了购买记录的账户
-• 通过 Google Play 网页端直接安装应用</string>
-    <string name="billing_block">屏蔽艺术家/曲目并自动跳过至下一曲或静音</string>
-    <string name="billing_pin_friends" formatted="true" comment="%1= number of pins, always 10 or more">最多钉选 %1$d 位朋友并且支持手动排序</string>
-    <string name="billing_sharing">分享时移除应用名称</string>
-    <string name="billing_scrobble_source">记住并查看提交记录的应用，并且可直接在这些应用中搜索</string>
-    <string name="billing_regex_extract">使用正则写入自定义元数据提取规则</string>
-    <string name="billing_max_devices_reached" formatted="true">此代码已经在最多(%1$d)设备上使用。</string>
 </resources>

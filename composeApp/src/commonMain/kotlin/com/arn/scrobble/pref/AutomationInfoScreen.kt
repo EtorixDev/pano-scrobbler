@@ -22,10 +22,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.arn.scrobble.automation.Automation
-import com.arn.scrobble.billing.LocalLicenseValidState
 import com.arn.scrobble.icons.ContentCopy
 import com.arn.scrobble.icons.Icons
-import com.arn.scrobble.icons.Lock
 import com.arn.scrobble.navigation.PanoRoute
 import com.arn.scrobble.utils.PlatformStuff
 import com.arn.scrobble.utils.Stuff.collectAsStateWithInitialValue
@@ -57,8 +55,6 @@ fun AutomationInfoScreen(
         )
     }
 
-    val isLicenseValid = LocalLicenseValidState.current
-
     val appIdPlaceholder = remember { PlatformStuff.appIdPlaceholder }
 
     Column(
@@ -68,18 +64,14 @@ fun AutomationInfoScreen(
             AppIconsPref(
                 packageNames = allowedPackages,
                 title = stringResource(Res.string.choose_apps),
-                enabled = isLicenseValid,
                 onClick = {
-                    if (!isLicenseValid)
-                        onNavigate(PanoRoute.Billing)
-                    else
-                        onNavigate(
-                            PanoRoute.AppList(
-                                isSingleSelect = false,
-                                saveType = AppListSaveType.Automation,
-                                preSelectedPackages = allowedPackages.toList()
-                            )
+                    onNavigate(
+                        PanoRoute.AppList(
+                            isSingleSelect = false,
+                            saveType = AppListSaveType.Automation,
+                            preSelectedPackages = allowedPackages.toList()
                         )
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -131,12 +123,9 @@ fun AutomationInfoScreen(
                     .minimumInteractiveComponentSize()
                     .clip(MaterialTheme.shapes.medium)
                     .clickable {
-                        if (!isLicenseValid)
-                            onNavigate(PanoRoute.Billing)
-                        else
-                            PlatformStuff.copyToClipboard(commandText)
+                        PlatformStuff.copyToClipboard(commandText)
                     }
-                    .alpha(if (!isLicenseValid) 0.5f else 1f),
+                    .alpha(1f),
             ) {
                 Column(
                     modifier = Modifier
@@ -157,7 +146,7 @@ fun AutomationInfoScreen(
                 }
 
                 Icon(
-                    imageVector = if (!isLicenseValid) Icons.Lock else Icons.ContentCopy,
+                    imageVector = Icons.ContentCopy,
                     contentDescription = null,
                 )
             }
