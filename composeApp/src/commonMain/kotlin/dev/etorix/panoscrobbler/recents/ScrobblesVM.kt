@@ -321,10 +321,19 @@ class ScrobblesVM(
     }
 
     fun removeTrack(item: TrackWrapper.TrackItem) {
+        val previousOverride = editsAndDeletes.value[item.key]
+        editsAndDeletes.value += item.key to null
+
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 Scrobblables.current?.delete(item.track)
                     ?.onFailure {
+                        if (previousOverride == null) {
+                            editsAndDeletes.value -= item.key
+                        } else {
+                            editsAndDeletes.value += item.key to previousOverride
+                        }
+
                         it.printStackTrace()
                         if (it is LastFm.CookiesInvalidatedException) {
                             Stuff.globalSnackbarFlow.emit(
@@ -338,7 +347,6 @@ class ScrobblesVM(
                     }
             }
         }
-        editsAndDeletes.value += item.key to null
     }
 
     fun loveOrUnlove(item: TrackWrapper.TrackItem, love: Boolean) {

@@ -91,7 +91,6 @@ class WebViewVM(
 
                         else -> return@collect
                     }
-                    platformClear()
                     loginState.value = WebViewLoginState.Processing
                 }
             }

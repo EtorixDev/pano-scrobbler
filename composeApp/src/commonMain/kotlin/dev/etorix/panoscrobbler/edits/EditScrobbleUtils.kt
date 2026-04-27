@@ -1,5 +1,6 @@
 package dev.etorix.panoscrobbler.edits
 
+import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.api.Requesters
 import dev.etorix.panoscrobbler.api.Scrobblables
 import dev.etorix.panoscrobbler.api.ScrobbleResult
@@ -177,6 +178,14 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
         }
 
         if (scrobblable != null) {
+            if (!isNowPlaying && scrobblable.userAccount.type == AccountType.LASTFM) {
+                runCatching {
+                    LastFm.LastfmUnscrobbler.ensureCanEditScrobbles()
+                }.onFailure {
+                    return Result.failure(it)
+                }
+            }
+
             scrobbleResult = scrobblable.scrobble(scrobbleData)
             if (scrobbleResult.map { it.ignored }.getOrNull() == true) {
                 return Result.failure(ScrobbleIgnoredException(timeMillis))

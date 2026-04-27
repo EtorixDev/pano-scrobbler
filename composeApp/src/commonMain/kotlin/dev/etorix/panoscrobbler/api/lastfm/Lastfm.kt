@@ -559,8 +559,20 @@ open class LastFm(userAccount: UserAccountSerializable) : Scrobblable(userAccoun
     }
 
     object LastfmUnscrobbler {
+        suspend fun ensureCanEditScrobbles() {
+            val cookies = cookieStorage.get(Url(URL_USER))
+            val hasCsrfToken = cookies.any { it.name == COOKIE_CSRFTOKEN }
+            val hasSessionId = cookies.any { it.name == COOKIE_SESSIONID }
+
+            if (!hasCsrfToken || !hasSessionId) {
+                throw CookiesInvalidatedException(getString(Res.string.lastfm_reauth))
+            }
+        }
+
         suspend fun unscrobble(track: Track, username: String): Unit =
             lock.withLock { // does this fix the csrf invalidation problem?
+                ensureCanEditScrobbles()
+
                 val csrfToken =
                     cookieStorage.get(Url(URL_USER)).find { it.name == COOKIE_CSRFTOKEN }?.value
 
