@@ -143,19 +143,21 @@ these repository secrets first:
 - `LOCAL_PROPERTIES`: contents of a minimal `local.properties` file. It should include at least
   `lastfm.key`, `lastfm.secret`, and any optional values you want such as `spotify.refreshToken`.
   If you are building the Android release on Actions, it should also include
-  `releaseGithub.storePassword`, `releaseGithub.alias`, and `releaseGithub.password`.
-  It does not need `releaseGithub.keystore`.
+  `releaseGithub.keystore`, `releaseGithub.storePassword`, `releaseGithub.alias`, and
+  `releaseGithub.password`.
+  On GitHub Actions, set `releaseGithub.keystore=android-keystore.jks` and omit `sdk.dir`.
+  You do not need `updates.enabled`; release packaging tasks already default it to `true`.
 - `ANDROID_KEYSTORE_JKS`: your Android signing keystore file, base64-encoded. The workflow writes
-  it to `androidApp/android-keystore.jks` and overrides `releaseGithub.keystore` to point there,
-  so the secret does not need to contain a machine-specific keystore path.
+  it to `androidApp/android-keystore.jks`, which matches the module-relative
+  `releaseGithub.keystore=android-keystore.jks` entry in the GitHub `LOCAL_PROPERTIES` secret.
 
 What `releaseGithub.keystore` means on GitHub Actions:
 
 - The workflow creates a file named `androidApp/android-keystore.jks` inside the temporary GitHub
   Actions checkout.
 - That file is created by decoding your `ANDROID_KEYSTORE_JKS` secret.
-- Then the workflow appends `releaseGithub.keystore=androidApp/android-keystore.jks` to
-  `local.properties` so Gradle knows where that temporary file is.
+- Your GitHub `LOCAL_PROPERTIES` secret should set `releaseGithub.keystore=android-keystore.jks`
+  so Gradle resolves that path inside the `androidApp` module.
 
 In other words, `androidApp/android-keystore.jks` is just the temporary file path used on the CI
 runner for your own signing key.

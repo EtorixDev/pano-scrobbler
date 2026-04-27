@@ -40,7 +40,6 @@ jobs:
           LOCAL_PROPERTIES_SECRET: ${{ secrets.LOCAL_PROPERTIES }}
         run: |
           printf '%s' "$LOCAL_PROPERTIES_SECRET" > local.properties
-          echo "updates.enabled=true" >> local.properties
 
       - if: matrix.resources-dir == 'linux-x64'
         name: Set up Android signing
@@ -49,8 +48,6 @@ jobs:
           ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_JKS }}
         run: |
           printf '%s' "$ANDROID_KEYSTORE_B64" | base64 -d - > androidApp/android-keystore.jks
-          echo "sdk.dir=$ANDROID_HOME" >> local.properties
-          echo "releaseGithub.keystore=androidApp/android-keystore.jks" >> local.properties
 
       - if: matrix.resources-dir == 'linux-x64'
         name: Build APK
@@ -82,14 +79,11 @@ jobs:
         run: |
           RUN_ID=$(gh run list \
             -R "EtorixDev/pano-native-components" \
-            --workflow "build.yml" \
-            --branch "main" \
-            --status success \
-            -L 1 \
-            --json databaseId \
-            -q '.[0].databaseId')
+            -L 20 \
+            --json databaseId,workflowName,headBranch,status,conclusion \
+            -q 'map(select(.workflowName == "Build" and .headBranch == "main" and .status == "completed" and .conclusion == "success"))[0].databaseId')
 
-          if [ -z "$RUN_ID" ]; then
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
             echo "No successful runs found" >&2
             exit 1
           fi
