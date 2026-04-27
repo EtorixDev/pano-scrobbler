@@ -50,8 +50,14 @@ if [ -f "$pkgbuildDir/PKGBUILD" ]; then
     )"
 
     tag="$(jq -r '.tag_name // empty' <<<"$release_json")"
+    release_name="$(jq -r '.name // empty' <<<"$release_json")"
     if [[ -z "$tag" ]]; then
       echo "Error: could not determine latest tag for $OWNER/$REPO" >&2
+      exit 1
+    fi
+
+    if [[ -z "$release_name" ]]; then
+      echo "Error: could not determine latest release name for $OWNER/$REPO" >&2
       exit 1
     fi
 
@@ -78,7 +84,7 @@ if [ -f "$pkgbuildDir/PKGBUILD" ]; then
       echo "${sha,,}"
     }
 
-    verName="$((tag / 100)).$((tag % 100))"
+    verName="${release_name/-etd./.etd.}"
 
     sha_x64="$(get_sha256_for_asset "$ASSET_X64")"
     sha_arm64="$(get_sha256_for_asset "$ASSET_ARM64")"

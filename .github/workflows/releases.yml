@@ -1,4 +1,7 @@
 name: Build binaries
+permissions:
+  actions: read
+  contents: read
 on:
   workflow_dispatch:
     inputs:
@@ -80,6 +83,7 @@ jobs:
           RUN_ID=$(gh run list \
             -R "EtorixDev/pano-native-components" \
             --workflow "build.yml" \
+            --branch "main" \
             --status success \
             -L 1 \
             --json databaseId \
@@ -108,22 +112,31 @@ jobs:
     needs: [ build ]
     runs-on: windows-2025-vs2026
     if: ${{ inputs.upload-release == true }}
+    permissions:
+      actions: read
+      contents: write
     steps:
-      - name: Read version and changelog
+      - name: Read version and fork changelog
         id: release_metadata
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          verCode="$(gh api -H "Accept: application/vnd.github.raw" "/repos/${GITHUB_REPOSITORY}/contents/version.txt?ref=${GITHUB_SHA}")"
-          verCode="$(echo "$verCode" | tr -d '\r\n' | xargs)"
-          verName="$((verCode / 100)).$((verCode % 100))"
+          upstreamVerCode="$(gh api -H "Accept: application/vnd.github.raw" "/repos/${GITHUB_REPOSITORY}/contents/version.txt?ref=${GITHUB_SHA}")"
+          upstreamVerCode="$(echo "$upstreamVerCode" | tr -d '\r\n' | xargs)"
+          forkVerCode="$(gh api -H "Accept: application/vnd.github.raw" "/repos/${GITHUB_REPOSITORY}/contents/version-fork.txt?ref=${GITHUB_SHA}")"
+          forkVerCode="$(echo "$forkVerCode" | tr -d '\r\n' | xargs)"
+          upstreamVerName="$((upstreamVerCode / 100)).$((upstreamVerCode % 100))"
+          verCode="$forkVerCode"
+          verName="$upstreamVerName-etd.$forkVerCode"
           echo "verCode=$verCode" >> "$GITHUB_OUTPUT"
           echo "verName=$verName" >> "$GITHUB_OUTPUT"
           
-          changelog="$(gh api -H "Accept: application/vnd.github.raw" "/repos/${GITHUB_REPOSITORY}/contents/changelog.md?ref=${GITHUB_SHA}")"
+          changelog="$(gh api -H "Accept: application/vnd.github.raw" "/repos/${GITHUB_REPOSITORY}/contents/changelog-fork.md?ref=${GITHUB_SHA}")"
           {
             echo "changelog<<EOF"
+            echo "Based on [Pano Scrobbler](https://github.com/kawaiiDango/pano-scrobbler/releases) $upstreamVerName"
+            echo
             echo "$changelog"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"

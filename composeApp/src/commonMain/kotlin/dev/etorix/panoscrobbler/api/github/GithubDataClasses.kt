@@ -12,7 +12,10 @@ data class GithubReleases(
     val assets: List<GithubReleaseAsset>,
 ) {
     val versionCode
-        get() = tag_name.replace(".", "").toInt()
+        get() = tag_name.toInt()
+
+    val versionName
+        get() = name.ifBlank { tag_name }
 
     fun getDownloadUrl(platformSubstring: String): List<GithubReleaseAsset> =
         assets.filter {

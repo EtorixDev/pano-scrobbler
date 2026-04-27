@@ -17,10 +17,17 @@ plugins {
 }
 
 extra.apply {
-    val versionFile = file("version.txt")
-    val verCode = versionFile.readText().trim().toInt()
-    set("VER_CODE", verCode)
-    set("VER_NAME", "${verCode / 100}.${verCode % 100}")
+    val upstreamVersionFile = file("version.txt")
+    val forkVersionFile = file("version-fork.txt")
+    val upstreamVerCode = upstreamVersionFile.readText().trim().toInt()
+    val forkVerCode = forkVersionFile.readText().trim().toInt()
+    val upstreamVerName = "${upstreamVerCode / 100}.${upstreamVerCode % 100}"
+
+    set("UPSTREAM_VER_CODE", upstreamVerCode)
+    set("UPSTREAM_VER_NAME", upstreamVerName)
+    set("VER_CODE", forkVerCode)
+    set("VER_NAME", "$upstreamVerName-etd.$forkVerCode")
+    set("PACKAGE_VER_NAME", "$upstreamVerName.$forkVerCode")
     set("APP_ID", "dev.etorix.panoscrobbler")
     set("APP_NAME", "Pano Scrobbler ETD")
     set("APP_NAME_NO_SPACES", "pano-scrobbler-etd")

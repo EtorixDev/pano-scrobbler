@@ -12,10 +12,7 @@ actual suspend fun doAfterUpdateCheck(releases: GithubReleases): UpdateAction? {
 
     return UpdateAction(
         urlOrFilePath = releases.html_url,
-        version = releases.tag_name.let {
-            val verCode = it.toInt()
-            "${verCode / 100}.${verCode % 100}"
-        },
+        version = releases.versionName,
         changelog = releases.body,
     )
 }

@@ -1,8 +1,8 @@
 $iconInfo
 
 1 VERSIONINFO
-FILEVERSION $versionMajor,$versionMinor,0,0
-PRODUCTVERSION $versionMajor,$versionMinor,0,0
+FILEVERSION $versionMajor,$versionMinor,$versionPatch,0
+PRODUCTVERSION $versionMajor,$versionMinor,$versionPatch,0
 FILEOS 0x40004
 FILETYPE $fileType
 {
@@ -12,11 +12,11 @@ BLOCK "StringFileInfo"
 	{
 		VALUE "CompanyName", "EtorixDev"
 		VALUE "FileDescription", "Pano Scrobbler ETD"
-		VALUE "FileVersion", "$versionMajor.$versionMinor"
+		VALUE "FileVersion", "$versionMajor.$versionMinor.$versionPatch"
 		VALUE "LegalCopyright", "(c) EtorixDev"
 		VALUE "OriginalFilename", "$fileName"
 		VALUE "ProductName", "Pano Scrobbler ETD"
-		VALUE "ProductVersion", "$versionMajor.$versionMinor"
+		VALUE "ProductVersion", "$versionMajor.$versionMinor.$versionPatch"
 	}
 }
 

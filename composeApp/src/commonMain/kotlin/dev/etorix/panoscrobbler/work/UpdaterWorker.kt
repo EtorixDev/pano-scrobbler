@@ -60,7 +60,7 @@ class UpdaterWorker(
                 val updatingMessage = if (PlatformStuff.isDesktop)
                     getString(Res.string.downloading)
                 else
-                    getString(Res.string.update_available, release.versionCode)
+                    getString(Res.string.update_available, release.versionName)
 
                 setProgress(CommonWorkProgress(updatingMessage, 0.2f))
 

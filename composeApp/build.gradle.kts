@@ -51,6 +51,7 @@ val resourcesDirName = when {
 val APP_ID: String by rootProject.extra
 val VER_CODE: Int by rootProject.extra
 val VER_NAME: String by rootProject.extra
+val PACKAGE_VER_NAME: String by rootProject.extra
 val APP_NAME: String by rootProject.extra
 val APP_NAME_NO_SPACES: String by rootProject.extra
 val localProperties = gradleLocalProperties(rootDir, project.providers)
@@ -338,7 +339,7 @@ compose.desktop {
             }
 
             targetFormats = formats
-            packageVersion = VER_NAME
+            packageVersion = PACKAGE_VER_NAME
             vendor = "EtorixDev"
             packageName = APP_NAME_NO_SPACES
 
@@ -468,7 +469,7 @@ tasks.register<Exec>("packageInno") {
         isccPath,
         "/DOUT_DIR=" + distDir.absolutePath,
         "/DAPP_DIR=" + executableDir.absolutePath,
-        "/DVERSION=$VER_NAME",
+        "/DVERSION=$PACKAGE_VER_NAME",
         "/DICON_FILE=" + iconFile.absolutePath,
         scriptFile.absolutePath
     )
@@ -490,8 +491,10 @@ tasks.register<Exec>("generateRc") {
         .replace("\\", "\\\\") // escape backslashes for rc compiler
     val outputFileName = "$APP_NAME_NO_SPACES.exe"
     val rcOut = File(rcOutputDir, "$outputFileName.rc")
-    val versionMajor = VER_NAME.substringBefore(".")
-    val versionMinor = VER_NAME.substringAfter(".")
+    val packageVersionParts = PACKAGE_VER_NAME.split(".")
+    val versionMajor = packageVersionParts.getOrElse(0) { "0" }
+    val versionMinor = packageVersionParts.getOrElse(1) { "0" }
+    val versionPatch = packageVersionParts.getOrElse(2) { "0" }
 
     // find rc.exe
     val rcExe = File(System.getenv("PROGRAMFILES(x86)") + "\\Windows Kits\\10\\bin")
@@ -522,6 +525,7 @@ tasks.register<Exec>("generateRc") {
             .readText()
             .replace("\$versionMajor", versionMajor)
             .replace("\$versionMinor", versionMinor)
+            .replace("\$versionPatch", versionPatch)
             .replace("\$fileName", outputFileName)
             .replace("\$fileType", fileType)
             .replace("\$iconInfo", iconInfo)
@@ -538,7 +542,7 @@ tasks.register<Exec>("buildNativeImage") {
     val copyDesktopAndIcon = os.isLinux
 
     val jarFile =
-        file("build/compose/jars/$APP_NAME_NO_SPACES-$resourcesDirName-$VER_NAME.jar")
+        file("build/compose/jars/$APP_NAME_NO_SPACES-$resourcesDirName-$PACKAGE_VER_NAME.jar")
     val jarTree = zipTree(jarFile)
     val jarFilesToExtract = if (os.isWindows && arch in archAmd64)
         arrayOf("skiko-windows-x64.dll", "icudtl.dat", "natives/windows_x64/sqliteJni.dll")
@@ -1019,17 +1023,18 @@ tasks.register("copyStringsToAndroid") {
 }
 
 tasks.register<Copy>("copyMds") {
-    val files = arrayOf("faq.md", "changelog.md")
+    val files = arrayOf("faq.md", "changelog-fork.md")
 
     from(project.layout.projectDirectory.dir("../"))
     into(project.layout.projectDirectory.dir("src/commonMain/composeResources/files"))
 
     include(*files)
+    rename("changelog-fork.md", "changelog.md")
     inputs.files(project.layout.projectDirectory.files(*files))
     outputs.files(
         project.layout.projectDirectory
             .dir("src/commonMain/composeResources/files")
-            .files(*files)
+            .files("faq.md", "changelog.md")
     )
 }
 

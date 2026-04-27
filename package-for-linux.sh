@@ -13,10 +13,10 @@ nativeImageDir="$scriptDir/composeApp/build/compose/native/$resourcesDirName"
 appDir="/tmp/PanoScrobblerETD.AppDir"
 libExecDir="$appDir/usr/libexec/pano-scrobbler-etd"
 distDir="$scriptDir/dist"
-
-# Read version code from version.txt
-verCode=$(cat "$(dirname "$0")/version.txt")
-verName="$((verCode / 100)).$((verCode % 100))"
+upstreamVerCode="$(tr -d '\r\n[:space:]' < "$scriptDir/version.txt")"
+forkVerCode="$(tr -d '\r\n[:space:]' < "$scriptDir/version-fork.txt")"
+upstreamVerName="$((upstreamVerCode / 100)).$((upstreamVerCode % 100))"
+packageVerName="$upstreamVerName.$forkVerCode"
 
 # Clean and create AppDir
 rm -rf "$appDir"
@@ -73,4 +73,4 @@ fi
 
 # Build AppImage
 distFile="$distDir/$appNameWithoutSpaces-$resourcesDirName.AppImage"
-ARCH=$arch VERSION="$verName" "$appImageToolFile" "$appDir" "$distFile"
+ARCH=$arch VERSION="$packageVerName" "$appImageToolFile" "$appDir" "$distFile"
