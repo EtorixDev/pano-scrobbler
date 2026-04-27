@@ -69,6 +69,7 @@ class PlayingTrackInfo(
     // cached values
     var timelineStartTime: Long = cachedTrackInfo?.timelineStartTime ?: 0L
         private set
+    private var playbackPositionMillis: Long = cachedTrackInfo?.playbackPositionMillis ?: -1L
     var playStartTime: Long = cachedTrackInfo?.playStartTime ?: 0L
         private set
     var scrobbledState: ScrobbledState = cachedTrackInfo?.scrobbledState ?: ScrobbledState.NONE
@@ -117,10 +118,20 @@ class PlayingTrackInfo(
         this.artUrl = artUrl
     }
 
+    fun resetPlaybackProgress() {
+        timelineStartTime = 0L
+        playbackPositionMillis = -1L
+        timePlayed = 0L
+    }
+
     // this is only done for desktop
     fun setTimelineStartTime(seekPosition: Long): Boolean {
-        if (seekPosition == -1L)
+        if (seekPosition == -1L) {
+            playbackPositionMillis = -1L
             return false
+        }
+
+        playbackPositionMillis = seekPosition
 
         if (durationMillis <= 0) {
             if (timelineStartTime != 0L) {
@@ -171,6 +182,14 @@ class PlayingTrackInfo(
 
     fun addTimePlayed() {
         timePlayed += System.currentTimeMillis() - playStartTime
+    }
+
+    fun effectiveProgressMillis(now: Long = System.currentTimeMillis()): Long {
+        return when {
+            playbackPositionMillis >= 0L -> playbackPositionMillis
+            timelineStartTime > 0L && isPlaying -> (now - timelineStartTime).coerceAtLeast(0L)
+            else -> timePlayed
+        }
     }
 
     fun paused() {

@@ -110,7 +110,7 @@ abstract class MediaListener(
             var finalDelay = min(delayMillisFraction, delayMillis)
                 .coerceAtLeast(scrobbleTimingPrefs.value.minDurationSecs * 1000L - 600L)
 
-            finalDelay = (finalDelay - trackInfo.timePlayed)
+            finalDelay = (finalDelay - trackInfo.effectiveProgressMillis())
                 .coerceAtLeast(2000)// deal with negative or 0 delay
 
             scrobbleQueue.scrobble(
@@ -145,6 +145,10 @@ abstract class MediaListener(
                     normalizedUrlHost = metadata.normalizedUrlHost,
                     artUrl = metadata.artUrl,
                 )
+
+                if (!sameAsOld) {
+                    trackInfo.resetPlaybackProgress()
+                }
 
                 if (mutedHash != null && trackInfo.hash != mutedHash && lastPlaybackState == CommonPlaybackState.Playing)
                     unmute(clearMutedHash = isMuted)

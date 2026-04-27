@@ -6,6 +6,7 @@ Donate to the original developer here:
 - https://buymeacoffee.com/kawaiiDango
 
 Changes:
+- Can be ran side-by-side with original.
 - Premium features have been unlocked.
 - Billing routes & crash analytics have been removed.
 - Refresh recents on track change rather than on 30 second interval.
@@ -15,8 +16,13 @@ Changes:
 - Edit the actively playing track.
   - Will scrobble immediately after an edit is saved.
   - If you need to edit it again, you must edit the scrobbled entry, as the active entry is now treated as no longer scrobble-pending.
+- App icon & default theming changed to blue.
 - More robust album art preservation when editing a track.
 - Mobile widget now supports more refresh intervals (1, 2, 4, 6, 12, 24) instead of always 4 hours.
+- Prevent duplicate LastFM scrobbles in the rare case your edit fails due to needing to reauthenticate.
+  - Edit will be discarded and you will need to redo it.
+- Scrobble threshold now based on track progress rather than time since app started tracking progress.
+  - Meaning if you open the app a minute into a song, it will have 1 minute of tracking instead of starting at 0.
 - Auto-focus settings search bar on desktop.
 - Adjust padding of various elements.
 

@@ -59,8 +59,8 @@ object ThemeUtils {
     }
 
     val defaultTheme
-        get() = ThemeEA1E63
-    val defaultThemeName = ThemeEA1E63.name
+        get() = Theme4385F6
+    val defaultThemeName = Theme4385F6.name
 
     fun themeNameToObject(name: String) = themesMap.getOrDefault(name, defaultTheme)
 }
