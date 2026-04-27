@@ -95,6 +95,7 @@ import dev.etorix.panoscrobbler.navigation.PanoNavigationType
 import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.navigation.PanoTab
 import dev.etorix.panoscrobbler.navigation.rememberPanoNavBackStack
+import dev.etorix.panoscrobbler.themes.ThemePreviewController
 import dev.etorix.panoscrobbler.ui.AvatarOrInitials
 import dev.etorix.panoscrobbler.ui.LocalInnerPadding
 import dev.etorix.panoscrobbler.ui.PanoPullToRefreshStateForTab
@@ -199,6 +200,10 @@ fun PanoAppContent(
         if (backStack.size <= 1)
             return null
 
+        if (currentPanoRoute == PanoRoute.ThemeChooser) {
+            ThemePreviewController.clearPreview()
+        }
+
         val route = backStack.removeLastOrNull()
 
         if (route is PanoRoute.HasTabs)
@@ -208,6 +213,29 @@ fun PanoAppContent(
             titlesMap.remove(route)
 
         return route
+    }
+
+    fun saveThemePreviewAndGoBack() {
+        val previewSettings = ThemePreviewController.previewSettings
+
+        if (currentPanoRoute != PanoRoute.ThemeChooser || previewSettings == null) {
+            goBack()
+            return
+        }
+
+        scope.launch {
+            PlatformStuff.mainPrefs.updateData {
+                it.copy(
+                    themeName = previewSettings.themeName,
+                    themeDynamic = previewSettings.dynamic,
+                    themeRandom = previewSettings.random,
+                    themeDayNight = previewSettings.dayNightMode,
+                    themeContrast = previewSettings.contrastMode,
+                )
+            }
+
+            goBack()
+        }
     }
 
     fun removeAllModals() {
@@ -325,7 +353,12 @@ fun PanoAppContent(
                             selectedTabIdx = tabIdxMap.getOrDefault(currentPanoRoute, 0),
                             fabData = fabData,
                             onNavigate = ::navigate,
-                            onBack = ::goBack,
+                            onBack = {
+                                if (currentPanoRoute == PanoRoute.ThemeChooser)
+                                    saveThemePreviewAndGoBack()
+                                else
+                                    goBack()
+                            },
                             onTabClicked = { pos ->
                                 (currentPanoRoute as? PanoRoute.HasTabs)?.let {
                                     tabIdxMap[it] = pos
@@ -413,7 +446,12 @@ fun PanoAppContent(
                                     fabData?.let { fabData ->
                                         PanoFab(
                                             fabData,
-                                            onBack = ::goBack,
+                                            onBack = {
+                                                if (currentPanoRoute == PanoRoute.ThemeChooser)
+                                                    saveThemePreviewAndGoBack()
+                                                else
+                                                    goBack()
+                                            },
                                             onNavigate = ::navigate,
                                         )
                                     }

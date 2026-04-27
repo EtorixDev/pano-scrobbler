@@ -22,13 +22,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -39,8 +35,7 @@ import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.themes.colors.ThemeVariants
 import dev.etorix.panoscrobbler.ui.LabeledCheckbox
 import dev.etorix.panoscrobbler.utils.PlatformStuff
-import dev.etorix.panoscrobbler.utils.Stuff
-import kotlinx.coroutines.launch
+import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.auto
@@ -57,40 +52,37 @@ import pano_scrobbler.composeapp.generated.resources.system_colors
 fun ThemeChooserScreen(
     modifier: Modifier = Modifier,
 ) {
-    var themeName: String? by rememberSaveable { mutableStateOf(null) }
-    var dynamic: Boolean? by rememberSaveable { mutableStateOf(null) }
-    var dayNightMode: DayNightMode? by rememberSaveable { mutableStateOf(null) }
-    var random: Boolean? by rememberSaveable { mutableStateOf(false) }
-    var contrastMode: ContrastMode? by rememberSaveable { mutableStateOf(null) }
+    val persistedThemeName by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeName }
+    val persistedDynamic by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeDynamic }
+    val persistedDayNightMode by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeDayNight }
+    val persistedRandom by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeRandom }
+    val persistedContrastMode by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeContrast }
     val isAppInNightMode = LocalThemeAttributes.current.isDark
 
-    DisposableEffect(Unit) {
-        onDispose {
-            if (themeName != null && dynamic != null && dayNightMode != null && contrastMode != null) {
-                Stuff.appScope.launch {
-                    PlatformStuff.mainPrefs.updateData {
-                        it.copy(
-                            themeName = themeName!!,
-                            themeDynamic = dynamic!!,
-                            themeDayNight = dayNightMode!!,
-                            themeRandom = random!!,
-                            themeContrast = contrastMode!!
-                        )
-                    }
-                }
-            }
-        }
+    val persistedSettings = remember(
+        persistedThemeName,
+        persistedDynamic,
+        persistedDayNightMode,
+        persistedRandom,
+        persistedContrastMode,
+    ) {
+        ThemePreviewSettings(
+            themeName = persistedThemeName,
+            dynamic = persistedDynamic,
+            random = persistedRandom,
+            dayNightMode = persistedDayNightMode,
+            contrastMode = persistedContrastMode,
+        )
     }
 
-    LaunchedEffect(Unit) {
-        PlatformStuff.mainPrefs.data
-            .collect {
-                themeName = it.themeName
-                dynamic = it.themeDynamic
-                dayNightMode = it.themeDayNight
-                random = it.themeRandom
-                contrastMode = it.themeContrast
-            }
+    LaunchedEffect(persistedSettings) {
+        ThemePreviewController.startPreview(persistedSettings)
+    }
+
+    val previewSettings = ThemePreviewController.previewSettings ?: persistedSettings
+
+    fun updatePreview(transform: ThemePreviewSettings.() -> ThemePreviewSettings) {
+        ThemePreviewController.updatePreview(previewSettings.transform())
     }
 
     Column(
@@ -105,11 +97,11 @@ fun ThemeChooserScreen(
                 ThemeSwatch(
                     themeVariants = themeObj,
                     isDark = isAppInNightMode,
-                    selected = themeName == themeObj.name,
+                    selected = previewSettings.themeName == themeObj.name,
                     onClick = {
-                        themeName = themeObj.name
+                        updatePreview { copy(themeName = themeObj.name) }
                     },
-                    enabled = dynamic != true && random != true,
+                    enabled = !previewSettings.dynamic && !previewSettings.random,
                 )
             }
         }
@@ -120,10 +112,10 @@ fun ThemeChooserScreen(
             DayNightMode.entries.forEach {
                 FilterChip(
                     label = { it.Label() },
-                    selected = dayNightMode == it,
+                    selected = previewSettings.dayNightMode == it,
                     enabled = true,
                     onClick = {
-                        dayNightMode = it
+                        updatePreview { copy(dayNightMode = it) }
                     }
                 )
             }
@@ -138,15 +130,15 @@ fun ThemeChooserScreen(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .alpha(if (dynamic == true) 0.5f else 1f)
+                .alpha(if (previewSettings.dynamic) 0.5f else 1f)
         ) {
             ContrastMode.entries.forEach {
                 FilterChip(
                     label = { it.Label() },
-                    enabled = dynamic != true,
-                    selected = contrastMode == it,
+                    enabled = !previewSettings.dynamic,
+                    selected = previewSettings.contrastMode == it,
                     onClick = {
-                        contrastMode = it
+                        updatePreview { copy(contrastMode = it) }
                     }
                 )
             }
@@ -155,17 +147,21 @@ fun ThemeChooserScreen(
         if (PlatformStuff.supportsDynamicColors && !PlatformStuff.isTv) {
             LabeledCheckbox(
                 text = stringResource(Res.string.system_colors),
-                checked = dynamic == true,
+                checked = previewSettings.dynamic,
                 enabled = true,
-                onCheckedChange = { dynamic = it }
+                onCheckedChange = { checked ->
+                    updatePreview { copy(dynamic = checked) }
+                }
             )
         }
 
         LabeledCheckbox(
             text = stringResource(Res.string.random_on_start),
-            checked = random == true,
+            checked = previewSettings.random,
             enabled = true,
-            onCheckedChange = { random = it }
+            onCheckedChange = { checked ->
+                updatePreview { copy(random = checked) }
+            }
         )
     }
 }

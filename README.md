@@ -9,6 +9,7 @@ Changes:
 - Can be ran side-by-side with original.
 - Premium features have been unlocked.
 - Billing routes & crash analytics have been removed.
+- Live theme previewing without needing to save which backs out of the themes page.
 - Refresh recents on track change rather than on 30 second interval.
   - Refreshes regardless of focus on desktop.
   - Refreshes only while app opened for mobile.
@@ -22,7 +23,7 @@ Changes:
 - Prevent duplicate LastFM scrobbles in the rare case your edit fails due to needing to reauthenticate.
   - Edit will be discarded and you will need to redo it.
 - Scrobble threshold now based on track progress rather than time since app started tracking progress.
-  - Meaning if you open the app a minute into a song, it will have 1 minute of tracking instead of starting at 0.
+  - Meaning if you open the app 1 minute into a song, it will have 1 minute of tracking instead of starting at 0.
 - Auto-focus settings search bar on desktop.
 - Adjust padding of various elements.
 

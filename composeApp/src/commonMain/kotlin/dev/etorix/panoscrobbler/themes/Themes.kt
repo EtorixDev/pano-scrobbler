@@ -7,8 +7,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.State
+import androidx.compose.runtime.setValue
 import dev.etorix.panoscrobbler.themes.colors.ThemeVariants
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
@@ -16,6 +18,33 @@ import kotlin.math.abs
 import kotlin.random.Random
 
 private val randomNumberForProcess = abs(Random.nextInt())
+
+data class ThemePreviewSettings(
+    val themeName: String,
+    val dynamic: Boolean,
+    val random: Boolean,
+    val dayNightMode: DayNightMode,
+    val contrastMode: ContrastMode,
+)
+
+object ThemePreviewController {
+    var previewSettings: ThemePreviewSettings? by mutableStateOf(null)
+        private set
+
+    fun startPreview(settings: ThemePreviewSettings) {
+        if (previewSettings == null) {
+            previewSettings = settings
+        }
+    }
+
+    fun updatePreview(settings: ThemePreviewSettings) {
+        previewSettings = settings
+    }
+
+    fun clearPreview() {
+        previewSettings = null
+    }
+}
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -30,6 +59,13 @@ fun AppTheme(
     val dayNightMode by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeDayNight }
     val contrastMode by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeContrast }
     val isSystemInDarkTheme by isSystemInDarkThemeNative()
+    val previewSettings = ThemePreviewController.previewSettings
+
+    val activeThemeName = previewSettings?.themeName ?: themeName
+    val activeDynamic = previewSettings?.dynamic ?: dynamic
+    val activeRandom = previewSettings?.random ?: random
+    val activeDayNightMode = previewSettings?.dayNightMode ?: dayNightMode
+    val activeContrastMode = previewSettings?.contrastMode ?: contrastMode
 
     if (prefsVersion == 0)
         return
@@ -38,43 +74,43 @@ fun AppTheme(
         onInitDone()
     }
 
-    val isDark = dayNightMode == DayNightMode.DARK ||
-            (dayNightMode == DayNightMode.SYSTEM && isSystemInDarkTheme)
+    val isDark = activeDayNightMode == DayNightMode.DARK ||
+            (activeDayNightMode == DayNightMode.SYSTEM && isSystemInDarkTheme)
 
-    val themeAttributes = remember(isDark, contrastMode, themeName) {
+    val themeAttributes = remember(isDark, activeContrastMode, activeThemeName) {
         val otherColorSchemes = ThemeUtils.themesMap.values
-            .filter { it.name != themeName }
+            .filter { it.name != activeThemeName }
             .map {
                 getColorScheme(
                     theme = it,
                     isDark = isDark,
-                    contrastMode = contrastMode,
+                    contrastMode = activeContrastMode,
                 )
             }
 
         ThemeAttributes(
             isDark = isDark,
-            contrastMode = contrastMode,
+            contrastMode = activeContrastMode,
             allOnSecondaryContainerColors = otherColorSchemes.map { it.onSecondaryContainer },
             allSecondaryContainerColors = otherColorSchemes.map { it.secondaryContainer },
         )
     }
 
     val colorScheme: ColorScheme = when {
-        dynamic && PlatformStuff.supportsDynamicColors -> {
+        activeDynamic && PlatformStuff.supportsDynamicColors -> {
             getDynamicColorScheme(isDark)
         }
 
         else -> {
-            val theme = if (random)
+            val theme = if (activeRandom)
                 ThemeUtils.themesMap.values.toList()[randomNumberForProcess % ThemeUtils.themesMap.size]
             else
-                ThemeUtils.themeNameToObject(themeName)
+                ThemeUtils.themeNameToObject(activeThemeName)
 
             getColorScheme(
                 theme = theme,
                 isDark = isDark,
-                contrastMode = contrastMode,
+                contrastMode = activeContrastMode,
             )
         }
     }
