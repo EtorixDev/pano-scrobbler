@@ -22,7 +22,7 @@ actual fun runUpdateAction(updateAction: UpdateAction) {
                 .start()
         } else if (DesktopStuff.os == DesktopStuff.Os.Linux) {
             val appDir = System.getenv("APPDIR")
-            val relauncher = "$appDir/usr/bin/relaunch.sh"
+            val relauncher = "$appDir/usr/libexec/pano-scrobbler-etd/relaunch.sh"
             ProcessBuilder(relauncher, updateAction.urlOrFilePath)
                 .inheritIO()
                 .start()

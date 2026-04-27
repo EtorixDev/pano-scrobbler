@@ -106,6 +106,8 @@ import dev.etorix.panoscrobbler.utils.LocaleUtils
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
+import dev.etorix.panoscrobbler.utils.VariantStuff
+import dev.etorix.panoscrobbler.work.UpdaterWork
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
@@ -281,6 +283,19 @@ fun PanoAppContent(
     LaunchedEffect(Unit) {
         Stuff.globalSnackbarFlow.collectLatest {
             snackbarHostState.showSnackbar(it)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (!PlatformStuff.isDesktop && !PlatformStuff.isTv && VariantStuff.githubApiUrl != null) {
+            val prefs = PlatformStuff.mainPrefs.data.first()
+            val lastUpdateCheckTime = prefs.lastUpdateCheckTime ?: 0L
+            val checkIntervalMillis = 24L * 60L * 60L * 1000L
+            val checkIsStale = System.currentTimeMillis() - lastUpdateCheckTime >= checkIntervalMillis
+
+            if (prefs.autoUpdates && checkIsStale) {
+                UpdaterWork.schedule(true)
+            }
         }
     }
 

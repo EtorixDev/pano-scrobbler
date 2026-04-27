@@ -10,6 +10,7 @@ import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.VariantStuff
 import dev.etorix.panoscrobbler.utils.redactedMessage
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import org.jetbrains.compose.resources.getString
 import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.done
@@ -87,7 +88,7 @@ class UpdaterWorker(
         delay(1000)
 
         // do not schedule another update if already updated, but not restarted yet
-        if (Stuff.globalUpdateAction.value == null)
+        if (Stuff.globalUpdateAction.value == null && mainPrefs.data.first().autoUpdates)
             UpdaterWork.schedule(false)
 
         return if (latestRelease.isSuccess)

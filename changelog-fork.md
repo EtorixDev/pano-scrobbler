@@ -1,1 +1,1 @@
-- Initial fork release.
+- Expose updater options on android.
