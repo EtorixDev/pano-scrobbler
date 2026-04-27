@@ -95,7 +95,6 @@ data class MainPrefs(
     val notiMonthlyDigests: Boolean = true,
     val notiPersistent: Boolean = PanoNotifications.forcePersistentNoti,
     val digestSeconds: Int? = null,
-    val lastReviewPromptTime: Long? = null,
     val lastUpdateCheckTime: Long? = null,
     val autoUpdates: Boolean = true,
     val version: Int = 0,

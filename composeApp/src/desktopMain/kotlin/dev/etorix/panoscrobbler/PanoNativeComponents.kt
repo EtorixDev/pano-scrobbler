@@ -12,7 +12,6 @@ import dev.etorix.panoscrobbler.media.SessionInfo
 import dev.etorix.panoscrobbler.media.listenForPlayingTrackEvents
 import dev.etorix.panoscrobbler.utils.DesktopStuff
 import dev.etorix.panoscrobbler.utils.PanoTrayUtils
-import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,9 +29,6 @@ object PanoNativeComponents {
     @Suppress("UnsafeDynamicallyLoadedCode")
     fun load() {
         System.load(DesktopStuff.getLibraryPath("pano_native_components"))
-
-        val logFilePath = PlatformStuff.logsDir.resolve("pano-native-components.log")
-        setLogFilePath(logFilePath.absolutePath)
     }
 
     fun init() {
@@ -171,7 +167,7 @@ object PanoNativeComponents {
     // external
 
     @JvmStatic
-    private external fun setLogFilePath(path: String)
+    external fun setLogFilePath(path: String)
 
     @JvmStatic
     external fun stopListeningMedia()

@@ -60,6 +60,8 @@ actual object PanoNotifications {
         )
     }
 
+    actual fun repostFgNotiIfNeeded() {}
+
     actual fun isNotiChannelEnabled(channelId: String): Boolean {
         // todo implement
         return false

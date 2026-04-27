@@ -27,14 +27,11 @@ import dev.etorix.panoscrobbler.onboarding.LoginDestinations
 import dev.etorix.panoscrobbler.onboarding.ShowLinkDialog
 import dev.etorix.panoscrobbler.pref.MediaSearchPrefDialog
 import dev.etorix.panoscrobbler.pref.ProxyPrefDialog
-import dev.etorix.panoscrobbler.ui.getActivityOrNull
 import dev.etorix.panoscrobbler.ui.verticalOverscanPadding
 import dev.etorix.panoscrobbler.updates.ChangelogDialog
 import dev.etorix.panoscrobbler.updates.UpdateAvailableDialog
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
-import dev.etorix.panoscrobbler.utils.VariantStuff
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
@@ -87,20 +84,10 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
     }
 
     modalEntry<PanoRoute.Modal.CollageGenerator> { route ->
-        val activity = getActivityOrNull()
-
         CollageGeneratorDialog(
             collageType = route.collageType,
             timePeriod = route.timePeriod,
             user = route.user,
-            onAskForReview = {
-                VariantStuff.reviewPrompter.showIfNeeded(
-                    activity,
-                    { PlatformStuff.mainPrefs.data.map { it.lastReviewPromptTime }.first() }
-                ) { t ->
-                    PlatformStuff.mainPrefs.updateData { it.copy(lastReviewPromptTime = t) }
-                }
-            },
             modifier = modalModifier()
         )
     }

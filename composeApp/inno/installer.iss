@@ -86,22 +86,49 @@ Root: HKA; Subkey: "{#NSIS_APP_SOFTWARE_KEY}\{#APP_NAME}"; Flags: deletekey; Che
 Root: HKA; Subkey: "{#NSIS_UNINST_KEY}\{#APP_NAME}"; Flags: deletekey; Check: HasNsisLeftovers
 Root: HKA; Subkey: "{#NSIS_LOCALSERVER32_KEY}\{#APP_GUID}"; Flags: deletekey; Check: HasNsisLeftovers
 
-[Messages]
-SelectDirLabel3=❗NOTE: [name] cannot be installed in non-ASCII paths.
-
 [Code]
+function NextButtonClick(CurPageID: Integer): Boolean;
+var
+  Dir: String;
+  I: Integer;
+begin
+  Result := True;
+  if CurPageID = wpSelectDir then
+  begin
+    Dir := WizardDirValue;
+    for I := 1 to Length(Dir) do
+    begin
+      if Ord(Dir[I]) > 127 then
+      begin
+        MsgBox(
+          '{#APP_NAME} cannot be installed in a path containing non-ASCII characters.' + #13#10 +
+          'Please choose a path with ASCII characters only (A-Z, 0-9, etc.).',
+          mbError,
+          MB_OK
+        );
+        Result := False;
+        Exit;
+      end;
+    end;
+  end;
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   AppDataPath: String;
 begin
-  if CurUninstallStep = usPostUninstall then
+  if (CurUninstallStep = usPostUninstall) AND (not UninstallSilent) then
   begin
-    if UninstallSilent then
-      Exit;
-    if MsgBox('Delete user data (settings, cache, etc.)?', mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then
+    AppDataPath := ExpandConstant('{userappdata}\{#APP_NAME_WITHOUT_SPACES}');
+    if DirExists(AppDataPath) then
     begin
-      AppDataPath := ExpandConstant('{userappdata}\{#APP_NAME_WITHOUT_SPACES}');
-      if DirExists(AppDataPath) then
+      if TaskDialogMsgBox(
+        'Delete user data (settings, cache, etc.)?',
+        '',
+        mbConfirmation,
+        MB_YESNO, ['Delete', 'Keep'],
+        0
+      ) = IDYES then
         DelTree(AppDataPath, True, True, True);
     end;
   end;

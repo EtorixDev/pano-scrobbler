@@ -1,14 +1,21 @@
-## Fork Details
+## Pano Scrobbler ETD
 This is a fork of [Pano Scrobbler](https://github.com/kawaiiDango/pano-scrobbler) by [kawaiiDango](https://github.com/kawaiiDango/).
 
 Donate to the original developer here:
 - https://ko-fi.com/kawaiiDango
 - https://buymeacoffee.com/kawaiiDango
 
+---
+
+**This fork is unstable**.
+
+If you utilize this fork you agree not to report bugs in the upstream repository before verifying they also exist in official releases, as well as agreeing to not rate the app poorly through official release channels for bugs or changes introduced in this fork.
+
 Changes:
 - Can be ran side-by-side with original.
 - Premium features have been unlocked.
 - Billing routes & crash analytics removed.
+- Releases and in-app update checks are GitHub-only.
 - App icon & default theming changed to blue.
 - Live theme previewing rather than needing to save which backs out of the themes page.
 - Refresh recents on track change rather than on 30 second interval.
@@ -20,7 +27,7 @@ Changes:
   - If you need to edit it again, you must edit the scrobbled entry, as the active entry is now treated as no longer scrobble-pending.
 - More robust album art preservation when editing a track.
 - Mobile widget now supports more refresh intervals (1, 2, 4, 6, 12, 24) instead of always 4 hours.
-- Prevent duplicate LastFM scrobbles in the rare case your edit fails due to needing to reauthenticate.
+- Prevent duplicate Last.fm scrobbles in the rare case your edit fails due to needing to reauthenticate.
   - Edit will be discarded and you will need to redo it.
 - Scrobble threshold now based on track progress rather than time since app started tracking progress.
   - Meaning if you open the app 1 minute into a song, it will have 1 minute of tracking instead of starting at 0.
@@ -28,12 +35,12 @@ Changes:
 - Adjust padding of various elements.
 
 Notes:
-- Spotify support for covers is blocked for releases from this repo.
-  - Spotify Web API requires a premium subscription which I don't have.
-  - You can build your own copy of the app if you want to use your own Spotify API key.
+- Spotify support for artist image and album art tools is disabled in releases from this repo.
+  - Spotify Web API requires a premium subscription from the app maintainer. As such, releases from this repo do not ship Spotify API credentials.
+  - If you want those features, build your own copy and set `spotify.refreshToken` in `local.properties`.
   - See [instructions.md](./instructions.md) for building steps.
 
-## <img src="composeApp/src/desktopMain/composeResources/drawable/ic_launcher_with_bg.svg" alt="app icon" width="32"/> Pano Scrobbler ETD
+---
 
 <img src="desktop-screenshots/1-scrobbles-desktop.jpg" alt="scrobbles screen" width="250"/> <img src="desktop-screenshots/2-charts-desktop.jpg" alt="charts screen" width="250"/>
 

@@ -19,6 +19,8 @@ expect object PanoNotifications {
 
     suspend fun notifyUpdater(updateAction: UpdateAction)
 
+    fun repostFgNotiIfNeeded()
+
     fun isNotiChannelEnabled(channelId: String): Boolean
 
     fun removeNotificationByKey(key: String)

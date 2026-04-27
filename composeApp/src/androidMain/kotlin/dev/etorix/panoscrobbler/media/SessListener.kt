@@ -61,8 +61,7 @@ class SessListener(
                 allowedPackages,
                 blockedPackages,
                 autoDetectApps,
-                scrobblerEnabled,
-            ) { allowed, blocked, autoDetect, scrobbleEnabled ->
+            ) { allowed, blocked, autoDetect ->
                 onActiveSessionsChanged(platformControllers)
                 val tokensToKeep = sessionTrackers
                     .filter { (k, v) ->

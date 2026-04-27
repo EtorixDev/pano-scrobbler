@@ -27,43 +27,19 @@ class PlayingTrackEventReceiver : BroadcastReceiver() {
 
 internal object PlayingTrackEventIntentCodec {
     private const val EXTRA_EVENT = "event"
-    private const val EXTRA_EVENT_TYPE = "event_type"
 
     fun decode(intent: Intent): PlayingTrackNotifyEvent? {
         val eventStr = intent.getStringExtra(EXTRA_EVENT)
-        val eventType = intent.getStringExtra(EXTRA_EVENT_TYPE)
 
-        if (eventStr == null || eventType == null) {
+        if (eventStr == null) {
             return null
         }
 
-        return when (eventType) {
-            PlayingTrackNotifyEvent.TrackPlaying::class.simpleName -> {
-                Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.TrackPlaying>(eventStr)
-            }
-
-            PlayingTrackNotifyEvent.TrackCancelled::class.simpleName -> {
-                Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.TrackCancelled>(eventStr)
-            }
-
-            PlayingTrackNotifyEvent.TrackLovedUnloved::class.simpleName -> {
-                Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.TrackLovedUnloved>(eventStr)
-            }
-
-            PlayingTrackNotifyEvent.AppAllowedBlocked::class.simpleName -> {
-                Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.AppAllowedBlocked>(eventStr)
-            }
-
-            PlayingTrackNotifyEvent.TrackScrobbleLocked::class.simpleName -> {
-                Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent.TrackScrobbleLocked>(eventStr)
-            }
-
-            else -> {
-                Logger.e {
-                    "Unknown PlayingTrackNotifyEvent type: $eventType, eventStr: $eventStr"
-                }
-                null
-            }
+        return runCatching {
+            Stuff.myJson.decodeFromString<PlayingTrackNotifyEvent>(eventStr)
+        }.getOrElse { error ->
+            Logger.e(error) { "Failed to decode PlayingTrackNotifyEvent: $eventStr" }
+            null
         }
     }
 
@@ -76,9 +52,5 @@ internal object PlayingTrackEventIntentCodec {
             .putExtra(
                 EXTRA_EVENT,
                 Stuff.myJson.encodeToString(event)
-            )
-            .putExtra(
-                EXTRA_EVENT_TYPE,
-                event::class.simpleName
             )
 }

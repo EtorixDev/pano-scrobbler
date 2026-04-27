@@ -7,6 +7,8 @@ Put these in local.properties
 # // https://www.last.fm/api/account/create
 lastfm.key=
 lastfm.secret=
+# Optional: Spotify client credentials for Spotify-backed artist image / album art features
+# in self-built copies. Value is base64(client_id:client_secret).
 # // https://developer.spotify.com/dashboard/
 spotify.refreshToken=<base64 encoded client_id:client_secret>
 
@@ -107,7 +109,16 @@ Currently, the builds skip this step.
 
 ### For desktop:
 
-- Compile the native lib https://github.com/EtorixDev/pano-native-components
+- Rebuild the sibling repo https://github.com/EtorixDev/pano-native-components and copy its
+  outputs into this repo before packaging desktop builds.
+
+  - If the repos are checked out side-by-side, run one of the helper scripts from the
+    `pano-native-components` repo root:
+    - Linux: `./copy-builds-to-pano-dir.sh`
+    - Windows: `copy-builds-to-pano-dir.bat`
+  - On Linux, the native build needs `libwebkit2gtk-4.1-dev`.
+  - Those scripts copy the built libraries into `composeApp/resources/<platform>`, which is where
+    desktop packaging expects them.
 
 - If you intend to package a build for desktop,
   use [Bellsoft's GraalVM based on OpenJDK 25](https://bell-sw.com/pages/downloads/native-image-kit/)
@@ -121,6 +132,10 @@ Currently, the builds skip this step.
   self-built package.
 
 ### GitHub Actions release workflow
+
+The workflow downloads the latest matching native desktop library artifacts from
+`EtorixDev/pano-native-components`, so CI releases do not depend on locally copied `.so` or `.dll`
+files from this repo checkout.
 
 If you want the `Build binaries` workflow to create release artifacts on GitHub Actions, configure
 these repository secrets first:

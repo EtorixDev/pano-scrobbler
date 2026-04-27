@@ -65,12 +65,14 @@ actual object PanoNotifications {
 
     private const val NOTI_ID = 1
 
-    actual val forcePersistentNoti = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-            Build.MANUFACTURER.lowercase() in arrayOf(
-        Stuff.MANUFACTURER_HUAWEI,
-        Stuff.MANUFACTURER_XIAOMI,
-        Stuff.MANUFACTURER_SAMSUNG,
-    )
+    actual val forcePersistentNoti by lazy {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                Build.MANUFACTURER.lowercase() in arrayOf(
+            Stuff.MANUFACTURER_HUAWEI,
+            Stuff.MANUFACTURER_XIAOMI,
+            Stuff.MANUFACTURER_SAMSUNG,
+        ) || PlatformStuff.isTv
+    }
 
     private fun buildNotificationAction(
         icon: Int,
@@ -633,8 +635,7 @@ actual object PanoNotifications {
                 )
             nb.setContentIntent(pendingIntent)
             nb.setContentTitle(
-                context.getString(R.string.scrobbler_on) + " • " +
-                        context.getString(R.string.pref_noti)
+                context.getString(R.string.scrobbler_on)
             )
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -665,9 +666,18 @@ actual object PanoNotifications {
 
         fgNotiShown = false
         try {
-            service.stopForeground(true)
+            service.stopForeground(Service.STOP_FOREGROUND_REMOVE)
         } catch (e: Exception) {
             Logger.e(e) { "Failed to stop foreground service" }
+        }
+    }
+
+    actual fun repostFgNotiIfNeeded() {
+        if (fgNotiShown &&
+            isNotiChannelEnabled(Stuff.CHANNEL_NOTI_FGS) &&
+            activeScrobbleNotifications.isEmpty()
+        ) {
+            notificationManager.notify(NOTI_ID, persistentNotification())
         }
     }
 

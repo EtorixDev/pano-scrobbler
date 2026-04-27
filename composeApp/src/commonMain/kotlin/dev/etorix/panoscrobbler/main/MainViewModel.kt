@@ -106,7 +106,9 @@ class MainViewModel : ViewModel() {
 
     fun updateScrobblerServiceState(requestRebind: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
-            delay(1000)
+            if (requestRebind)
+                delay(2000)
+
             val state = PlatformStuff.checkScrobblerState(requestRebind)
             _scrobblerStateFlow.value = state
 
@@ -116,7 +118,8 @@ class MainViewModel : ViewModel() {
                 killedReasonReported = true
                 val message = state.reason.formatted()
                 val pss = " ${state.reason.pssMb} MB"
-                Logger.e(AppExitException(message + pss)) { message }
+                val notiState = if (!state.reason.fgNoti) " noFgNoti" else ""
+                Logger.e(AppExitException(message + pss + notiState)) { message }
             }
         }
     }

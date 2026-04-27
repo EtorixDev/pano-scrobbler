@@ -2,24 +2,28 @@
 
 ### [android] The app skips scrobbles when it is in the background / The app says that it has been killed
 
-Some manufacturers such as Xiaomi, Huawei, OnePlus and others do not allow 3rd party apps to run in
+Some manufacturers such as Xiaomi, Samsung, Huawei and others do not allow 3rd party apps to run in
 the background by default.
 
 **Workaround for Xiaomi devices:**
 
 - Settings > Apps > Background Autostart
-- Long-press the app in recents > Lock the app
 - App Info > Battery Saver > No restrictions
 - App Info > Force stop
 - Start the app again
 
 The location of these settings will depend on your MIUI / HyperOS version
 
-For other devices, check [dontkillmyapp.com](https://dontkillmyapp.com) and follow all the
-steps in there, for your manufacturer.
+**Workaround for Samsung devices:**
 
-This app can optionally display a persistent notification at all times, which may help. It may be
-impossible to use this app on a stock ROM from certain manufacturers, due to the said restrictions.
+- Search for "Never sleeping apps" in the system settings
+- Add the app to the list
+
+For other devices, go to [dontkillmyapp.com](https://dontkillmyapp.com), click on your mobile
+manufacturer's name on the site and follow all the steps in there.
+
+It may be impossible to use this app on a stock ROM from certain manufacturers, due to the said
+restrictions.
 
 ### [android] The app says that scrobbling is disabled
 

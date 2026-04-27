@@ -115,7 +115,7 @@ fun ScrobblesScreen(
     showChips: Boolean,
     pullToRefreshState: PullToRefreshState,
     onSetRefreshing: (PanoPullToRefreshStateForTab) -> Unit,
-    pullToRefreshTriggered: Flow<Unit>,
+    pullToRefreshTriggered: () -> Flow<Unit>,
     onNavigate: (PanoRoute) -> Unit,
     onTitleChange: (String) -> Unit,
     editDataFlow: Flow<Pair<String, Track>>,
@@ -264,7 +264,7 @@ fun ScrobblesScreen(
                 it.key == expandedKey
             }
 
-            listState.animateScrollToItem(expandedItem?.index ?: 0)
+            listState.requestScrollToItem(expandedItem?.index ?: 0)
         }
     }
 
@@ -347,7 +347,7 @@ fun ScrobblesScreen(
     }
 
     LaunchedEffect(Unit) {
-        pullToRefreshTriggered.collect {
+        pullToRefreshTriggered().collect {
             if (tracks.loadState.refresh is LoadState.NotLoading) {
                 tracks.refresh()
             }

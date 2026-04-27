@@ -87,7 +87,6 @@ fun CollageGeneratorDialog(
     collageType: Int,
     timePeriod: TimePeriod,
     user: UserCached,
-    onAskForReview: suspend () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CollageGeneratorVM = viewModel { CollageGeneratorVM() },
 ) {
@@ -158,11 +157,7 @@ fun CollageGeneratorDialog(
     fun launchedShowSavedMessage() {
         showSavedMessage = true
         scope.launch {
-            delay(1000)
-
-            onAskForReview()
-
-            delay(2000)
+            delay(3000)
             showSavedMessage = false
         }
     }

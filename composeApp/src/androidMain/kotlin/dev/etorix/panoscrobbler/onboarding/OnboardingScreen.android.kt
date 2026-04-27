@@ -34,12 +34,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.Warning
 import dev.etorix.panoscrobbler.main.MainViewModel
 import dev.etorix.panoscrobbler.main.ScrobblerState
+import dev.etorix.panoscrobbler.media.PlayingTrackNotifyEvent
+import dev.etorix.panoscrobbler.media.notifyPlayingTrackEvent
 import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.navigation.enumSaver
 import dev.etorix.panoscrobbler.pref.AppListSaveType
@@ -61,12 +63,12 @@ import pano_scrobbler.composeapp.generated.resources.grant_notification_access
 import pano_scrobbler.composeapp.generated.resources.grant_notification_access_desc
 import pano_scrobbler.composeapp.generated.resources.notification_access_tv
 import pano_scrobbler.composeapp.generated.resources.persistent_noti_desc
+import pano_scrobbler.composeapp.generated.resources.persistent_noti_fgs
 import pano_scrobbler.composeapp.generated.resources.persistent_noti_oems
 import pano_scrobbler.composeapp.generated.resources.pref_login
 import pano_scrobbler.composeapp.generated.resources.pref_scrobble_from
 import pano_scrobbler.composeapp.generated.resources.send_notifications
 import pano_scrobbler.composeapp.generated.resources.send_notifications_desc
-import pano_scrobbler.composeapp.generated.resources.show_persistent_noti
 import pano_scrobbler.composeapp.generated.resources.will_not_scrobble
 
 
@@ -93,7 +95,8 @@ private fun NotificationPermissionStep(
     val permRequest = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-//        if (isGranted)
+        if (isGranted)
+            notifyPlayingTrackEvent(PlayingTrackNotifyEvent.RepostFgNoti)
         onDone()
     }
 
@@ -159,7 +162,7 @@ private fun NotificationListenerStep(
         isDone = isDone,
         isExpanded = isExpanded,
         onSkip = { warningShown = true },
-        additionalContent = if (AndroidStuff.canShowPersistentNotiIfEnabled && !PlatformStuff.isTv) {
+        additionalContent = if (AndroidStuff.canShowPersistentNotiIfEnabled) {
             {
                 Row(
                     modifier = Modifier.fillMaxWidth()
@@ -186,14 +189,16 @@ private fun NotificationListenerStep(
                         modifier = Modifier.padding(start = 16.dp)
                     ) {
                         Text(
-                            text = stringResource(Res.string.show_persistent_noti),
+                            text = stringResource(Res.string.persistent_noti_fgs),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                         Text(
                             text = stringResource(
                                 Res.string.persistent_noti_desc,
                                 stringResource(Res.string.persistent_noti_oems)
                             ),
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
                 }
@@ -228,9 +233,6 @@ actual fun OnboardingScreen(
         listOfNotNull(
             OnboardingStepType.LOGIN,
             OnboardingStepType.NOTIFICATION_LISTENER,
-            if (!PlatformStuff.isTv && AndroidStuff.isDkmaNeeded() && scrobblerState == ScrobblerState.NLSDisabled)
-                OnboardingStepType.DKMA
-            else null,
             OnboardingStepType.CHOOSE_APPS,
             if (!PlatformStuff.isTv && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
                 OnboardingStepType.SEND_NOTIFICATIONS
@@ -271,18 +273,19 @@ actual fun OnboardingScreen(
 
     LaunchedEffect(doneStatus.toList()) {
         if (doneStatus.all { it }) {
+            mainViewModel.updateScrobblerServiceState(true)
             onDone()
         } else {
             currentStep = steps.firstOrNull { !doneStatus[steps.indexOf(it)] } ?: steps.last()
         }
     }
 
-    LifecycleResumeEffect(Unit) {
+    LifecycleStartEffect(Unit) {
         if (scrobblerState == ScrobblerState.NLSDisabled || scrobblerState == ScrobblerState.Unknown) {
             mainViewModel.updateScrobblerServiceState(false)
         }
 
-        onPauseOrDispose { }
+        onStopOrDispose { }
     }
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
