@@ -17,7 +17,7 @@ object LoginDestinations {
                 "",
             )
 
-            if (!PlatformStuff.isDesktop && !PlatformStuff.isTv) {
+            if (!PlatformStuff.isTv) {
                 val urlBuilder = URLBuilder("https://www.last.fm/api/auth")
                 urlBuilder.set {
                     parameters.append("api_key", Requesters.lastfmUnauthedRequester.apiKey)
