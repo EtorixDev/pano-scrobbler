@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -128,6 +129,8 @@ fun ScrobblesScreen(
     var selectedType by rememberSaveable { mutableStateOf(ScrobblesType.RECENTS) }
     var timeJumpMillis by rememberSaveable { mutableStateOf<Long?>(null) }
     val tracks = viewModel.tracks.collectAsLazyPagingItems()
+    val currentTracks by rememberUpdatedState(tracks)
+    val currentViewModel by rememberUpdatedState(viewModel)
     val pendingScrobblesWithCount by
     if (user.isSelf)
         viewModel.pendingScrobblesWithCount.collectAsStateWithLifecycle()
@@ -178,7 +181,7 @@ fun ScrobblesScreen(
     }
 
     fun currentTopTrackItem() =
-        tracks.itemSnapshotList.items.firstOrNull() as? TrackWrapper.TrackItem
+        currentTracks.itemSnapshotList.items.firstOrNull() as? TrackWrapper.TrackItem
 
     fun topTrackListIndex(): Int {
         var index = 0
@@ -258,6 +261,12 @@ fun ScrobblesScreen(
         }
     }
 
+    LaunchedEffect(user) {
+        if (user.isSelf && selectedType == ScrobblesType.RECENTS) {
+            currentTracks.refresh()
+        }
+    }
+
     LaunchedEffect(expandedKey) {
         if (expandedKey != null) {
             val expandedItem = listState.layoutInfo.visibleItemsInfo.find {
@@ -321,14 +330,14 @@ fun ScrobblesScreen(
 
     if (user.isSelf) {
         LifecycleStartEffect(Unit) {
-            viewModel.setForeground(true)
+            currentViewModel.setForeground(true)
             onStopOrDispose {
-                viewModel.setForeground(false)
+                currentViewModel.setForeground(false)
             }
         }
 
         LaunchedEffect(pendingScrobblesExpanded) {
-            viewModel.setPendingScrobblesExpanded(pendingScrobblesExpanded)
+            currentViewModel.setPendingScrobblesExpanded(pendingScrobblesExpanded)
         }
     }
 
@@ -348,8 +357,8 @@ fun ScrobblesScreen(
 
     LaunchedEffect(Unit) {
         pullToRefreshTriggered().collect {
-            if (tracks.loadState.refresh is LoadState.NotLoading) {
-                tracks.refresh()
+            if (currentTracks.loadState.refresh is LoadState.NotLoading) {
+                currentTracks.refresh()
             }
         }
     }
@@ -389,7 +398,7 @@ fun ScrobblesScreen(
         }
 
         suspend fun awaitRefreshCompletion() {
-            snapshotFlow { tracks.loadState.refresh }
+            snapshotFlow { currentTracks.loadState.refresh }
                 .dropWhile { it !is LoadState.Loading }
                 .first { it !is LoadState.Loading }
         }
@@ -416,10 +425,10 @@ fun ScrobblesScreen(
                     if (!it.nowPlaying) {
                         delay(1000)
 
-                        if (tracks.loadState.refresh is LoadState.NotLoading &&
-                            !tracks.loadState.hasError
+                        if (currentTracks.loadState.refresh is LoadState.NotLoading &&
+                            !currentTracks.loadState.hasError
                         ) {
-                            tracks.refresh()
+                            currentTracks.refresh()
                         }
 
                         return@launch
@@ -436,10 +445,10 @@ fun ScrobblesScreen(
                             return@launch
                         }
 
-                        if (tracks.loadState.refresh is LoadState.NotLoading &&
-                            !tracks.loadState.hasError
+                        if (currentTracks.loadState.refresh is LoadState.NotLoading &&
+                            !currentTracks.loadState.hasError
                         ) {
-                            tracks.refresh()
+                            currentTracks.refresh()
                             awaitRefreshCompletion()
 
                             if (topTrackMatchesEvent(it) || topTrackUpdatedSince(topTrackKeyBeforeRefresh)) {

@@ -37,6 +37,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -124,6 +125,8 @@ fun FriendsScreen(
 ) {
     val scope = rememberCoroutineScope()
     val friends = viewModel.friends.collectAsLazyPagingItems()
+    val currentFriends by rememberUpdatedState(friends)
+    val currentViewModel by rememberUpdatedState(viewModel)
     val totalFriends by viewModel.totalFriends.collectAsStateWithLifecycle()
     val friendsExtraDataMap by viewModel.friendsExtraDataMap.collectAsStateWithLifecycle()
     val friendsExtraDataMapState = remember { mutableStateMapOf<String, FriendExtraData>() }
@@ -225,10 +228,10 @@ fun FriendsScreen(
 
     LaunchedEffect(Unit) {
         pullToRefreshTriggered().collect {
-            if (friends.loadState.refresh is LoadState.NotLoading) {
-                viewModel.markExtraDataAsStale()
-                viewModel.clearSortedFriends()
-                friends.refresh()
+            if (currentFriends.loadState.refresh is LoadState.NotLoading) {
+                currentViewModel.markExtraDataAsStale()
+                currentViewModel.clearSortedFriends()
+                currentFriends.refresh()
             }
         }
     }

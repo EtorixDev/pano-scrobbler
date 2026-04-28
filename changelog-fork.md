@@ -1,0 +1,1 @@
+- Fixed a bug with auto-refreshing when using multiple services.

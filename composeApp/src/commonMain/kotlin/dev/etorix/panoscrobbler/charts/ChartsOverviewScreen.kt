@@ -34,6 +34,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -153,6 +154,7 @@ fun ChartsOverviewScreen(
     val artists = viewModel.artists.collectAsLazyPagingItems()
     val albums = viewModel.albums.collectAsLazyPagingItems()
     val tracks = viewModel.tracks.collectAsLazyPagingItems()
+    val currentViewModel by rememberUpdatedState(viewModel)
 
     val artistsCount by viewModel.artistCount.collectAsStateWithLifecycle()
     val albumsCount by viewModel.albumCount.collectAsStateWithLifecycle()
@@ -216,20 +218,20 @@ fun ChartsOverviewScreen(
     }
 
     LaunchedEffect(scrolledToTagCloud) {
-        viewModel.setTagCloudVisible(scrolledToTagCloud)
+        currentViewModel.setTagCloudVisible(scrolledToTagCloud)
     }
 
     LaunchedEffect(scrolledToListeningActivity) {
-        viewModel.setListeningActivityVisible(scrolledToListeningActivity)
+        currentViewModel.setListeningActivityVisible(scrolledToListeningActivity)
     }
 
     LifecycleResumeEffect(Unit) {
-        viewModel.setTagCloudVisible(scrolledToTagCloud)
-        viewModel.setListeningActivityVisible(scrolledToListeningActivity)
+        currentViewModel.setTagCloudVisible(scrolledToTagCloud)
+        currentViewModel.setListeningActivityVisible(scrolledToListeningActivity)
 
         onPauseOrDispose {
-            viewModel.setTagCloudVisible(false)
-            viewModel.setListeningActivityVisible(false)
+            currentViewModel.setTagCloudVisible(false)
+            currentViewModel.setListeningActivityVisible(false)
         }
     }
 
