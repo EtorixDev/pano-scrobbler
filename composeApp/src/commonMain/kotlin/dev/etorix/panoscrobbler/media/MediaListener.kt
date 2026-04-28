@@ -17,6 +17,7 @@ abstract class MediaListener(
         val delayPercent: Int,
         val delaySecs: Int,
         val minDurationSecs: Int,
+        val useTrackProgress: Boolean,
     )
 
     private val mainPrefs = PlatformStuff.mainPrefs
@@ -33,7 +34,8 @@ abstract class MediaListener(
             ScrobbleTimingPrefs(
                 delayPercent = it.delayPercentP,
                 delaySecs = it.delaySecsP,
-                minDurationSecs = it.minDurationSecsP
+                minDurationSecs = it.minDurationSecsP,
+                useTrackProgress = it.useTrackProgressP,
             )
         }
 
@@ -110,7 +112,8 @@ abstract class MediaListener(
             var finalDelay = min(delayMillisFraction, delayMillis)
                 .coerceAtLeast(scrobbleTimingPrefs.value.minDurationSecs * 1000L - 600L)
 
-            finalDelay = (finalDelay - trackInfo.effectiveProgressMillis())
+            finalDelay = (finalDelay - if (scrobbleTimingPrefs.value.useTrackProgress)
+                trackInfo.effectiveProgressMillis() else trackInfo.timePlayed)
                 .coerceAtLeast(2000)// deal with negative or 0 delay
 
             scrobbleQueue.scrobble(
@@ -226,7 +229,10 @@ abstract class MediaListener(
                         )
                             trackInfo.resetTimePlayed()
 
-                        if (!scrobbleQueue.has(trackInfo.hash) &&
+                        if (timelineChanged && scrobbleTimingPrefs.value.useTrackProgress) {
+                            scrobbleQueue.remove(trackInfo.lastScrobbleHash)
+                            scrobble()
+                        } else if (!scrobbleQueue.has(trackInfo.hash) &&
                             ((playbackInfo.position >= 0L && isPossiblyAtStart) ||
                                     trackInfo.scrobbledState < PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED &&
                                     // ignore state=playing, pos=lowValue spam

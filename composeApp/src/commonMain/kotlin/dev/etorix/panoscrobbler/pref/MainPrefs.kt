@@ -52,6 +52,7 @@ data class MainPrefs(
     private val delaySecs: Int = PREF_DELAY_SECS_DEFAULT,
     private val delayPercent: Int = PREF_DELAY_PER_DEFAULT,
     private val minDurationSecs: Int = PREF_MIN_DURATON_SECS_DEFAULT,
+    private val useTrackProgress: Boolean = false,
     private val scrobbleSpotifyRemote: Boolean = false,
     val linkHeartButtonToRating: Boolean = false,
     val preventDuplicateAmbientScrobbles: Boolean = false,
@@ -160,6 +161,7 @@ data class MainPrefs(
         @JsonNames("delay_per")
         val delayPercent: Int = defaultMainPrefs.delayPercent,
         val minDurationSecs: Int = defaultMainPrefs.minDurationSecs,
+        val useTrackProgress: Boolean = defaultMainPrefs.useTrackProgress,
         @JsonNames("now_playing")
         val submitNowPlaying: Boolean = defaultMainPrefs.submitNowPlaying,
         @JsonNames("fetch_album")
@@ -206,6 +208,9 @@ data class MainPrefs(
 
     val minDurationSecsP
         get() = minDurationSecs.coerceIn(PREF_MIN_DURATON_SECS_MIN, PREF_MIN_DURATON_SECS_MAX)
+
+    val useTrackProgressP
+        get() = useTrackProgress
 
     val demoModeP
         get() = demoMode && BuildKonfig.DEBUG
@@ -257,6 +262,8 @@ data class MainPrefs(
         scrobblerEnabled = prefs.scrobblerEnabled,
         delaySecs = prefs.delaySecs.coerceIn(PREF_DELAY_SECS_MIN, PREF_DELAY_SECS_MAX),
         delayPercent = prefs.delayPercent.coerceIn(PREF_DELAY_PER_MIN, PREF_DELAY_PER_MAX),
+        minDurationSecs = prefs.minDurationSecs.coerceIn(PREF_MIN_DURATON_SECS_MIN, PREF_MIN_DURATON_SECS_MAX),
+        useTrackProgress = prefs.useTrackProgress,
         submitNowPlaying = prefs.submitNowPlaying,
         fetchAlbum = prefs.fetchAlbum,
         autoDetectApps = prefs.autoDetectApps,
@@ -289,6 +296,7 @@ data class MainPrefs(
         delaySecs = delaySecsP,
         delayPercent = delayPercentP,
         minDurationSecs = minDurationSecsP,
+        useTrackProgress = useTrackProgress,
         submitNowPlaying = submitNowPlaying,
         fetchAlbum = fetchAlbum,
         autoDetectApps = autoDetectApps,

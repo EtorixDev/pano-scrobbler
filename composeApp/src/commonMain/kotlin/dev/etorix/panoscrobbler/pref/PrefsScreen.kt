@@ -96,6 +96,8 @@ import pano_scrobbler.composeapp.generated.resources.pref_check_updates
 import pano_scrobbler.composeapp.generated.resources.pref_delay
 import pano_scrobbler.composeapp.generated.resources.pref_delay_mins
 import pano_scrobbler.composeapp.generated.resources.pref_delay_per
+import pano_scrobbler.composeapp.generated.resources.pref_use_track_progress
+import pano_scrobbler.composeapp.generated.resources.pref_use_track_progress_desc
 import pano_scrobbler.composeapp.generated.resources.pref_enabled_apps_summary
 import pano_scrobbler.composeapp.generated.resources.pref_export
 import pano_scrobbler.composeapp.generated.resources.pref_export_desc
@@ -153,6 +155,7 @@ fun PrefsScreen(
     val delayPercent by mainPrefs.data.collectAsStateWithInitialValue { it.delayPercentP }
     val delaySecs by mainPrefs.data.collectAsStateWithInitialValue { it.delaySecsP }
     val minDurationSecs by mainPrefs.data.collectAsStateWithInitialValue { it.minDurationSecsP }
+    val useTrackProgress by mainPrefs.data.collectAsStateWithInitialValue { it.useTrackProgressP }
     val showScrobbleSources by mainPrefs.data.collectAsStateWithInitialValue { it.showScrobbleSources }
     val searchInSource by mainPrefs.data.collectAsStateWithInitialValue { it.searchInSource }
     val searchUrlTemplate by mainPrefs.data.collectAsStateWithInitialValue { p ->
@@ -471,6 +474,15 @@ fun PrefsScreen(
                 max = MainPrefs.PREF_DELAY_SECS_MAX,
                 increments = 5,
                 stringRepresentation = { Stuff.humanReadableDuration(it * 1000L) }
+            )
+        }
+
+        filteredItem(MainPrefs::useTrackProgressP.name, Res.string.pref_use_track_progress) { title ->
+            SwitchPref(
+                text = title,
+                summary = stringResource(Res.string.pref_use_track_progress_desc),
+                value = useTrackProgress,
+                copyToSave = { copy(useTrackProgress = it) }
             )
         }
 

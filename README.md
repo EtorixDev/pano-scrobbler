@@ -20,16 +20,16 @@ Changes:
 - Live theme previewing rather than needing to save which backs out of the themes page.
 - Refresh recents on track change rather than on 30 second interval.
   - Refreshes regardless of focus on desktop.
-  - Refreshes only while app opened for mobile.
+  - Refreshes only while app opened for mobile.W
   - Will refresh up to 3 times after a track change at 3, 6, and 9 seconds post update until a refresh succeeds in receiving new data.
 - Edit the actively playing track.
   - Will scrobble immediately after an edit is saved.
   - If you need to edit it again, you must edit the scrobbled entry, as the active entry is now treated as no longer scrobble-pending.
 - More robust album art preservation when editing a track.
 - Mobile widget now supports more refresh intervals (1, 2, 4, 6, 12, 24) instead of always 4 hours.
-- Prevent duplicate Last.fm scrobbles in the rare case your edit fails due to needing to reauthenticate.
+- Prevent duplicate last.fm scrobbles in the rare case your edit fails due to needing to reauthenticate.
   - Edit will be discarded and you will need to redo it.
-- Scrobble threshold now based on track progress rather than time since app started tracking progress.
+- New setting to apply the scrobble threshold against the track progress rather than time since app started tracking progress.
   - Meaning if you open the app 1 minute into a song, it will have 1 minute of tracking instead of starting at 0.
 - Auto-focus settings search bar on desktop.
 - Adjust padding of various elements.
