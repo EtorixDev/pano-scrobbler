@@ -1,1 +1,0 @@
-- Expose updater options on android.
