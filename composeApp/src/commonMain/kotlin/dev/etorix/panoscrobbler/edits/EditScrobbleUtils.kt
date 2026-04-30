@@ -2,9 +2,9 @@ package dev.etorix.panoscrobbler.edits
 
 import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.api.Requesters
+import dev.etorix.panoscrobbler.api.Scrobblable
 import dev.etorix.panoscrobbler.api.Scrobblables
-import dev.etorix.panoscrobbler.api.ScrobbleResult
-import dev.etorix.panoscrobbler.api.lastfm.Album
+import dev.etorix.panoscrobbler.api.ScrobbleEverywhere
 import dev.etorix.panoscrobbler.api.lastfm.ApiException
 import dev.etorix.panoscrobbler.api.lastfm.Artist
 import dev.etorix.panoscrobbler.api.lastfm.LastFm
@@ -22,6 +22,7 @@ import dev.etorix.panoscrobbler.media.PlayingTrackNotifyEvent
 import dev.etorix.panoscrobbler.media.notifyPlayingTrackEvent
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
+import dev.etorix.panoscrobbler.utils.redactedMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -33,8 +34,18 @@ import org.jetbrains.compose.resources.getString
 import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.rank_change_no_change
 import pano_scrobbler.composeapp.generated.resources.required_fields_empty
+import kotlin.math.abs
 
 class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
+    private class EditScrobbleException(
+        failures: List<Pair<Scrobblable, Throwable>>
+    ) : Exception(
+        failures.joinToString("\n") { (scrobblable, throwable) ->
+            "${scrobblable.userAccount.type}: ${throwable.redactedMessage}"
+        },
+        failures.firstOrNull()?.second
+    )
+
     private val _result = MutableSharedFlow<Pair<ScrobbleData?, Result<Unit>>>()
     val result = _result.asSharedFlow()
 
@@ -142,9 +153,6 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
             duration = origScrobbleData.duration,
             appId = origScrobbleData.appId,
         )
-        val scrobblable = Scrobblables.current
-        val scrobbleResult: Result<ScrobbleResult>
-
         val origTrackObj = Track(
             origTrack,
             null,
@@ -179,50 +187,39 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
             }
         }
 
-        if (scrobblable != null) {
-            if (!isNowPlaying && scrobblable.userAccount.type == AccountType.LASTFM) {
-                runCatching {
-                    LastFm.LastfmUnscrobbler.ensureCanEditScrobbles()
-                }.onFailure {
-                    return Result.failure(it)
-                }
+        if (isNowPlaying) {
+            ScrobbleEverywhere.scrobble(scrobbleData)
+            ScrobbleEverywhere.nowPlaying(scrobbleData)
+            return Result.success(scrobbleData)
+        }
+
+        val editTargets = Scrobblables.all.filter { it.supportsHistoricalEdit() }
+
+        if (editTargets.isNotEmpty()) {
+            if (editTargets.any { it.userAccount.type == AccountType.LASTFM }) {
+                runCatching { LastFm.LastfmUnscrobbler.ensureCanEditScrobbles() }
+                    .onFailure { return Result.failure(it) }
             }
 
-            scrobbleResult = scrobblable.scrobble(scrobbleData)
-            if (scrobbleResult.map { it.ignored }.getOrNull() == true) {
-                return Result.failure(ScrobbleIgnoredException(timeMillis))
-            } else {
-                if (!isNowPlaying) {
-                    // The user might submit the edit after it has been scrobbled, so delete anyways
-                    val deleteResult = scrobblable.delete(origTrackObj)
-                    if (deleteResult.exceptionOrNull() is LastFm.CookiesInvalidatedException) {
-                        return Result.failure(deleteResult.exceptionOrNull()!!)
-                    }
-                    if (deleteResult.isSuccess && scrobblable is ListenBrainz) {
-                        PendingListenBrainzMutation.edit(
-                            userAccount = scrobblable.userAccount,
-                            originalTrack = origTrackObj,
-                            replacementScrobbleData = scrobbleData,
-                        )?.let {
-                            PanoDb.db.getPendingListenBrainzMutationsDao().insertBounded(it)
-                        }
-                    }
-                } else {
-                    scrobblable.updateNowPlaying(scrobbleData)
-                }
-
-                if (rescrobbleRequired)
-                    scrobblable.scrobble(scrobbleData)
+            val failures = editTargets.mapNotNull { scrobblable ->
+                editScrobbleForService(
+                    scrobblable = scrobblable,
+                    scrobbleData = scrobbleData,
+                    origScrobbleData = origScrobbleData,
+                    origTrackObj = origTrackObj,
+                    rescrobbleRequired = rescrobbleRequired,
+                ).exceptionOrNull()?.let { scrobblable to it }
             }
 
-            val _artist = Artist(artist)
-
-            val trackObj = Track(
-                track,
-                album?.let { Album(it, _artist) },
-                _artist,
-                date = timeMillis
-            )
+            if (failures.isNotEmpty()) {
+                return Result.failure(
+                    if (failures.size == 1) {
+                        failures.first().second
+                    } else {
+                        EditScrobbleException(failures)
+                    }
+                )
+            }
         }
 
         // track player
@@ -233,6 +230,97 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
         }
 
         return Result.success(scrobbleData)
+    }
+
+    private fun Scrobblable.supportsHistoricalEdit(): Boolean {
+        return userAccount.type in arrayOf(
+            AccountType.LASTFM,
+            AccountType.LIBREFM,
+            AccountType.GNUFM,
+            AccountType.LISTENBRAINZ,
+            AccountType.CUSTOM_LISTENBRAINZ,
+        )
+    }
+
+    private suspend fun editScrobbleForService(
+        scrobblable: Scrobblable,
+        scrobbleData: ScrobbleData,
+        origScrobbleData: ScrobbleData,
+        origTrackObj: Track,
+        rescrobbleRequired: Boolean,
+    ): Result<Unit> = runCatching {
+        val originalTrackForService =
+            if (scrobblable is ListenBrainz) {
+                scrobblable.findOriginalListenBrainzTrack(origScrobbleData, origTrackObj)
+            } else {
+                origTrackObj
+            }
+
+        scrobblable.scrobble(scrobbleData).getOrThrow()
+            .takeIf { it.ignored }
+            ?.let { throw ScrobbleIgnoredException(origScrobbleData.timestamp) }
+
+        // The user might submit the edit after it has been scrobbled, so delete anyways.
+        val deleteResult = scrobblable.delete(originalTrackForService)
+        if (deleteResult.exceptionOrNull() is LastFm.CookiesInvalidatedException) {
+            throw deleteResult.exceptionOrNull()!!
+        }
+        deleteResult.getOrThrow()
+
+        if (scrobblable is ListenBrainz) {
+            PendingListenBrainzMutation.edit(
+                userAccount = scrobblable.userAccount,
+                originalTrack = originalTrackForService,
+                replacementScrobbleData = scrobbleData,
+            )?.let {
+                PanoDb.db.getPendingListenBrainzMutationsDao().insertBounded(it)
+            }
+        }
+
+        if (rescrobbleRequired) {
+            scrobblable.scrobble(scrobbleData).getOrThrow()
+                .takeIf { it.ignored }
+                ?.let { throw ScrobbleIgnoredException(origScrobbleData.timestamp) }
+        }
+    }
+
+    private suspend fun ListenBrainz.findOriginalListenBrainzTrack(
+        origScrobbleData: ScrobbleData,
+        fallbackTrack: Track,
+    ): Track {
+        if (fallbackTrack.msid != null)
+            return fallbackTrack
+
+        val timestamp = origScrobbleData.timestamp
+        if (timestamp <= 0)
+            return fallbackTrack
+
+        val lookupWindowMs = 5 * 60 * 1000L
+        val pageResult = getRecents(
+            page = 1,
+            cached = false,
+            from = timestamp - lookupWindowMs,
+            to = timestamp + lookupWindowMs,
+            includeNowPlaying = false,
+            limit = 25,
+        ).getOrNull() ?: return fallbackTrack
+
+        val candidates = pageResult.entries
+            .filter { !it.isNowPlaying && it.date != null && it.msid != null }
+
+        return candidates
+            .filter { it.matches(origScrobbleData) }
+            .minByOrNull { abs(it.date!! - timestamp) }
+            ?: candidates
+                .filter { abs(it.date!! - timestamp) <= 2_000L }
+                .minByOrNull { abs(it.date!! - timestamp) }
+            ?: fallbackTrack
+    }
+
+    private fun Track.matches(scrobbleData: ScrobbleData): Boolean {
+        return name.equals(scrobbleData.track, ignoreCase = true) &&
+                artist.name.equals(scrobbleData.artist, ignoreCase = true) &&
+                album?.name.orEmpty().equals(scrobbleData.album.orEmpty(), ignoreCase = true)
     }
 
     fun deleteSimpleEdit(simpleEdit: SimpleEdit) {

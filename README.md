@@ -32,6 +32,7 @@ Changes:
 - Keep a temporary local record of ListenBrainz deletions to prevent them reappearing after a refresh since ListenBrainz batches their deletions to the top of the hour.
 - New setting to apply the scrobble threshold against the track progress rather than time since app started tracking progress.
   - Meaning if you open the app 1 minute into a song, it will have 1 minute of tracking instead of starting at 0.
+- Editing a scrobble on one service will attempt a historical edit on other connected services as well instead of just the one it was initiated on.
 - Auto-focus settings search bar on desktop.
 - Adjust padding of various elements.
 

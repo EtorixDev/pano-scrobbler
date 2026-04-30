@@ -1,3 +1,2 @@
-- Fixed several auto-refresh related bugs.
-- Added "Use track progress" setting for scrobble thresholds.
-- Added local record of ListenBrainz deletes and edits to prevent phantom entries on reload.
+- Fixed editing a now-playing track preventing it from scrobbling on other non-focused services.
+- Made editing an entry on one service attempt historical edits on all connected services rather than just that one.

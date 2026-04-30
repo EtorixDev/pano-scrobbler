@@ -65,6 +65,7 @@ jobs:
         with:
           name: pano-scrobbler-etd-android-universal
           path: dist/pano-scrobbler-etd-android-universal*
+          retention-days: 1
 
       - name: Install Liberica NIK (GraalVM)
         uses: graalvm/setup-graalvm@v1
@@ -102,6 +103,7 @@ jobs:
         with:
           name: pano-scrobbler-etd-${{ matrix.resources-dir }}
           path: dist/pano-scrobbler-etd-${{ matrix.resources-dir }}*
+          retention-days: 1
   
   upload-release:
     needs: [ build ]
