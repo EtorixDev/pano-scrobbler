@@ -20,7 +20,7 @@ import dev.etorix.panoscrobbler.utils.PlatformStuff
         SeenAlbum::class,
         SeenTrackAlbumAssociation::class
     ],
-    version = 19,
+    version = 20,
     autoMigrations = [
         AutoMigration(from = 9, to = 10),
         AutoMigration(from = 10, to = 11, spec = Spec_10_11::class),

@@ -1,2 +1,2 @@
-- Fixed a bug with auto-refreshing when using multiple services.
-- Track-progress based scrobble threshold application delegated to a default disabled setting.
+- Fixed several auto-refresh related bugs.
+- Track-progress based scrobble threshold moved to "Use track progress..." setting.

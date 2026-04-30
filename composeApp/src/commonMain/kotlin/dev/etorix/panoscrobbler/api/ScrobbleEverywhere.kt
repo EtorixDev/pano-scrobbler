@@ -325,7 +325,10 @@ object ScrobbleEverywhere {
         if (scrobbleData.appId != null) {
             val scrobbleSource = ScrobbleSource(
                 timeMillis = scrobbleData.timestamp,
-                pkg = scrobbleData.appId
+                pkg = scrobbleData.appId,
+                artist = scrobbleData.artist,
+                track = scrobbleData.track,
+                album = scrobbleData.album,
             )
             PanoDb.db
                 .getScrobbleSourcesDao()

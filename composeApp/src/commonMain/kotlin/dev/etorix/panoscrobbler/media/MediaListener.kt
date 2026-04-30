@@ -116,10 +116,18 @@ abstract class MediaListener(
                 trackInfo.effectiveProgressMillis() else trackInfo.timePlayed)
                 .coerceAtLeast(2000)// deal with negative or 0 delay
 
+            val inferredStartTimestamp =
+                if (scrobbleTimingPrefs.value.useTrackProgress && trackInfo.timelineStartTime > 0L) {
+                    trackInfo.timelineStartTime
+                } else {
+                    null
+                }
+
             scrobbleQueue.scrobble(
                 trackInfo = trackInfo,
                 appIsAllowListed = trackInfo.appId in allowedPackages.value,
                 delay = finalDelay,
+                timestampOverride = inferredStartTimestamp,
             )
         }
 
@@ -202,8 +210,9 @@ abstract class MediaListener(
             if (!playbackStateChanged /* bandcamp does this */ &&
                 !(playbackInfo.state == CommonPlaybackState.Playing && isPossiblyAtStart) &&
                 !timelineChanged
-            )
+            ) {
                 return
+            }
 
             when (playbackInfo.state) {
                 CommonPlaybackState.Paused,
@@ -229,7 +238,10 @@ abstract class MediaListener(
                         )
                             trackInfo.resetTimePlayed()
 
-                        if (timelineChanged && scrobbleTimingPrefs.value.useTrackProgress) {
+                        if (timelineChanged &&
+                            scrobbleTimingPrefs.value.useTrackProgress &&
+                            trackInfo.scrobbledState < PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED
+                        ) {
                             scrobbleQueue.remove(trackInfo.lastScrobbleHash)
                             scrobble()
                         } else if (!scrobbleQueue.has(trackInfo.hash) &&
@@ -244,7 +256,7 @@ abstract class MediaListener(
                         ) {
                             scrobble()
                         } else if ((timelineChanged && notifyTimelineUpdates || playbackStateChanged) &&
-                            trackInfo.scrobbledState <= PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED
+                            trackInfo.scrobbledState < PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED
                         ) {
                             // update notification
                             notifyPlayingTrackEvent(trackInfo.toTrackPlayingEvent())

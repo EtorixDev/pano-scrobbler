@@ -18,4 +18,7 @@ data class ScrobbleSource(
     val _id: Long = 0,
     val timeMillis: Long,
     val pkg: String,
+    val artist: String? = null,
+    val track: String? = null,
+    val album: String? = null,
 )

@@ -20,6 +20,34 @@ interface ScrobbleSourcesDao {
     @Query("SELECT * FROM $tableName WHERE ABS(timeMillis - :time) < ${Stuff.SCROBBLE_SOURCE_THRESHOLD} ORDER BY ABS(timeMillis - :time) ASC LIMIT 1")
     suspend fun findPlayer(time: Long): ScrobbleSource?
 
+    @Query("SELECT * FROM $tableName WHERE pkg = :pkg AND timeMillis >= :earliest AND timeMillis <= :latest ORDER BY timeMillis DESC LIMIT 1")
+    suspend fun findForPackageBetween(pkg: String, earliest: Long, latest: Long): ScrobbleSource?
+
+    @Query(
+        """
+        SELECT * FROM $tableName
+        WHERE pkg = :pkg
+            AND timeMillis >= :earliest
+            AND timeMillis <= :latest
+            AND artist IS NOT NULL
+            AND track IS NOT NULL
+            AND LOWER(artist) = LOWER(:artist)
+            AND LOWER(track) = LOWER(:track)
+            AND (:album IS NULL OR album IS NULL OR LOWER(album) = LOWER(:album))
+        ORDER BY ABS(timeMillis - :time) ASC
+        LIMIT 1
+        """
+    )
+    suspend fun findSameTrackForPackageBetween(
+        pkg: String,
+        artist: String,
+        track: String,
+        album: String?,
+        time: Long,
+        earliest: Long,
+        latest: Long,
+    ): ScrobbleSource?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(p: ScrobbleSource)
 

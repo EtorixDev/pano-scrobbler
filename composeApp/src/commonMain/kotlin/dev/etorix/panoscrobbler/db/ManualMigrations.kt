@@ -226,7 +226,16 @@ WHERE `extractionTrack` IS NOT NULL
         }
     }
 
+    private val MIGRATION_19_20 = object : Migration(19, 20) {
+        override suspend fun migrate(connection: SQLiteConnection) {
+            val tableName = ScrobbleSourcesDao.tableName
+            connection.execSQL("ALTER TABLE $tableName ADD COLUMN artist TEXT")
+            connection.execSQL("ALTER TABLE $tableName ADD COLUMN track TEXT")
+            connection.execSQL("ALTER TABLE $tableName ADD COLUMN album TEXT")
+        }
+    }
+
     val all = arrayOf(
-        MIGRATION_7_8, MIGRATION_8_9, MIGRATION_14_15
+        MIGRATION_7_8, MIGRATION_8_9, MIGRATION_14_15, MIGRATION_19_20
     )
 }

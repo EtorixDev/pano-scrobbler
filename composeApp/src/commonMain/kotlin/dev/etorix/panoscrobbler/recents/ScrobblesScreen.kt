@@ -103,12 +103,16 @@ import pano_scrobbler.composeapp.generated.resources.reload
 import pano_scrobbler.composeapp.generated.resources.scrobbler_off
 import pano_scrobbler.composeapp.generated.resources.scrobbles
 import pano_scrobbler.composeapp.generated.resources.time_jump
+import kotlin.math.abs
 
 private enum class ScrobblesType {
     RECENTS,
     LOVED,
     TIME_JUMP,
 }
+
+private val AUTO_REFRESH_RETRY_DELAYS_MS = listOf(3_000L, 6_000L, 6_000L)
+private const val SCROBBLE_REFRESH_MATCH_WINDOW_MS = 2_000L
 
 @Composable
 fun ScrobblesScreen(
@@ -143,6 +147,10 @@ fun ScrobblesScreen(
     val showScrobbleSources by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue {
         it.showScrobbleSources
     }
+    val submitNowPlaying by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue {
+        it.submitNowPlaying
+    }
+    val currentSubmitNowPlaying by rememberUpdatedState(submitNowPlaying)
     val accountType by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.currentAccountType }
     val otherPlatformsLearnt by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.desktopAppLearnt }
     var pendingScrobblesExpanded by rememberSaveable { mutableStateOf(false) }
@@ -324,7 +332,8 @@ fun ScrobblesScreen(
                 shouldAutoScrollToUpdatedTopTrack = false
             }
 
-            is LoadState.Error -> Unit
+            is LoadState.Error -> {
+            }
         }
     }
 
@@ -368,8 +377,16 @@ fun ScrobblesScreen(
             return@LaunchedEffect
         }
 
-        fun topTrackMatchesEvent(event: PlayingTrackNotifyEvent.TrackPlaying): Boolean {
-            val topTrack = currentTopTrackItem()?.track ?: return false
+        fun nullableStringMatches(value: String?, candidates: Set<String?>): Boolean {
+            return candidates.any { candidate ->
+                value.orEmpty().equals(candidate.orEmpty(), ignoreCase = true)
+            }
+        }
+
+        fun trackIdentityMatchesEvent(
+            track: Track,
+            event: PlayingTrackNotifyEvent.TrackPlaying,
+        ): Boolean {
             val candidateArtists = setOf(
                 event.scrobbleData.artist,
                 event.origScrobbleData.artist,
@@ -383,10 +400,32 @@ fun ScrobblesScreen(
                 event.origScrobbleData.album,
             )
 
+            return nullableStringMatches(track.artist.name, candidateArtists) &&
+                    nullableStringMatches(track.name, candidateTracks) &&
+                    nullableStringMatches(track.album?.name, candidateAlbums)
+        }
+
+        fun topTrackMatchesEvent(event: PlayingTrackNotifyEvent.TrackPlaying): Boolean {
+            val topTrack = currentTopTrackItem()?.track
+            if (topTrack == null) return false
+
             return topTrack.isNowPlaying == event.nowPlaying &&
-                    topTrack.artist.name in candidateArtists &&
-                    topTrack.name in candidateTracks &&
-                    topTrack.album?.name in candidateAlbums
+                    trackIdentityMatchesEvent(topTrack, event)
+        }
+
+        fun scrobbleEntryMatchesEvent(event: PlayingTrackNotifyEvent.TrackPlaying): Boolean {
+            val timestamp = event.scrobbleData.timestamp
+            val match = currentTracks.itemSnapshotList.items
+                .filterIsInstance<TrackWrapper.TrackItem>()
+                .firstOrNull { item ->
+                    val track = item.track
+                    val date = track.date ?: return@firstOrNull false
+                    !track.isNowPlaying &&
+                            abs(date - timestamp) <= SCROBBLE_REFRESH_MATCH_WINDOW_MS &&
+                            trackIdentityMatchesEvent(track, event)
+                }
+
+            return match != null
         }
 
         fun topTrackUpdatedSince(topTrackKeyBeforeRefresh: String?): Boolean {
@@ -409,8 +448,18 @@ fun ScrobblesScreen(
         globalTrackEventFlow
             .filterIsInstance<PlayingTrackNotifyEvent.TrackPlaying>()
             .collect {
+                val refreshEventTimestamp =
+                    if (it.nowPlaying) it.timelineStartTime else it.scrobbleData.timestamp
                 val refreshEventKey =
-                    "${it.hash}\n${it.timelineStartTime}\n${it.nowPlaying}"
+                    "${it.hash}\n$refreshEventTimestamp\n${it.nowPlaying}"
+
+                if (it.nowPlaying && !it.preprocessed) {
+                    return@collect
+                }
+
+                if (it.nowPlaying && !currentSubmitNowPlaying) {
+                    return@collect
+                }
 
                 if (lastRefreshEventKey == refreshEventKey) {
                     return@collect
@@ -423,25 +472,45 @@ fun ScrobblesScreen(
                     val topTrackKeyBeforeRefresh = currentTopTrackItem()?.key
 
                     if (!it.nowPlaying) {
-                        delay(1000)
+                        AUTO_REFRESH_RETRY_DELAYS_MS.forEach { delayMs ->
+                            if (scrobbleEntryMatchesEvent(it)) {
+                                return@launch
+                            }
 
-                        if (currentTracks.loadState.refresh is LoadState.NotLoading &&
-                            !currentTracks.loadState.hasError
-                        ) {
-                            currentTracks.refresh()
+                            delay(delayMs)
+
+                            if (scrobbleEntryMatchesEvent(it)) {
+                                return@launch
+                            }
+
+                            if (currentTracks.loadState.refresh is LoadState.NotLoading &&
+                                !currentTracks.loadState.hasError
+                            ) {
+                                currentTracks.refresh()
+                                awaitRefreshCompletion()
+
+                                if (scrobbleEntryMatchesEvent(it)) {
+                                    return@launch
+                                }
+                            }
                         }
 
                         return@launch
                     }
 
-                    repeat(3) { _ ->
-                        if (topTrackMatchesEvent(it) || topTrackUpdatedSince(topTrackKeyBeforeRefresh)) {
+                    var completedRefresh = false
+                    AUTO_REFRESH_RETRY_DELAYS_MS.forEach { delayMs ->
+                        val topUpdated = topTrackUpdatedSince(topTrackKeyBeforeRefresh)
+                        val topMatches = topTrackMatchesEvent(it)
+                        if (topUpdated || (completedRefresh && topMatches)) {
                             return@launch
                         }
 
-                        delay(3_000L)
+                        delay(delayMs)
 
-                        if (topTrackMatchesEvent(it) || topTrackUpdatedSince(topTrackKeyBeforeRefresh)) {
+                        val topUpdatedAfterDelay = topTrackUpdatedSince(topTrackKeyBeforeRefresh)
+                        val topMatchesAfterDelay = topTrackMatchesEvent(it)
+                        if (topUpdatedAfterDelay || (completedRefresh && topMatchesAfterDelay)) {
                             return@launch
                         }
 
@@ -450,6 +519,7 @@ fun ScrobblesScreen(
                         ) {
                             currentTracks.refresh()
                             awaitRefreshCompletion()
+                            completedRefresh = true
 
                             if (topTrackMatchesEvent(it) || topTrackUpdatedSince(topTrackKeyBeforeRefresh)) {
                                 return@launch

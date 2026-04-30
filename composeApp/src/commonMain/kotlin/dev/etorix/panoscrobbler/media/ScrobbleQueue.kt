@@ -7,6 +7,7 @@ import dev.etorix.panoscrobbler.api.ScrobbleEverywhere
 import dev.etorix.panoscrobbler.api.ScrobbleResult
 import dev.etorix.panoscrobbler.api.lastfm.ScrobbleData
 import dev.etorix.panoscrobbler.db.BlockedMetadata
+import dev.etorix.panoscrobbler.db.PanoDb
 import dev.etorix.panoscrobbler.utils.PanoNotifications
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
@@ -92,32 +93,47 @@ class ScrobbleQueue(
         delay: Long,
         timestampOverride: Long? = null,
     ) {
-        if (trackInfo.title.isEmpty() || has(trackInfo.hash))
+        if (trackInfo.title.isEmpty() || has(trackInfo.hash)) {
             return
+        }
 
         val submitAtTime = PlatformStuff.monotonicTimeMs() + delay
         val hash = trackInfo.hash
+        val wasScrobbledBeforePrepare =
+            trackInfo.scrobbledState >= PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED
         val prevPlayStartTime =
             if (trackInfo.scrobbledState > PlayingTrackInfo.ScrobbledState.PREPROCESSED)
                 trackInfo.playStartTime
             else
                 null
+        val previousNowPlayingExpired = prevPlayStartTime == null ||
+                (System.currentTimeMillis() - prevPlayStartTime) > min(
+            trackInfo.durationMillis * 3 / 4,
+            4 * 60 * 1000L
+        )
+        val shouldEmitNowPlayingEvent =
+            previousNowPlayingExpired || wasScrobbledBeforePrepare
         trackInfo.prepareForScrobbling()
-        val scrobbleData = trackInfo.toScrobbleData(useOriginals = false)
-            .let {
-                if (timestampOverride != null) {
-                    it.copy(timestamp = timestampOverride)
-                } else {
-                    it
-                }
-            }
-        val origScrobbleData = trackInfo.toScrobbleData(useOriginals = true)
+        fun ScrobbleData.withTimestampOverride() =
+            if (timestampOverride != null) copy(timestamp = timestampOverride) else this
+
+        fun PlayingTrackNotifyEvent.TrackPlaying.withScrobbleData(
+            scrobbleData: ScrobbleData,
+            origScrobbleData: ScrobbleData? = null,
+        ) = copy(
+            scrobbleData = scrobbleData.withTimestampOverride(),
+            origScrobbleData = (origScrobbleData ?: this.origScrobbleData).withTimestampOverride(),
+        )
+
+        val scrobbleData = trackInfo.toScrobbleData(useOriginals = false).withTimestampOverride()
+        val origScrobbleData = trackInfo.toScrobbleData(useOriginals = true).withTimestampOverride()
+        val duplicateWindowStartMillis = timestampOverride ?: trackInfo.timelineStartTime.takeIf { it > 0L }
 
         suspend fun nowPlayingAndSubmit(
             sd: ScrobbleData,
             fetchAdditionalMetadata: Boolean
         ) = coroutineScope {
-            Logger.d { "will submit in ${submitAtTime - PlatformStuff.monotonicTimeMs()}ms" }
+            val nowPlayingSd = sd.withTimestampOverride()
 
             val submitNowPlaying =
                 PlatformStuff.mainPrefs.data.map { it.submitNowPlaying }.first()
@@ -125,17 +141,12 @@ class ScrobbleQueue(
             // now playing for a new track or after that of the previously paused track has expired
             var lastfmNpSucc = false
             if (
-                timestampOverride == null &&
                 submitNowPlaying &&
-                (prevPlayStartTime == null ||
-                        (System.currentTimeMillis() - prevPlayStartTime) > min(
-                    trackInfo.durationMillis * 3 / 4, // 3/4 of the track duration to prevent edge cases
-                    4 * 60 * 1000L // 4 minutes
-                ))
+                (previousNowPlayingExpired || wasScrobbledBeforePrepare)
             ) {
                 val npResults =
                     withTimeoutOrNull(submitAtTime - PlatformStuff.monotonicTimeMs() - 5000) {
-                        ScrobbleEverywhere.nowPlaying(sd)
+                        ScrobbleEverywhere.nowPlaying(nowPlayingSd)
                     }
 
                 // listenbrainz msid for now playing
@@ -149,14 +160,14 @@ class ScrobbleQueue(
                 trackInfo.nowPlayingSubmitted(msid)
 
                 if (msid != null)
-                    notifyPlayingTrackEvent(trackInfo.toTrackPlayingEvent())
+                    notifyPlayingTrackEvent(trackInfo.toTrackPlayingEvent().withScrobbleData(nowPlayingSd))
 
 
                 if (npResults != null && npResults.values.any { !it.isSuccess }) {
                     notifyScrobbleError(
                         notiKey = trackInfo.notiKey,
                         scrobbleResults = npResults,
-                        scrobbleData = sd,
+                        scrobbleData = nowPlayingSd,
                         hash = hash
                     )
                 }
@@ -164,7 +175,6 @@ class ScrobbleQueue(
                 lastfmNpSucc = npResults?.any { (k, v) ->
                     k.userAccount.type == AccountType.LASTFM && v.isSuccess
                 } == true
-
             }
 
             // discord rpc album art
@@ -199,9 +209,49 @@ class ScrobbleQueue(
 
             npArtFetchJob?.cancel()
 
+            val duplicateProbeData = sd.withTimestampOverride()
+            val exactDuplicateSource = duplicateProbeData.appId?.let { appId ->
+                duplicateWindowStartMillis?.let { windowStart ->
+                    PanoDb.db.getScrobbleSourcesDao().findForPackageBetween(
+                        pkg = appId,
+                        earliest = windowStart - Stuff.SCROBBLE_SOURCE_THRESHOLD,
+                        latest = System.currentTimeMillis(),
+                    )
+                }
+            }
+            val sameTrackDuplicateSource = if (exactDuplicateSource == null) {
+                duplicateProbeData.appId?.let { appId ->
+                    duplicateWindowStartMillis?.let { windowStart ->
+                        val windowMillis =
+                            if (trackInfo.durationMillis > 0L) {
+                                (trackInfo.durationMillis * 3 / 4)
+                                    .coerceAtLeast(Stuff.SCROBBLE_SOURCE_THRESHOLD)
+                            } else {
+                                4 * 60 * 1000L
+                            }
+                        PanoDb.db.getScrobbleSourcesDao().findSameTrackForPackageBetween(
+                            pkg = appId,
+                            artist = duplicateProbeData.artist,
+                            track = duplicateProbeData.track,
+                            album = duplicateProbeData.album,
+                            time = windowStart,
+                            earliest = windowStart - windowMillis,
+                            latest = windowStart + windowMillis,
+                        )
+                    }
+                }
+            } else {
+                null
+            }
+            val duplicateSource = exactDuplicateSource ?: sameTrackDuplicateSource
+            if (duplicateSource != null) {
+                trackInfo.scrobbled()
+                return@coroutineScope
+            }
+
             // launch it in a separate scope, so that it does not get cancelled
             scope.launch(Dispatchers.IO) {
-                val scrobbleSd = if (fetchAdditionalMetadata) {
+                val scrobbleSd = (if (fetchAdditionalMetadata) {
                     val additionalMetadata = ScrobbleEverywhere.fetchAdditionalMetadata(
                         scrobbleData,
                         { }
@@ -213,24 +263,27 @@ class ScrobbleQueue(
                     ).scrobbleData
                 } else {
                     sd
-                }
+                }).withTimestampOverride()
 
                 ScrobbleEverywhere.scrobble(scrobbleSd)
             }
 
             trackInfo.scrobbled()
+            val scrobbledEvent = trackInfo.toTrackPlayingEvent().withScrobbleData(sd, origScrobbleData)
 
             notifyPlayingTrackEvent(
-                trackInfo.toTrackPlayingEvent()
+                scrobbledEvent
             )
         }
 
-        notifyPlayingTrackEvent(
-            trackInfo.toTrackPlayingEvent().copy(
-                scrobbleData = scrobbleData,
-                nowPlaying = true,
+        if (shouldEmitNowPlayingEvent) {
+            notifyPlayingTrackEvent(
+                trackInfo.toTrackPlayingEvent().copy(
+                    scrobbleData = scrobbleData,
+                    nowPlaying = true,
+                )
             )
-        )
+        }
 
         if (!appIsAllowListed) {
             scope.launch {
@@ -252,7 +305,7 @@ class ScrobbleQueue(
                 PlayingTrackInfo.ScrobbledState.PREPROCESSED..PlayingTrackInfo.ScrobbledState.NOW_PLAYING_SUBMITTED
             ) {
                 nowPlayingAndSubmit(
-                    trackInfo.toScrobbleData(false),
+                    trackInfo.toScrobbleData(false).withTimestampOverride(),
                     trackInfo.scrobbledState == PlayingTrackInfo.ScrobbledState.PREPROCESSED
                 )
                 return@launch
@@ -307,16 +360,17 @@ class ScrobbleQueue(
                         trackInfo.setArtUrl(additionalMeta.artUrl)
                     }
 
+                    val preprocessedEvent =
+                        trackInfo.toTrackPlayingEvent().withScrobbleData(
+                            preprocessResult.scrobbleData,
+                            additionalMeta.scrobbleData ?: origScrobbleData,
+                        ).copy(nowPlaying = true)
                     notifyPlayingTrackEvent(
-
-                        trackInfo.toTrackPlayingEvent().copy(
-                            origScrobbleData = additionalMeta.scrobbleData ?: origScrobbleData,
-                            nowPlaying = true,
-                        )
+                        preprocessedEvent
                     )
 
                     nowPlayingAndSubmit(
-                        preprocessResult.scrobbleData,
+                        preprocessResult.scrobbleData.withTimestampOverride(),
                         additionalMeta.shouldFetchAgain
                     )
                 }
