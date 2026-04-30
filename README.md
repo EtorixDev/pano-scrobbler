@@ -21,7 +21,7 @@ Changes:
 - Refresh recents on track change rather than on 30 second interval.
   - Refreshes regardless of focus on desktop.
   - Refreshes only while app opened for mobile.W
-  - Will refresh up to 3 times after a track change at 3, 6, and 9 seconds post update until a refresh succeeds in receiving new data.
+  - Will refresh up to 3 times after a track change at 3, 9, and 15 seconds post update until a refresh succeeds in receiving new data.
 - Edit the actively playing track.
   - Will scrobble immediately after an edit is saved.
   - If you need to edit it again, you must edit the scrobbled entry, as the active entry is now treated as no longer scrobble-pending.
@@ -29,6 +29,7 @@ Changes:
 - Mobile widget now supports more refresh intervals (1, 2, 4, 6, 12, 24) instead of always 4 hours.
 - Prevent duplicate last.fm scrobbles in the rare case your edit fails due to needing to reauthenticate.
   - Edit will be discarded and you will need to redo it.
+- Keep a temporary local record of ListenBrainz deletions to prevent them reappearing after a refresh since ListenBrainz batches their deletions to the top of the hour.
 - New setting to apply the scrobble threshold against the track progress rather than time since app started tracking progress.
   - Meaning if you open the app 1 minute into a song, it will have 1 minute of tracking instead of starting at 0.
 - Auto-focus settings search bar on desktop.

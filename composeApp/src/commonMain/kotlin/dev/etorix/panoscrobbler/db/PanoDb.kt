@@ -18,7 +18,8 @@ import dev.etorix.panoscrobbler.utils.PlatformStuff
         ArtistWithDelimiters::class,
         SeenTrack::class,
         SeenAlbum::class,
-        SeenTrackAlbumAssociation::class
+        SeenTrackAlbumAssociation::class,
+        PendingListenBrainzMutation::class
     ],
     version = 20,
     autoMigrations = [
@@ -43,6 +44,7 @@ abstract class PanoDb : RoomDatabase() {
     abstract fun getCustomSpotifyMappingsDao(): CustomSpotifyMappingsDao
     abstract fun getArtistsWithDelimitersDao(): ArtistsWithDelimitersDao
     abstract fun getSeenEntitiesDao(): SeenEntitiesDao
+    abstract fun getPendingListenBrainzMutationsDao(): PendingListenBrainzMutationsDao
 
     companion object {
         val db = PlatformStuff.getDatabaseBuilder()

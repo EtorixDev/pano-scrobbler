@@ -33,6 +33,7 @@ import dev.etorix.panoscrobbler.charts.ListeningActivity
 import dev.etorix.panoscrobbler.charts.TimePeriod
 import dev.etorix.panoscrobbler.charts.TimePeriodType
 import dev.etorix.panoscrobbler.db.PanoDb
+import dev.etorix.panoscrobbler.db.PendingListenBrainzMutation
 import dev.etorix.panoscrobbler.db.SeenTrackAlbumAssociation
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.cacheStrategy
@@ -244,7 +245,7 @@ class ListenBrainz(userAccount: UserAccountSerializable) : Scrobblable(userAccou
 
         val actualLimit = if (limit > 0) limit else 25
 
-        val listens =
+        var listens =
             client.getPageResult<ListenBrainzListensData, Track>(
                 "user/$username/listens",
                 {
@@ -279,14 +280,14 @@ class ListenBrainz(userAccount: UserAccountSerializable) : Scrobblable(userAccou
             }
 
 
-        if (includeNowPlaying) {
+        if (includeNowPlaying && !cached) {
             client.getResult<ListenBrainzListensData>("user/$username/playing-now") {
-                cacheStrategy(cacheStrategy)
+                cacheStrategy(CacheStrategy.NETWORK_ONLY)
                 commonReq()
             }.map { it.payload.listens.firstOrNull()?.let { trackMap(it) } }
                 .getOrNull()
                 ?.let { npTrack ->
-                    return listens.map {
+                    listens = listens.map {
                         it.copy(entries = listOf(npTrack) + it.entries)
                     }
                 }
@@ -295,12 +296,17 @@ class ListenBrainz(userAccount: UserAccountSerializable) : Scrobblable(userAccou
         // run cache hook
         listens.onSuccess { pageResult ->
             outerScope.launch {
+                val recentEntries = pageResult.entries.filter { !it.isNowPlaying }
+
                 PanoDb.db.getSeenEntitiesDao().saveRecentTracks(
-                    pageResult.entries,
+                    recentEntries,
                     mayHaveAlbumArt = false, // track charts have a release_mbid for album art unlike lastfm
                     savedLoved = false, // recents does not contain feedback info
                     priority = SeenTrackAlbumAssociation.Priority.RECENT_TRACKS,
                 )
+
+                if (!cached)
+                    prunePendingMutations(username, recentEntries)
             }
         }
 
@@ -311,10 +317,47 @@ class ListenBrainz(userAccount: UserAccountSerializable) : Scrobblable(userAccou
         track.date ?: return Result.failure(IllegalStateException("no date"))
         val msid = track.msid ?: return Result.success(Unit) // ignore error
 
-        return client.postResult<ListenBrainzSubmitResponse>("delete-listen") {
+        val result = client.postResult<ListenBrainzSubmitResponse>("delete-listen") {
             setJsonBody(ListenBrainzDeleteRequest(track.date, msid))
             commonReq()
-        }.map { }
+        }
+
+        if (result.isSuccess) {
+            PendingListenBrainzMutation.delete(userAccount, track)
+                ?.let {
+                    PanoDb.db.getPendingListenBrainzMutationsDao().insertBounded(it)
+                }
+        }
+
+        return result.map { }
+    }
+
+    private suspend fun prunePendingMutations(
+        username: String,
+        entries: List<Track>,
+    ) {
+        val datedEntries = entries.filter { !it.isNowPlaying && it.date != null }
+        if (datedEntries.isEmpty()) return
+
+        val newest = datedEntries.maxOf { it.date!! }
+        val oldest = datedEntries.minOf { it.date!! }
+        val presentIdentities = datedEntries
+            .mapNotNull { PendingListenBrainzMutation.identityKey(it) }
+            .toSet()
+
+        val dao = PanoDb.db.getPendingListenBrainzMutationsDao()
+        val idsToDelete = dao.activeForAccount(
+            apiRoot = PendingListenBrainzMutation.accountApiRoot(userAccount),
+            username = username,
+        )
+            .filter { mutation ->
+                mutation.listenedAtMillis in oldest..newest &&
+                        mutation.identityKey !in presentIdentities
+            }
+            .map { it._id }
+
+        if (idsToDelete.isNotEmpty())
+            dao.delete(idsToDelete)
     }
 
     override suspend fun getLoves(

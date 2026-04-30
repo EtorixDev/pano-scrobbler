@@ -232,6 +232,12 @@ WHERE `extractionTrack` IS NOT NULL
             connection.execSQL("ALTER TABLE $tableName ADD COLUMN artist TEXT")
             connection.execSQL("ALTER TABLE $tableName ADD COLUMN track TEXT")
             connection.execSQL("ALTER TABLE $tableName ADD COLUMN album TEXT")
+
+            val pendingListenBrainzMutationsTable = PendingListenBrainzMutationsDao.tableName
+            connection.execSQL("CREATE TABLE IF NOT EXISTS `$pendingListenBrainzMutationsTable` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `apiRoot` TEXT NOT NULL, `username` TEXT NOT NULL, `listenedAtMillis` INTEGER NOT NULL, `recordingMsid` TEXT NOT NULL, `kind` TEXT NOT NULL, `createdAtMillis` INTEGER NOT NULL, `expiresAtMillis` INTEGER NOT NULL, `replacementArtist` TEXT, `replacementTrack` TEXT, `replacementAlbum` TEXT, `replacementAlbumArtist` TEXT, `replacementDuration` INTEGER)")
+            connection.execSQL("CREATE INDEX IF NOT EXISTS `index_PendingListenBrainzMutations_apiRoot_username` ON `$pendingListenBrainzMutationsTable` (`apiRoot`, `username`)")
+            connection.execSQL("CREATE INDEX IF NOT EXISTS `index_PendingListenBrainzMutations_expiresAtMillis` ON `$pendingListenBrainzMutationsTable` (`expiresAtMillis`)")
+            connection.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_PendingListenBrainzMutations_apiRoot_username_listenedAtMillis_recordingMsid` ON `$pendingListenBrainzMutationsTable` (`apiRoot`, `username`, `listenedAtMillis`, `recordingMsid`)")
         }
     }
 

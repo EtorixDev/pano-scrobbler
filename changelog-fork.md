@@ -1,2 +1,3 @@
 - Fixed several auto-refresh related bugs.
-- Track-progress based scrobble threshold moved to "Use track progress..." setting.
+- Added "Use track progress" setting for scrobble thresholds.
+- Added local record of ListenBrainz deletes and edits to prevent phantom entries on reload.

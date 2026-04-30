@@ -11,7 +11,9 @@ import dev.etorix.panoscrobbler.api.lastfm.LastFm
 import dev.etorix.panoscrobbler.api.lastfm.ScrobbleData
 import dev.etorix.panoscrobbler.api.lastfm.ScrobbleIgnoredException
 import dev.etorix.panoscrobbler.api.lastfm.Track
+import dev.etorix.panoscrobbler.api.listenbrainz.ListenBrainz
 import dev.etorix.panoscrobbler.db.PanoDb
+import dev.etorix.panoscrobbler.db.PendingListenBrainzMutation
 import dev.etorix.panoscrobbler.db.ScrobbleSource
 import dev.etorix.panoscrobbler.db.SimpleEdit
 import dev.etorix.panoscrobbler.db.SimpleEditsDao.Companion.insertReplaceLowerCase
@@ -195,6 +197,15 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
                     val deleteResult = scrobblable.delete(origTrackObj)
                     if (deleteResult.exceptionOrNull() is LastFm.CookiesInvalidatedException) {
                         return Result.failure(deleteResult.exceptionOrNull()!!)
+                    }
+                    if (deleteResult.isSuccess && scrobblable is ListenBrainz) {
+                        PendingListenBrainzMutation.edit(
+                            userAccount = scrobblable.userAccount,
+                            originalTrack = origTrackObj,
+                            replacementScrobbleData = scrobbleData,
+                        )?.let {
+                            PanoDb.db.getPendingListenBrainzMutationsDao().insertBounded(it)
+                        }
                     }
                 } else {
                     scrobblable.updateNowPlaying(scrobbleData)

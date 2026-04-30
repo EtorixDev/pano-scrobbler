@@ -79,7 +79,6 @@ class DefaultExpirationPolicy : ExpirationPolicy {
 
     private fun getListenBrainzExpiration(url: Url): Long {
         return when (url.segments.lastOrNull()) {
-            "playing-now",
             "listens",
             "following",
             "get-feedback",

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 20,
-    "identityHash": "cfad24d0aa480e3b0b23a92a87cea2cd",
+    "identityHash": "a347f2052994b17b184d5df557d599cb",
     "entities": [
       {
         "tableName": "PendingScrobbles",
@@ -717,11 +717,129 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "PendingListenBrainzMutations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `apiRoot` TEXT NOT NULL, `username` TEXT NOT NULL, `listenedAtMillis` INTEGER NOT NULL, `recordingMsid` TEXT NOT NULL, `kind` TEXT NOT NULL, `createdAtMillis` INTEGER NOT NULL, `expiresAtMillis` INTEGER NOT NULL, `replacementArtist` TEXT, `replacementTrack` TEXT, `replacementAlbum` TEXT, `replacementAlbumArtist` TEXT, `replacementDuration` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "_id",
+            "columnName": "_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "apiRoot",
+            "columnName": "apiRoot",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "username",
+            "columnName": "username",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "listenedAtMillis",
+            "columnName": "listenedAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordingMsid",
+            "columnName": "recordingMsid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtMillis",
+            "columnName": "createdAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expiresAtMillis",
+            "columnName": "expiresAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "replacementArtist",
+            "columnName": "replacementArtist",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "replacementTrack",
+            "columnName": "replacementTrack",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "replacementAlbum",
+            "columnName": "replacementAlbum",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "replacementAlbumArtist",
+            "columnName": "replacementAlbumArtist",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "replacementDuration",
+            "columnName": "replacementDuration",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_PendingListenBrainzMutations_apiRoot_username",
+            "unique": false,
+            "columnNames": [
+              "apiRoot",
+              "username"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_PendingListenBrainzMutations_apiRoot_username` ON `${TABLE_NAME}` (`apiRoot`, `username`)"
+          },
+          {
+            "name": "index_PendingListenBrainzMutations_expiresAtMillis",
+            "unique": false,
+            "columnNames": [
+              "expiresAtMillis"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_PendingListenBrainzMutations_expiresAtMillis` ON `${TABLE_NAME}` (`expiresAtMillis`)"
+          },
+          {
+            "name": "index_PendingListenBrainzMutations_apiRoot_username_listenedAtMillis_recordingMsid",
+            "unique": true,
+            "columnNames": [
+              "apiRoot",
+              "username",
+              "listenedAtMillis",
+              "recordingMsid"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_PendingListenBrainzMutations_apiRoot_username_listenedAtMillis_recordingMsid` ON `${TABLE_NAME}` (`apiRoot`, `username`, `listenedAtMillis`, `recordingMsid`)"
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cfad24d0aa480e3b0b23a92a87cea2cd')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a347f2052994b17b184d5df557d599cb')"
     ]
   }
 }

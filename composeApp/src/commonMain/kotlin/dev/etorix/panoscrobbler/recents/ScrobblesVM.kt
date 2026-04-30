@@ -18,6 +18,8 @@ import dev.etorix.panoscrobbler.api.lastfm.Track
 import dev.etorix.panoscrobbler.api.listenbrainz.ListenBrainz
 import dev.etorix.panoscrobbler.db.PanoDb
 import dev.etorix.panoscrobbler.db.PendingScrobble
+import dev.etorix.panoscrobbler.db.PendingListenBrainzMutation
+import dev.etorix.panoscrobbler.db.PendingListenBrainzMutationKind
 import dev.etorix.panoscrobbler.ui.PanoSnackbarVisuals
 import dev.etorix.panoscrobbler.ui.generateKey
 import dev.etorix.panoscrobbler.utils.PlatformStuff
@@ -26,6 +28,7 @@ import dev.etorix.panoscrobbler.work.CommonWorkState
 import dev.etorix.panoscrobbler.work.PendingScrobblesWork
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +38,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -42,6 +46,10 @@ import kotlinx.coroutines.withContext
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
+private data class PendingTrackDisplay(
+    val item: TrackWrapper.TrackItem,
+    val hidden: Boolean,
+)
 
 class ScrobblesVM(
     val user: UserCached,
@@ -112,7 +120,7 @@ class ScrobblesVM(
         prefetchDistance = 4
     )
 
-    val tracks = _input
+    val tracks: Flow<PagingData<TrackWrapper>> = _input
         .filterNotNull()
         .combine(_loadedCachedVersion) { input, loadedCachedVersion ->
             val loadedCachedVersion =
@@ -123,6 +131,17 @@ class ScrobblesVM(
             input to loadedCachedVersion
         }
         .flatMapLatest { (input, loadedCachedVersion) ->
+            val currentScrobblable = Scrobblables.current
+            val listenBrainzMutationsFlow: Flow<List<PendingListenBrainzMutation>> =
+                if (currentScrobblable is ListenBrainz && user.isSelf && track == null && !input.loadLoved) {
+                    PanoDb.db.getPendingListenBrainzMutationsDao().allForAccountFlow(
+                        apiRoot = PendingListenBrainzMutation.accountApiRoot(currentScrobblable.userAccount),
+                        username = user.name,
+                    )
+                } else {
+                    flowOf(emptyList())
+                }
+
             Pager(
                 config = pagingConfig,
                 pagingSourceFactory = {
@@ -152,6 +171,9 @@ class ScrobblesVM(
                 .flow
                 .cachedIn(viewModelScope)
                 .combine(editsAndDeletes) { pagingData, editsAndDeletesMap ->
+                    pagingData to editsAndDeletesMap
+                }
+                .combine(listenBrainzMutationsFlow) { (pagingData, editsAndDeletesMap), listenBrainzMutations ->
                     if (!_loadedCachedVersion.value) {
                         viewModelScope.launch {
                             delay(50)
@@ -161,20 +183,45 @@ class ScrobblesVM(
 
                     val keysTillNow = mutableSetOf<String>()
                     val cal = Calendar.getInstance()!!
+                    val now = System.currentTimeMillis()
+                    val listenBrainzMutationMap = listenBrainzMutations
+                        .filter { it.expiresAtMillis > now }
+                        .associateBy { it.identityKey }
 
                     // filter duplicates to prevent a crash in LazyColumn
                     pagingData.map { track ->
                         val key = track.generateKey()
+                        val hasLocalOverride = key in editsAndDeletesMap
                         val editedTrack = editsAndDeletesMap[key]
-                        TrackWrapper.TrackItem(editedTrack ?: track, key)
+                        val listenBrainzMutation = PendingListenBrainzMutation.identityKey(track)
+                            ?.let { listenBrainzMutationMap[it] }
+
+                        val displayTrack = when {
+                            hasLocalOverride -> editedTrack
+                            listenBrainzMutation?.kind == PendingListenBrainzMutationKind.DELETE -> null
+                            listenBrainzMutation?.kind == PendingListenBrainzMutationKind.EDIT ->
+                                listenBrainzMutation.toReplacementTrack(track)
+
+                            else -> track
+                        }
+
+                        PendingTrackDisplay(
+                            item = TrackWrapper.TrackItem(
+                                displayTrack ?: track,
+                                displayTrack?.generateKey() ?: key
+                            ),
+                            hidden = displayTrack == null
+                        )
                     }
                         .filter {
+                            if (it.hidden) return@filter false
                             val keep =
-                                it.key !in keysTillNow &&
-                                        (editsAndDeletesMap[it.key] != null || it.key !in editsAndDeletesMap)
-                            keysTillNow += it.key
+                                it.item.key !in keysTillNow &&
+                                        (editsAndDeletesMap[it.item.key] != null || it.item.key !in editsAndDeletesMap)
+                            keysTillNow += it.item.key
                             keep
                         }
+                        .map { it.item }
                         .let {
                             if (track == null && !input.loadLoved) {
                                 it.insertSeparators { before, after ->
@@ -197,7 +244,7 @@ class ScrobblesVM(
                                         null
                                 }
                             } else
-                                it as PagingData<TrackWrapper>
+                                it.map { item -> item as TrackWrapper }
                         }
                 }
         }.cachedIn(viewModelScope)
@@ -326,8 +373,19 @@ class ScrobblesVM(
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                Scrobblables.current?.delete(item.track)
+                val currentScrobblable = Scrobblables.current
+                val optimisticMutation = (currentScrobblable as? ListenBrainz)
+                    ?.let { PendingListenBrainzMutation.delete(it.userAccount, item.track) }
+
+                optimisticMutation?.let {
+                    PanoDb.db.getPendingListenBrainzMutationsDao().insertBounded(it)
+                }
+
+                currentScrobblable?.delete(item.track)
                     ?.onFailure {
+                        optimisticMutation?.let { mutation ->
+                            PanoDb.db.getPendingListenBrainzMutationsDao().deleteExact(mutation)
+                        }
                         if (previousOverride == null) {
                             editsAndDeletes.value -= item.key
                         } else {
