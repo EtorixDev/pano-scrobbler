@@ -37,6 +37,17 @@ import pano_scrobbler.composeapp.generated.resources.required_fields_empty
 import kotlin.math.abs
 
 class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
+    data class EditData(
+        val id: Long,
+        val key: String,
+        val track: Track,
+    )
+
+    private data class ServiceTrackResolution(
+        val track: Track?,
+        val alreadyTarget: Boolean = false,
+    )
+
     private class EditScrobbleException(
         failures: List<Pair<Scrobblable, Throwable>>
     ) : Exception(
@@ -55,7 +66,8 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
     private val _updatedAlbumArtist = MutableSharedFlow<Pair<ScrobbleData, String>>()
     val updatedAlbumArtist = _updatedAlbumArtist.asSharedFlow()
 
-    private val _editData = MutableSharedFlow<Pair<String, Track>>(extraBufferCapacity = 1)
+    private var editDataId = 0L
+    private val _editData = MutableSharedFlow<EditData>(replay = 1, extraBufferCapacity = 1)
     val editDataFlow = _editData.asSharedFlow()
 
     fun doEdit(
@@ -91,7 +103,13 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
                         }
 
                         if (key != null) { // from scrobble history
-                            _editData.emit(key to editedSd.toTrack(origTrack))
+                            _editData.emit(
+                                EditData(
+                                    id = ++editDataId,
+                                    key = key,
+                                    track = editedSd.toTrack(origTrack),
+                                )
+                            )
                         }
                     }
                     .recoverCatching {
@@ -193,7 +211,14 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
             return Result.success(scrobbleData)
         }
 
-        val editTargets = Scrobblables.all.filter { it.supportsHistoricalEdit() }
+        val syncEditsAcrossServices =
+            PlatformStuff.mainPrefs.data.map { it.syncEditsAcrossServices }.first()
+        val editCandidates =
+            if (syncEditsAcrossServices)
+                Scrobblables.all
+            else
+                listOfNotNull(Scrobblables.current)
+        val editTargets = editCandidates.filter { it.supportsHistoricalEdit() }
 
         if (editTargets.isNotEmpty()) {
             if (editTargets.any { it.userAccount.type == AccountType.LASTFM }) {
@@ -249,12 +274,27 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
         origTrackObj: Track,
         rescrobbleRequired: Boolean,
     ): Result<Unit> = runCatching {
-        val originalTrackForService =
+        val resolution = scrobblable.resolveOriginalTrackForService(
+            origScrobbleData = origScrobbleData,
+            scrobbleData = scrobbleData,
+            fallbackTrack = origTrackObj,
+        )
+        if (resolution.alreadyTarget)
+            return@runCatching
+
+        val originalTrackForService = resolution.track
+        if (originalTrackForService == null) {
             if (scrobblable is ListenBrainz) {
-                scrobblable.findOriginalListenBrainzTrack(origScrobbleData, origTrackObj)
-            } else {
-                origTrackObj
+                PendingListenBrainzMutation.unresolvedEdit(
+                    userAccount = scrobblable.userAccount,
+                    originalScrobbleData = origScrobbleData,
+                    replacementScrobbleData = scrobbleData,
+                )?.let {
+                    PanoDb.db.getPendingListenBrainzMutationsDao().insertBounded(it)
+                }
             }
+            return@runCatching
+        }
 
         scrobblable.scrobble(scrobbleData).getOrThrow()
             .takeIf { it.ignored }
@@ -284,16 +324,38 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
         }
     }
 
-    private suspend fun ListenBrainz.findOriginalListenBrainzTrack(
+    private suspend fun Scrobblable.resolveOriginalTrackForService(
         origScrobbleData: ScrobbleData,
+        scrobbleData: ScrobbleData,
         fallbackTrack: Track,
-    ): Track {
-        if (fallbackTrack.msid != null)
-            return fallbackTrack
+    ): ServiceTrackResolution {
+        return when {
+            this is ListenBrainz -> ServiceTrackResolution(
+                track = findOriginalListenBrainzTrack(origScrobbleData, fallbackTrack),
+            )
 
+            userAccount.type in arrayOf(
+                AccountType.LASTFM,
+                AccountType.LIBREFM,
+                AccountType.GNUFM,
+            ) -> resolveTimestampedTrackForService(
+                origScrobbleData = origScrobbleData,
+                scrobbleData = scrobbleData,
+                fallbackTrack = fallbackTrack,
+            )
+
+            else -> ServiceTrackResolution(fallbackTrack)
+        }
+    }
+
+    private suspend fun Scrobblable.resolveTimestampedTrackForService(
+        origScrobbleData: ScrobbleData,
+        scrobbleData: ScrobbleData,
+        fallbackTrack: Track,
+    ): ServiceTrackResolution {
         val timestamp = origScrobbleData.timestamp
         if (timestamp <= 0)
-            return fallbackTrack
+            return ServiceTrackResolution(fallbackTrack)
 
         val lookupWindowMs = 5 * 60 * 1000L
         val pageResult = getRecents(
@@ -303,24 +365,95 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
             to = timestamp + lookupWindowMs,
             includeNowPlaying = false,
             limit = 25,
-        ).getOrNull() ?: return fallbackTrack
+        ).getOrNull() ?: return ServiceTrackResolution(fallbackTrack)
+
+        val candidates = pageResult.entries
+            .filter { !it.isNowPlaying && it.date != null }
+            .filter { abs(it.date!! - timestamp) <= 2_000L }
+
+        fun List<Track>.closest() = minByOrNull { abs(it.date!! - timestamp) }
+
+        val exactOriginal = candidates
+            .filter { it.matchesExact(origScrobbleData) }
+            .closest()
+        val exactTarget = candidates
+            .filter { it.matchesExact(scrobbleData) }
+            .closest()
+        if (exactOriginal == null && exactTarget != null) {
+            return ServiceTrackResolution(
+                track = exactTarget,
+                alreadyTarget = true,
+            )
+        }
+
+        val resolvedTrack = exactOriginal
+            ?: candidates
+                .filter { it.matchesLenient(origScrobbleData) }
+                .closest()
+            ?: candidates.closest()
+            ?: fallbackTrack
+
+        return ServiceTrackResolution(resolvedTrack)
+    }
+
+    private suspend fun ListenBrainz.findOriginalListenBrainzTrack(
+        origScrobbleData: ScrobbleData,
+        fallbackTrack: Track,
+    ): Track? {
+        val timestamp = origScrobbleData.timestamp
+        if (timestamp <= 0)
+            return fallbackTrack.takeIf { it.msid != null }
+
+        val lookupWindowMs = 5 * 60 * 1000L
+        val pageResult = getRecents(
+            page = 1,
+            cached = false,
+            from = timestamp - lookupWindowMs,
+            to = timestamp + lookupWindowMs,
+            includeNowPlaying = false,
+            limit = 25,
+        ).getOrNull() ?: return fallbackTrack.takeIf { it.msid != null }
 
         val candidates = pageResult.entries
             .filter { !it.isNowPlaying && it.date != null && it.msid != null }
 
         return candidates
-            .filter { it.matches(origScrobbleData) }
+            .filter { it.matchesLenient(origScrobbleData) }
             .minByOrNull { abs(it.date!! - timestamp) }
+            ?: fallbackTrack.takeIf { it.msid != null }
             ?: candidates
                 .filter { abs(it.date!! - timestamp) <= 2_000L }
                 .minByOrNull { abs(it.date!! - timestamp) }
-            ?: fallbackTrack
     }
 
-    private fun Track.matches(scrobbleData: ScrobbleData): Boolean {
-        return name.equals(scrobbleData.track, ignoreCase = true) &&
-                artist.name.equals(scrobbleData.artist, ignoreCase = true) &&
-                album?.name.orEmpty().equals(scrobbleData.album.orEmpty(), ignoreCase = true)
+    private fun Track.matchesLenient(scrobbleData: ScrobbleData): Boolean {
+        fun String?.metadataEquals(other: String?): Boolean {
+            return orEmpty().trim().equals(other.orEmpty().trim(), ignoreCase = true)
+        }
+
+        val albumName = album?.name
+        val albumMatches = albumName.isNullOrBlank() ||
+                scrobbleData.album.isNullOrBlank() ||
+                albumName.metadataEquals(scrobbleData.album)
+
+        return name.metadataEquals(scrobbleData.track) &&
+                artist.name.metadataEquals(scrobbleData.artist) &&
+                albumMatches
+    }
+
+    private fun Track.matchesExact(scrobbleData: ScrobbleData): Boolean {
+        fun String?.metadataEquals(other: String?): Boolean {
+            return orEmpty().trim() == other.orEmpty().trim()
+        }
+
+        val albumName = album?.name
+        val albumMatches = albumName.isNullOrBlank() ||
+                scrobbleData.album.isNullOrBlank() ||
+                albumName.metadataEquals(scrobbleData.album)
+
+        return name.metadataEquals(scrobbleData.track) &&
+                artist.name.metadataEquals(scrobbleData.artist) &&
+                albumMatches
     }
 
     fun deleteSimpleEdit(simpleEdit: SimpleEdit) {

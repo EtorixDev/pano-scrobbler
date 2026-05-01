@@ -55,6 +55,7 @@ import dev.etorix.panoscrobbler.charts.TimePeriodsGenerator
 import dev.etorix.panoscrobbler.charts.getPeriodTypeIcon
 import dev.etorix.panoscrobbler.charts.getPeriodTypePluralRes
 import dev.etorix.panoscrobbler.db.PendingScrobble
+import dev.etorix.panoscrobbler.edits.EditScrobbleUtils
 import dev.etorix.panoscrobbler.icons.ArrowDropDown
 import dev.etorix.panoscrobbler.icons.Casino
 import dev.etorix.panoscrobbler.icons.Favorite
@@ -123,7 +124,7 @@ fun ScrobblesScreen(
     pullToRefreshTriggered: () -> Flow<Unit>,
     onNavigate: (PanoRoute) -> Unit,
     onTitleChange: (String) -> Unit,
-    editDataFlow: Flow<Pair<String, Track>>,
+    editDataFlow: Flow<EditScrobbleUtils.EditData>,
     scrobblerStateFlow: StateFlow<ScrobblerState>,
     updateScrobblerState: () -> Unit,
     modifier: Modifier = Modifier,
@@ -532,7 +533,14 @@ fun ScrobblesScreen(
 
     OnEditEffect(
         viewModel,
-        editDataFlow
+        editDataFlow,
+        onEdited = {
+            if (currentTracks.loadState.refresh is LoadState.NotLoading &&
+                !currentTracks.loadState.hasError
+            ) {
+                currentTracks.refresh()
+            }
+        }
     )
 
     PanoPullToRefresh(

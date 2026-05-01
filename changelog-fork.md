@@ -1,2 +1,3 @@
-- Fixed editing a now-playing track preventing it from scrobbling on other non-focused services.
-- Made editing an entry on one service attempt historical edits on all connected services rather than just that one.
+- Moved the historical edit syncing to a default enabled setting.
+- Keep a local record of ListenBrainz(-like instance) edits to prevent phantom rows due to degraded service or delayed operations.
+- Fixed some refresh & editing related bugs.

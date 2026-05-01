@@ -34,6 +34,7 @@ import dev.etorix.panoscrobbler.charts.TimePeriod
 import dev.etorix.panoscrobbler.charts.TimePeriodType
 import dev.etorix.panoscrobbler.db.PanoDb
 import dev.etorix.panoscrobbler.db.PendingListenBrainzMutation
+import dev.etorix.panoscrobbler.db.PendingListenBrainzMutationKind
 import dev.etorix.panoscrobbler.db.SeenTrackAlbumAssociation
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.cacheStrategy
@@ -50,6 +51,7 @@ import kotlinx.coroutines.launch
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.text.SimpleDateFormat
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.min
 
@@ -305,8 +307,10 @@ class ListenBrainz(userAccount: UserAccountSerializable) : Scrobblable(userAccou
                     priority = SeenTrackAlbumAssociation.Priority.RECENT_TRACKS,
                 )
 
-                if (!cached)
+                if (!cached) {
+                    processUnresolvedPendingEdits(recentEntries)
                     prunePendingMutations(username, recentEntries)
+                }
             }
         }
 
@@ -314,22 +318,116 @@ class ListenBrainz(userAccount: UserAccountSerializable) : Scrobblable(userAccou
     }
 
     override suspend fun delete(track: Track): Result<Unit> {
-        track.date ?: return Result.failure(IllegalStateException("no date"))
+        val listenedAtMillis = track.date ?: return Result.failure(IllegalStateException("no date"))
         val msid = track.msid ?: return Result.success(Unit) // ignore error
 
         val result = client.postResult<ListenBrainzSubmitResponse>("delete-listen") {
-            setJsonBody(ListenBrainzDeleteRequest(track.date, msid))
+            setJsonBody(ListenBrainzDeleteRequest(listenedAtMillis, msid))
             commonReq()
         }
 
         if (result.isSuccess) {
+            val dao = PanoDb.db.getPendingListenBrainzMutationsDao()
             PendingListenBrainzMutation.delete(userAccount, track)
-                ?.let {
-                    PanoDb.db.getPendingListenBrainzMutationsDao().insertBounded(it)
-                }
+                ?.let { dao.insertBounded(it) }
+            dao.deleteUnresolved(
+                apiRoot = PendingListenBrainzMutation.accountApiRoot(userAccount),
+                username = userAccount.user.name,
+                listenedAtMillis = listenedAtMillis,
+            )
         }
 
         return result.map { }
+    }
+
+    suspend fun deleteLinkedListens(track: Track): Result<Unit> {
+        val listenedAtMillis = track.date ?: return delete(track)
+        val entries = getRecents(
+            page = 1,
+            cached = false,
+            from = listenedAtMillis - 2_000L,
+            to = listenedAtMillis + 2_000L,
+            includeNowPlaying = false,
+            limit = 25,
+        ).getOrNull()?.entries
+
+        val targets = entries
+            ?.linkedDeleteTargets(track)
+            .orEmpty()
+            .ifEmpty { listOf(track) }
+
+        var firstFailure: Throwable? = null
+        targets.forEach { target ->
+            delete(target)
+                .onFailure {
+                    if (firstFailure == null) {
+                        firstFailure = it
+                    }
+                }
+        }
+
+        return firstFailure
+            ?.let { Result.failure(it) }
+            ?: Result.success(Unit)
+    }
+
+    private suspend fun List<Track>.linkedDeleteTargets(track: Track): List<Track> {
+        val listenedAtMillis = track.date ?: return listOf(track)
+        val activeMutations = PanoDb.db.getPendingListenBrainzMutationsDao()
+            .activeForAccount(
+                apiRoot = PendingListenBrainzMutation.accountApiRoot(userAccount),
+                username = userAccount.user.name,
+            )
+            .filter { it.listenedAtMillis == listenedAtMillis }
+
+        fun String?.metadataEquals(other: String?): Boolean {
+            return orEmpty().trim().equals(other.orEmpty().trim(), ignoreCase = true)
+        }
+
+        fun Track.matchesTrackMetadata(other: Track): Boolean {
+            val albumName = album?.name
+            val otherAlbumName = other.album?.name
+            val albumMatches = albumName.isNullOrBlank() ||
+                    otherAlbumName.isNullOrBlank() ||
+                    albumName.metadataEquals(otherAlbumName)
+
+            return name.metadataEquals(other.name) &&
+                    artist.name.metadataEquals(other.artist.name) &&
+                    albumMatches
+        }
+
+        fun Track.matchesMutationMetadata(mutation: PendingListenBrainzMutation): Boolean {
+            fun matchesMetadata(artist: String?, name: String?, albumName: String?): Boolean {
+                val trackAlbumName = album?.name
+                val albumMatches = albumName.isNullOrBlank() ||
+                        trackAlbumName.isNullOrBlank() ||
+                        albumName.metadataEquals(trackAlbumName)
+
+                return name.metadataEquals(this.name) &&
+                        artist.metadataEquals(this.artist.name) &&
+                        albumMatches
+            }
+
+            return matchesMetadata(
+                mutation.originalArtist,
+                mutation.originalTrack,
+                mutation.originalAlbum,
+            ) || matchesMetadata(
+                mutation.replacementArtist,
+                mutation.replacementTrack,
+                mutation.replacementAlbum,
+            )
+        }
+
+        return (listOf(track) + this)
+            .filter { !it.isNowPlaying && it.date != null && it.msid != null }
+            .filter { candidate ->
+                abs(candidate.date!! - listenedAtMillis) <= 2_000L &&
+                        (candidate.date == listenedAtMillis ||
+                                candidate.matchesTrackMetadata(track) ||
+                                activeMutations.any { candidate.matchesMutationMetadata(it) })
+            }
+            .distinctBy { PendingListenBrainzMutation.identityKey(it) }
     }
 
     private suspend fun prunePendingMutations(
@@ -351,13 +449,82 @@ class ListenBrainz(userAccount: UserAccountSerializable) : Scrobblable(userAccou
             username = username,
         )
             .filter { mutation ->
-                mutation.listenedAtMillis in oldest..newest &&
+                mutation.kind != PendingListenBrainzMutationKind.UNRESOLVED_EDIT &&
+                        mutation.listenedAtMillis in oldest..newest &&
                         mutation.identityKey !in presentIdentities
             }
             .map { it._id }
 
         if (idsToDelete.isNotEmpty())
             dao.delete(idsToDelete)
+    }
+
+    private suspend fun processUnresolvedPendingEdits(entries: List<Track>) {
+        val dao = PanoDb.db.getPendingListenBrainzMutationsDao()
+        val activeMutations = dao.activeForAccount(
+            apiRoot = PendingListenBrainzMutation.accountApiRoot(userAccount),
+            username = userAccount.user.name,
+        )
+        val activeMutationMap = activeMutations
+            .filter { it.kind != PendingListenBrainzMutationKind.UNRESOLVED_EDIT }
+            .groupBy { it.identityKey }
+            .mapValues { (_, mutations) -> mutations.maxBy { it.createdAtMillis } }
+        val unresolvedEdits = activeMutations
+            .filter { it.kind == PendingListenBrainzMutationKind.UNRESOLVED_EDIT }
+
+        if (unresolvedEdits.isEmpty()) return
+
+        unresolvedEdits.forEach { mutation ->
+            val originalTrack = entries
+                .filter { !it.isNowPlaying && it.date != null && it.msid != null }
+                .filter { mutation.matchesUnresolvedOriginal(it, maxDistanceMs = 5 * 60 * 1000L) }
+                .minByOrNull { kotlin.math.abs(it.date!! - mutation.listenedAtMillis) }
+                ?: return@forEach
+            val originalIdentity = PendingListenBrainzMutation.identityKey(originalTrack)
+            when (activeMutationMap[originalIdentity]?.kind) {
+                PendingListenBrainzMutationKind.DELETE -> return@forEach
+                PendingListenBrainzMutationKind.EDIT -> {
+                    dao.deleteUnresolved(
+                        apiRoot = mutation.apiRoot,
+                        username = mutation.username,
+                        listenedAtMillis = mutation.listenedAtMillis,
+                    )
+                    return@forEach
+                }
+
+                PendingListenBrainzMutationKind.UNRESOLVED_EDIT,
+                null -> Unit
+            }
+
+            val replacementScrobbleData = ScrobbleData(
+                artist = mutation.replacementArtist ?: originalTrack.artist.name,
+                track = mutation.replacementTrack ?: originalTrack.name,
+                album = mutation.replacementAlbum ?: originalTrack.album?.name,
+                albumArtist = mutation.replacementAlbumArtist ?: originalTrack.album?.artist?.name,
+                timestamp = mutation.listenedAtMillis,
+                duration = mutation.replacementDuration ?: originalTrack.duration,
+                appId = originalTrack.appId,
+            )
+
+            val scrobbleResult = scrobble(replacementScrobbleData)
+            if (scrobbleResult.isFailure || scrobbleResult.getOrNull()?.ignored == true)
+                return@forEach
+
+            val deleteResult = delete(originalTrack)
+            if (deleteResult.isFailure)
+                return@forEach
+
+            dao.deleteUnresolved(
+                apiRoot = mutation.apiRoot,
+                username = mutation.username,
+                listenedAtMillis = mutation.listenedAtMillis,
+            )
+            PendingListenBrainzMutation.edit(
+                userAccount = userAccount,
+                originalTrack = originalTrack,
+                replacementScrobbleData = replacementScrobbleData,
+            )?.let { dao.insertBounded(it) }
+        }
     }
 
     override suspend fun getLoves(

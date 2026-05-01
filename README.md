@@ -29,10 +29,10 @@ Changes:
 - Mobile widget now supports more refresh intervals (1, 2, 4, 6, 12, 24) instead of always 4 hours.
 - Prevent duplicate last.fm scrobbles in the rare case your edit fails due to needing to reauthenticate.
   - Edit will be discarded and you will need to redo it.
-- Keep a temporary local record of ListenBrainz deletions to prevent them reappearing after a refresh since ListenBrainz batches their deletions to the top of the hour.
 - New setting to apply the scrobble threshold against the track progress rather than time since app started tracking progress.
   - Meaning if you open the app 1 minute into a song, it will have 1 minute of tracking instead of starting at 0.
-- Editing a scrobble on one service will attempt a historical edit on other connected services as well instead of just the one it was initiated on.
+- Keep a temporary local record of ListenBrainz(-like instance) edits and deletions to prevent phantom rows due to ListenBrainz delaying their operations or from degraded service.
+- Added a default enabled setting which will attempt to sync historical edits across connected services instead of just the one it was initiated on.
 - Auto-focus settings search bar on desktop.
 - Adjust padding of various elements.
 

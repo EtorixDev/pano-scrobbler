@@ -122,6 +122,7 @@ import pano_scrobbler.composeapp.generated.resources.pref_show_scrobble_sources
 import pano_scrobbler.composeapp.generated.resources.pref_show_scrobble_sources_desc
 import pano_scrobbler.composeapp.generated.resources.pref_spotify_artist_search_approximate
 import pano_scrobbler.composeapp.generated.resources.pref_spotify_remote
+import pano_scrobbler.composeapp.generated.resources.pref_sync_edits_across_services
 import pano_scrobbler.composeapp.generated.resources.pref_themes
 import pano_scrobbler.composeapp.generated.resources.pref_translate
 import pano_scrobbler.composeapp.generated.resources.pref_translate_credits
@@ -173,6 +174,8 @@ fun PrefsScreen(
     mainPrefs.data.collectAsStateWithInitialValue { it.preventDuplicateAmbientScrobbles }
     val submitNowPlaying by
     mainPrefs.data.collectAsStateWithInitialValue { it.submitNowPlaying }
+    val syncEditsAcrossServices by
+    mainPrefs.data.collectAsStateWithInitialValue { it.syncEditsAcrossServices }
     val trayIconTheme by
     mainPrefs.data.collectAsStateWithInitialValue { it.trayIconTheme }
     val notiPersistent by
@@ -644,6 +647,14 @@ fun PrefsScreen(
             )
         }
 
+        filteredItem(MainPrefs::syncEditsAcrossServices.name, Res.string.pref_sync_edits_across_services) { title ->
+            SwitchPref(
+                text = title,
+                value = syncEditsAcrossServices,
+                copyToSave = { copy(syncEditsAcrossServices = it) }
+            )
+        }
+
         filteredHeader("additional_metatadata", Res.string.external_metadata, Icons.Api)
 
         filteredItem(MainPrefs::lastfmApiAlways.name, Res.string.lastfm) { title ->
@@ -985,4 +996,3 @@ private data class TitleStringResource(
     val formatRes: StringResource?,
     var string: String? = null
 )
-

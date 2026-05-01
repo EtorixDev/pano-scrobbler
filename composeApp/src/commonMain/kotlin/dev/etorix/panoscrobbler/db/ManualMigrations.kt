@@ -241,7 +241,16 @@ WHERE `extractionTrack` IS NOT NULL
         }
     }
 
+    private val MIGRATION_20_21 = object : Migration(20, 21) {
+        override suspend fun migrate(connection: SQLiteConnection) {
+            val pendingListenBrainzMutationsTable = PendingListenBrainzMutationsDao.tableName
+            connection.execSQL("ALTER TABLE `$pendingListenBrainzMutationsTable` ADD COLUMN originalArtist TEXT")
+            connection.execSQL("ALTER TABLE `$pendingListenBrainzMutationsTable` ADD COLUMN originalTrack TEXT")
+            connection.execSQL("ALTER TABLE `$pendingListenBrainzMutationsTable` ADD COLUMN originalAlbum TEXT")
+        }
+    }
+
     val all = arrayOf(
-        MIGRATION_7_8, MIGRATION_8_9, MIGRATION_14_15, MIGRATION_19_20
+        MIGRATION_7_8, MIGRATION_8_9, MIGRATION_14_15, MIGRATION_19_20, MIGRATION_20_21
     )
 }

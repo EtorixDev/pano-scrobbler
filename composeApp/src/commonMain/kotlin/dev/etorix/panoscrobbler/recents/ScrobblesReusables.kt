@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -32,6 +33,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
+import dev.etorix.panoscrobbler.edits.EditScrobbleUtils
 import dev.etorix.panoscrobbler.api.ScrobbleEvent
 import dev.etorix.panoscrobbler.api.ScrobbleEverywhere
 import dev.etorix.panoscrobbler.api.UserCached
@@ -783,11 +785,20 @@ fun LazyListScope.scrobblesListItems(
 @Composable
 fun OnEditEffect(
     viewModel: ScrobblesVM,
-    editDataFlow: Flow<Pair<String, Track>>
+    editDataFlow: Flow<EditScrobbleUtils.EditData>,
+    onEdited: () -> Unit = {},
 ) {
+    var lastConsumedEditId by rememberSaveable { mutableStateOf(0L) }
+
     LaunchedEffect(Unit) {
-        editDataFlow.collect { (key, editedTrack) ->
-            viewModel.editTrack(key, editedTrack)
+        editDataFlow.collect { editData ->
+            if (editData.id <= lastConsumedEditId) {
+                return@collect
+            }
+
+            lastConsumedEditId = editData.id
+            viewModel.editTrack(editData.key, editData.track)
+            onEdited()
         }
     }
 }

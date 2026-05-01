@@ -184,9 +184,25 @@ class ScrobblesVM(
                     val keysTillNow = mutableSetOf<String>()
                     val cal = Calendar.getInstance()!!
                     val now = System.currentTimeMillis()
-                    val listenBrainzMutationMap = listenBrainzMutations
+                    val activeListenBrainzMutations = listenBrainzMutations
                         .filter { it.expiresAtMillis > now }
-                        .associateBy { it.identityKey }
+                    val listenBrainzMutationMap = activeListenBrainzMutations
+                        .filter { it.kind != PendingListenBrainzMutationKind.UNRESOLVED_EDIT }
+                        .groupBy { it.identityKey }
+                        .mapValues { (_, mutations) -> mutations.maxBy { it.createdAtMillis } }
+                    val unresolvedListenBrainzEdits = activeListenBrainzMutations
+                        .filter { it.kind == PendingListenBrainzMutationKind.UNRESOLVED_EDIT }
+                    val latestListenBrainzDeletesByTimestamp = activeListenBrainzMutations
+                        .filter { it.kind == PendingListenBrainzMutationKind.DELETE }
+                        .groupBy { it.listenedAtMillis }
+                        .mapValues { (_, mutations) -> mutations.maxBy { it.createdAtMillis } }
+                    val latestListenBrainzEditsByTimestamp = activeListenBrainzMutations
+                        .filter {
+                            it.kind == PendingListenBrainzMutationKind.EDIT ||
+                                    it.kind == PendingListenBrainzMutationKind.UNRESOLVED_EDIT
+                        }
+                        .groupBy { it.listenedAtMillis }
+                        .mapValues { (_, mutations) -> mutations.maxBy { it.createdAtMillis } }
 
                     // filter duplicates to prevent a crash in LazyColumn
                     pagingData.map { track ->
@@ -195,12 +211,30 @@ class ScrobblesVM(
                         val editedTrack = editsAndDeletesMap[key]
                         val listenBrainzMutation = PendingListenBrainzMutation.identityKey(track)
                             ?.let { listenBrainzMutationMap[it] }
+                            ?: unresolvedListenBrainzEdits
+                                .firstOrNull { it.matchesUnresolvedOriginal(track) }
+                        val latestListenBrainzEdit = listenBrainzMutation
+                            ?.takeIf {
+                                it.kind == PendingListenBrainzMutationKind.EDIT ||
+                                        it.kind == PendingListenBrainzMutationKind.UNRESOLVED_EDIT
+                            }
+                            ?.let { latestListenBrainzEditsByTimestamp[it.listenedAtMillis] ?: it }
+                        val latestListenBrainzDelete =
+                            track.date?.let { latestListenBrainzDeletesByTimestamp[it] }
+                        val deleteWinsForTimestamp =
+                            latestListenBrainzDelete != null &&
+                                    latestListenBrainzDelete.createdAtMillis >=
+                                    (latestListenBrainzEdit?.createdAtMillis ?: 0)
 
                         val displayTrack = when {
                             hasLocalOverride -> editedTrack
+                            deleteWinsForTimestamp -> null
                             listenBrainzMutation?.kind == PendingListenBrainzMutationKind.DELETE -> null
                             listenBrainzMutation?.kind == PendingListenBrainzMutationKind.EDIT ->
-                                listenBrainzMutation.toReplacementTrack(track)
+                                latestListenBrainzEdit?.toReplacementTrack(track)
+
+                            listenBrainzMutation?.kind == PendingListenBrainzMutationKind.UNRESOLVED_EDIT ->
+                                latestListenBrainzEdit?.toReplacementTrack(track)
 
                             else -> track
                         }
@@ -381,7 +415,12 @@ class ScrobblesVM(
                     PanoDb.db.getPendingListenBrainzMutationsDao().insertBounded(it)
                 }
 
-                currentScrobblable?.delete(item.track)
+                val deleteResult = if (currentScrobblable is ListenBrainz)
+                    currentScrobblable.deleteLinkedListens(item.track)
+                else
+                    currentScrobblable?.delete(item.track)
+
+                deleteResult
                     ?.onFailure {
                         optimisticMutation?.let { mutation ->
                             PanoDb.db.getPendingListenBrainzMutationsDao().deleteExact(mutation)

@@ -43,6 +43,13 @@ interface PendingListenBrainzMutationsDao {
         recordingMsid: String,
     )
 
+    @Query("DELETE FROM $tableName WHERE apiRoot = :apiRoot AND username = :username AND listenedAtMillis = :listenedAtMillis AND recordingMsid = ''")
+    suspend fun deleteUnresolved(
+        apiRoot: String,
+        username: String,
+        listenedAtMillis: Long,
+    )
+
     suspend fun deleteExact(mutation: PendingListenBrainzMutation) {
         deleteExact(
             apiRoot = mutation.apiRoot,

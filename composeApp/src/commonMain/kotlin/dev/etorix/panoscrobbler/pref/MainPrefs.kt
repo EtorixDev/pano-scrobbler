@@ -57,6 +57,7 @@ data class MainPrefs(
     val linkHeartButtonToRating: Boolean = false,
     val preventDuplicateAmbientScrobbles: Boolean = false,
     val submitNowPlaying: Boolean = true,
+    val syncEditsAcrossServices: Boolean = true,
     val fetchAlbum: Boolean = false,
     val searchInSource: Boolean = false,
     val firstDayOfWeek: Int = -1,
@@ -164,6 +165,7 @@ data class MainPrefs(
         val useTrackProgress: Boolean = defaultMainPrefs.useTrackProgress,
         @JsonNames("now_playing")
         val submitNowPlaying: Boolean = defaultMainPrefs.submitNowPlaying,
+        val syncEditsAcrossServices: Boolean = defaultMainPrefs.syncEditsAcrossServices,
         @JsonNames("fetch_album")
         val fetchAlbum: Boolean = defaultMainPrefs.fetchAlbum,
         @JsonNames("auto_detect")
@@ -265,6 +267,7 @@ data class MainPrefs(
         minDurationSecs = prefs.minDurationSecs.coerceIn(PREF_MIN_DURATON_SECS_MIN, PREF_MIN_DURATON_SECS_MAX),
         useTrackProgress = prefs.useTrackProgress,
         submitNowPlaying = prefs.submitNowPlaying,
+        syncEditsAcrossServices = prefs.syncEditsAcrossServices,
         fetchAlbum = prefs.fetchAlbum,
         autoDetectApps = prefs.autoDetectApps,
         showScrobbleSources = prefs.showScrobbleSources,
@@ -298,6 +301,7 @@ data class MainPrefs(
         minDurationSecs = minDurationSecsP,
         useTrackProgress = useTrackProgress,
         submitNowPlaying = submitNowPlaying,
+        syncEditsAcrossServices = syncEditsAcrossServices,
         fetchAlbum = fetchAlbum,
         autoDetectApps = autoDetectApps,
         showScrobbleSources = showScrobbleSources,

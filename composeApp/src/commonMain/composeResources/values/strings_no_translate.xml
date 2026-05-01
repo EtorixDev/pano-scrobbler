@@ -49,6 +49,7 @@
     <string name="edit_continue_regex">If found, continue editing with other regex rules &amp; presets</string>
     <string name="pref_use_track_progress" translatable="false">Use track progress</string>
     <string name="pref_use_track_progress_desc" translatable="false">…instead of time since tracking started, if available</string>
+    <string name="pref_sync_edits_across_services" translatable="false">Sync edits across services</string>
 
     <string name="scrobble_sources">Scrobble sources</string>
     <string name="stop">Stop</string>

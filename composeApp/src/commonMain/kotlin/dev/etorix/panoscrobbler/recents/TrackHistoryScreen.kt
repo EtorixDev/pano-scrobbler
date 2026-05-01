@@ -25,6 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import dev.etorix.panoscrobbler.api.UserCached
 import dev.etorix.panoscrobbler.api.lastfm.Track
+import dev.etorix.panoscrobbler.edits.EditScrobbleUtils
 import dev.etorix.panoscrobbler.icons.Cake
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.navigation.PanoRoute
@@ -46,7 +47,7 @@ fun TrackHistoryScreen(
     track: Track,
     onSetTitle: (String) -> Unit,
     onNavigate: (PanoRoute) -> Unit,
-    editDataFlow: Flow<Pair<String, Track>>,
+    editDataFlow: Flow<EditScrobbleUtils.EditData>,
     modifier: Modifier = Modifier,
     viewModel: ScrobblesVM = viewModel { ScrobblesVM(user, track) },
 ) {

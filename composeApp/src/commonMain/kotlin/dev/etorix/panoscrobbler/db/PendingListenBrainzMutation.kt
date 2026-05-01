@@ -36,6 +36,9 @@ data class PendingListenBrainzMutation(
     val replacementAlbum: String? = null,
     val replacementAlbumArtist: String? = null,
     val replacementDuration: Long? = null,
+    val originalArtist: String? = null,
+    val originalTrack: String? = null,
+    val originalAlbum: String? = null,
 ) {
     val identityKey get() = identityKey(listenedAtMillis, recordingMsid)
 
@@ -59,8 +62,28 @@ data class PendingListenBrainzMutation(
             album = album,
             duration = replacementDuration ?: previousTrack.duration,
             date = listenedAtMillis,
-            msid = null,
         )
+    }
+
+    fun matchesUnresolvedOriginal(track: Track, maxDistanceMs: Long = 2_000L): Boolean {
+        if (kind != PendingListenBrainzMutationKind.UNRESOLVED_EDIT)
+            return false
+        val trackDate = track.date ?: return false
+        if (kotlin.math.abs(trackDate - listenedAtMillis) > maxDistanceMs)
+            return false
+
+        fun String?.metadataEquals(other: String?): Boolean {
+            return orEmpty().trim().equals(other.orEmpty().trim(), ignoreCase = true)
+        }
+
+        val albumName = track.album?.name
+        val albumMatches = originalAlbum.isNullOrBlank() ||
+                albumName.isNullOrBlank() ||
+                originalAlbum.metadataEquals(albumName)
+
+        return originalTrack.metadataEquals(track.name) &&
+                originalArtist.metadataEquals(track.artist.name) &&
+                albumMatches
     }
 
     companion object {
@@ -109,6 +132,33 @@ data class PendingListenBrainzMutation(
                 replacementAlbum = replacementScrobbleData.album,
                 replacementAlbumArtist = replacementScrobbleData.albumArtist,
                 replacementDuration = replacementScrobbleData.duration,
+                originalArtist = originalTrack.artist.name,
+                originalTrack = originalTrack.name,
+                originalAlbum = originalTrack.album?.name,
+            )
+        }
+
+        fun unresolvedEdit(
+            userAccount: UserAccountSerializable,
+            originalScrobbleData: ScrobbleData,
+            replacementScrobbleData: ScrobbleData,
+        ): PendingListenBrainzMutation? {
+            val listenedAtMillis = originalScrobbleData.timestamp.takeIf { it > 0 } ?: return null
+
+            return PendingListenBrainzMutation(
+                apiRoot = accountApiRoot(userAccount),
+                username = userAccount.user.name,
+                listenedAtMillis = listenedAtMillis,
+                recordingMsid = "",
+                kind = PendingListenBrainzMutationKind.UNRESOLVED_EDIT,
+                replacementArtist = replacementScrobbleData.artist,
+                replacementTrack = replacementScrobbleData.track,
+                replacementAlbum = replacementScrobbleData.album,
+                replacementAlbumArtist = replacementScrobbleData.albumArtist,
+                replacementDuration = replacementScrobbleData.duration,
+                originalArtist = originalScrobbleData.artist,
+                originalTrack = originalScrobbleData.track,
+                originalAlbum = originalScrobbleData.album,
             )
         }
     }
@@ -116,5 +166,6 @@ data class PendingListenBrainzMutation(
 
 enum class PendingListenBrainzMutationKind {
     DELETE,
-    EDIT
+    EDIT,
+    UNRESOLVED_EDIT,
 }
