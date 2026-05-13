@@ -32,7 +32,6 @@ import dev.etorix.panoscrobbler.updates.ChangelogDialog
 import dev.etorix.panoscrobbler.updates.UpdateAvailableDialog
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
-import kotlinx.coroutines.flow.map
 
 fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
     navigate: (PanoRoute) -> Unit,

@@ -3,6 +3,7 @@ package dev.etorix.panoscrobbler.updates
 import co.touchlab.kermit.Logger
 import dev.etorix.panoscrobbler.api.github.GithubReleases
 import dev.etorix.panoscrobbler.utils.DesktopStuff
+import kotlin.system.exitProcess
 
 actual suspend fun doAfterUpdateCheck(releases: GithubReleases): UpdateAction? {
     val updateFile = AutoUpdater.update(releases) ?: return null
@@ -31,5 +32,5 @@ actual fun runUpdateAction(updateAction: UpdateAction) {
         Logger.e(e) { "Failed to relaunch after update" }
     }
 
-    DesktopStuff.exit()
+    exitProcess(0)
 }

@@ -12,11 +12,11 @@ if [[ -z "$(command -v makepkg)" ]]; then
     -v "$(realpath "$pkgbuildDir"):/pkgbuild:z" \
     -w /scripts \
     docker.io/archlinux:base \
-    bash -c "pacman -Sy --noconfirm jq ed && useradd -u $(id -u) -m dango && su dango -c 'bash /scripts/$(basename "$0")'"
+    bash -c "pacman -Sy --noconfirm jq ed git && bash /scripts/$(basename "$0")"
 fi
 
-# if inside container, set pkgbuildDir to /pkgbuild. Don't do it if the host is Arch.
-if [[ -n "${IN_CONTAINER:-}" ]]; then  
+# if inside container, set dirs to their mount paths. Don't do it if the host is Arch.
+if [[ -n "${IN_CONTAINER:-}" ]]; then
   pkgbuildDir="/pkgbuild"
 fi
 
@@ -99,7 +99,7 @@ w
 q
 EOF
     echo -e "PKGBUILD updated:\n_pkgver=$tag\npkgver=$verName\nsha_x64=$sha_x64\nsha_arm64=$sha_arm64"
-    makepkg -D "$pkgbuildDir" --printsrcinfo > "$pkgbuildDir/.SRCINFO"
+    runuser -u nobody -- makepkg -D "$pkgbuildDir" --printsrcinfo > "$pkgbuildDir/.SRCINFO"
 else
     echo "PKGBUILD not found" >&2
 fi

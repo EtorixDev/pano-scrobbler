@@ -1,3 +1,1 @@
-- Moved the historical edit syncing to a default enabled setting.
-- Keep a local record of ListenBrainz(-like instance) edits to prevent phantom rows due to degraded service or delayed operations.
-- Fixed some refresh & editing related bugs.
+- Merge upstream.

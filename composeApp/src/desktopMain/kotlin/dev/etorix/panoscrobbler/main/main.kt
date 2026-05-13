@@ -40,6 +40,7 @@ import co.touchlab.kermit.Severity
 import dev.etorix.panoscrobbler.BuildKonfig
 import dev.etorix.panoscrobbler.PanoNativeComponents
 import dev.etorix.panoscrobbler.automation.Automation
+import dev.etorix.panoscrobbler.db.PanoDb
 import dev.etorix.panoscrobbler.discordrpc.DiscordRpc
 import dev.etorix.panoscrobbler.logger.JavaUtilFileLogger
 import dev.etorix.panoscrobbler.media.PlayingTrackNotifyEvent
@@ -57,6 +58,7 @@ import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.VariantStuff
 import dev.etorix.panoscrobbler.utils.setAppLocale
+import dev.etorix.panoscrobbler.work.DesktopWorkManager
 import dev.etorix.panoscrobbler.work.UpdaterWork
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -205,6 +207,14 @@ fun main(args: Array<String>) {
 
     init()
     initHeadlessResourceEnvironment()
+
+    // ------------------------------- shutdown hook
+
+    Runtime.getRuntime().addShutdownHook(Thread {
+        PanoNativeComponents.stopListeningMedia()
+        DesktopWorkManager.clearAll()
+        PanoDb.db.close()
+    })
 
     // ------------------------------- tray menu
 
@@ -391,7 +401,6 @@ fun main(args: Array<String>) {
     mutableStateOf(DesktopStuff.os == DesktopStuff.Os.Linux || !cmdlineArgs.minimized)
     var windowCreated by mutableStateOf(windowShown)
     val windowOpenTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    var exitApplicationVar: (() -> Unit)? = null
 
     fun openIfNeeded() {
         windowOpenTrigger.tryEmit(Unit)
@@ -399,15 +408,10 @@ fun main(args: Array<String>) {
         windowShown = true
     }
 
-    fun onExit() {
-        exitApplicationVar?.invoke()
-        DesktopStuff.exit()
-    }
-
     Stuff.appScope.launch {
         trayMenuClickListener(
             onOpenIfNeeded = ::openIfNeeded,
-            onExit = ::onExit
+            onExit = { exitProcess(0) }
         )
     }
 
@@ -436,7 +440,6 @@ fun main(args: Array<String>) {
                 }
             }
 
-            exitApplicationVar = ::exitApplication
             firstCompositionDone = true
         }
 
@@ -597,7 +600,7 @@ fun main(args: Array<String>) {
 
                 LaunchedEffect(Unit) {
                     if (DesktopStuff.os == DesktopStuff.Os.Windows)
-                        PanoNativeComponents.applyDarkModeWindows(window.windowHandle)
+                        PanoNativeComponents.setHwndWindows(window.windowHandle)
                 }
 
                 LaunchedEffect(Unit) {

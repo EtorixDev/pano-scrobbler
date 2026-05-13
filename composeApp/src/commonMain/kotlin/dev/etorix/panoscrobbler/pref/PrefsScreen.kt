@@ -52,7 +52,6 @@ import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
 import dev.etorix.panoscrobbler.utils.Stuff.format
-import dev.etorix.panoscrobbler.utils.VariantStuff
 import dev.etorix.panoscrobbler.utils.setAppLocale
 import dev.etorix.panoscrobbler.work.CommonWorkState
 import dev.etorix.panoscrobbler.work.DigestWork
@@ -92,7 +91,6 @@ import pano_scrobbler.composeapp.generated.resources.notification_channel_blocke
 import pano_scrobbler.composeapp.generated.resources.pref_about
 import pano_scrobbler.composeapp.generated.resources.pref_auto_detect
 import pano_scrobbler.composeapp.generated.resources.pref_blocked_metadata
-import pano_scrobbler.composeapp.generated.resources.pref_check_updates
 import pano_scrobbler.composeapp.generated.resources.pref_delay
 import pano_scrobbler.composeapp.generated.resources.pref_delay_mins
 import pano_scrobbler.composeapp.generated.resources.pref_delay_per
@@ -108,7 +106,6 @@ import pano_scrobbler.composeapp.generated.resources.pref_import
 import pano_scrobbler.composeapp.generated.resources.pref_link_heart_button_rating
 import pano_scrobbler.composeapp.generated.resources.pref_locale
 import pano_scrobbler.composeapp.generated.resources.pref_misc
-import pano_scrobbler.composeapp.generated.resources.pref_notify_updates
 import pano_scrobbler.composeapp.generated.resources.pref_now_playing
 import pano_scrobbler.composeapp.generated.resources.pref_oss_credits
 import pano_scrobbler.composeapp.generated.resources.pref_personalization
@@ -197,9 +194,6 @@ fun PrefsScreen(
     val updateProgress by remember {
         UpdaterWork.getProgress().filter { it.state == CommonWorkState.RUNNING }
     }.collectAsStateWithLifecycle(null)
-    val updatesAvailable = BuildKonfig.UPDATES_AVAILABLE && VariantStuff.githubApiUrl != null
-    val showAutoUpdatePref = !PlatformStuff.isTv && (updatesAvailable || !BuildKonfig.UPDATES_AVAILABLE)
-    val showManualUpdatePref = updatesAvailable || showAutoUpdatePref
 
     val numSimpleEdits by if (Stuff.isInDemoMode) {
         remember { mutableIntStateOf(1000) }
@@ -357,6 +351,8 @@ fun PrefsScreen(
 
         PlatformSpecificPrefs.prefAutostart(::filteredItem)
 
+        PlatformSpecificPrefs.prefAddToAppLauncher(::filteredItem)
+
         filteredItem(MainPrefs::allowedPackages.name, Res.string.pref_scrobble_from) { title ->
             Column(Modifier.fillMaxWidth()) {
                 AppIconsPref(
@@ -453,6 +449,8 @@ fun PrefsScreen(
         }
 
         PlatformSpecificPrefs.discordRpc(::filteredItem, onNavigate)
+
+        PlatformSpecificPrefs.prefPersistentNotification(::filteredItem, notiPersistent)
 
         filteredHeader("delay", Res.string.pref_delay, Icons.HourglassEmpty)
 
@@ -616,7 +614,7 @@ fun PrefsScreen(
             )
         }
 
-        PlatformSpecificPrefs.prefNotifications(::filteredItem, notiPersistent)
+        PlatformSpecificPrefs.prefNotifications(::filteredItem)
 
         filteredHeader("lists", Res.string.simple_edits, Icons.EditNote)
 
@@ -854,36 +852,7 @@ fun PrefsScreen(
             )
         }
 
-        if (showAutoUpdatePref) {
-            filteredItem(MainPrefs::autoUpdates.name, Res.string.pref_notify_updates) { title ->
-                SwitchPref(
-                    text = title,
-                    value = updatesAvailable && checkForUpdates,
-                    enabled = updatesAvailable,
-                    copyToSave = {
-                        if (!it)
-                            UpdaterWork.cancel()
-                        else
-                            UpdaterWork.schedule(true)
-
-                        copy(autoUpdates = it)
-                    }
-                )
-            }
-        }
-
-        if (showManualUpdatePref) {
-            filteredItem("check_for_updates", Res.string.pref_check_updates) { title ->
-                TextPref(
-                    text = if (updatesAvailable) updateProgress?.message ?: title else title,
-                    enabled = updatesAvailable && updateProgress == null,
-                    onClick = {
-                        if (updateProgress == null)
-                            UpdaterWork.schedule(true)
-                    }
-                )
-            }
-        }
+        PlatformSpecificPrefs.updateCheck(::filteredItem, checkForUpdates, updateProgress)
 
         if (!PlatformStuff.isTv) {
             filteredItem("automation", Res.string.automation) { title ->

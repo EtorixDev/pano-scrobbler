@@ -140,6 +140,7 @@ data class MainPrefs(
         val nameFormat: String = $$"$mediaPlayer",
         val showPausedForSecs: Int = 60,
         val detailsUrl: Boolean = true,
+        val lovedState: Boolean = true,
     )
 
     @Serializable
