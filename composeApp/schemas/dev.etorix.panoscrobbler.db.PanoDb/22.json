@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 20,
-    "identityHash": "a347f2052994b17b184d5df557d599cb",
+    "version": 22,
+    "identityHash": "0ef4c407ffa56093127869cd1f76a7bc",
     "entities": [
       {
         "tableName": "PendingScrobbles",
@@ -213,7 +213,7 @@
       },
       {
         "tableName": "regexEdits",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `order` INTEGER NOT NULL, `name` TEXT NOT NULL, `appIds` TEXT NOT NULL, `caseSensitive` INTEGER NOT NULL, `blockPlayerAction` TEXT, `continueMatching` INTEGER NOT NULL DEFAULT 1, `enabled` INTEGER NOT NULL DEFAULT 1, `searchTrack` TEXT NOT NULL, `searchAlbum` TEXT NOT NULL, `searchArtist` TEXT NOT NULL, `searchAlbumArtist` TEXT NOT NULL, `replacementTrack` TEXT, `replacementAlbum` TEXT, `replacementArtist` TEXT, `replacementAlbumArtist` TEXT, `replaceAll` INTEGER)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `order` INTEGER NOT NULL, `name` TEXT NOT NULL, `appIds` TEXT NOT NULL, `caseSensitive` INTEGER NOT NULL, `blockPlayerAction` TEXT, `continueMatching` INTEGER NOT NULL DEFAULT 1, `enabled` INTEGER NOT NULL DEFAULT 1, `searchTrack` TEXT NOT NULL, `searchAlbum` TEXT NOT NULL, `searchArtist` TEXT NOT NULL, `searchAlbumArtist` TEXT NOT NULL, `replacementTrack` TEXT, `replacementAlbum` TEXT, `replacementArtist` TEXT, `replacementAlbumArtist` TEXT, `replaceAll` INTEGER, `fetchAlbum` INTEGER)",
         "fields": [
           {
             "fieldPath": "_id",
@@ -311,6 +311,11 @@
           {
             "fieldPath": "replacement.replaceAll",
             "columnName": "replaceAll",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "replacement.fetchAlbum",
+            "columnName": "fetchAlbum",
             "affinity": "INTEGER"
           }
         ],
@@ -720,7 +725,7 @@
       },
       {
         "tableName": "PendingListenBrainzMutations",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `apiRoot` TEXT NOT NULL, `username` TEXT NOT NULL, `listenedAtMillis` INTEGER NOT NULL, `recordingMsid` TEXT NOT NULL, `kind` TEXT NOT NULL, `createdAtMillis` INTEGER NOT NULL, `expiresAtMillis` INTEGER NOT NULL, `replacementArtist` TEXT, `replacementTrack` TEXT, `replacementAlbum` TEXT, `replacementAlbumArtist` TEXT, `replacementDuration` INTEGER)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `apiRoot` TEXT NOT NULL, `username` TEXT NOT NULL, `listenedAtMillis` INTEGER NOT NULL, `recordingMsid` TEXT NOT NULL, `kind` TEXT NOT NULL, `createdAtMillis` INTEGER NOT NULL, `expiresAtMillis` INTEGER NOT NULL, `replacementArtist` TEXT, `replacementTrack` TEXT, `replacementAlbum` TEXT, `replacementAlbumArtist` TEXT, `replacementDuration` INTEGER, `originalArtist` TEXT, `originalTrack` TEXT, `originalAlbum` TEXT)",
         "fields": [
           {
             "fieldPath": "_id",
@@ -794,6 +799,21 @@
             "fieldPath": "replacementDuration",
             "columnName": "replacementDuration",
             "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "originalArtist",
+            "columnName": "originalArtist",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "originalTrack",
+            "columnName": "originalTrack",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "originalAlbum",
+            "columnName": "originalAlbum",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -839,7 +859,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a347f2052994b17b184d5df557d599cb')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0ef4c407ffa56093127869cd1f76a7bc')"
     ]
   }
 }

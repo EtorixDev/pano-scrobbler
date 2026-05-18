@@ -250,7 +250,13 @@ WHERE `extractionTrack` IS NOT NULL
         }
     }
 
+    private val MIGRATION_21_22 = object : Migration(21, 22) {
+        override suspend fun migrate(connection: SQLiteConnection) {
+            connection.execSQL("ALTER TABLE `${RegexEditsDao.tableName}` ADD COLUMN fetchAlbum INTEGER")
+        }
+    }
+
     val all = arrayOf(
-        MIGRATION_7_8, MIGRATION_8_9, MIGRATION_14_15, MIGRATION_19_20, MIGRATION_20_21
+        MIGRATION_7_8, MIGRATION_8_9, MIGRATION_14_15, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22
     )
 }

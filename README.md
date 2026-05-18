@@ -65,7 +65,8 @@ Windows releases are unsigned, so a SmartScreen warning about "Unknown Publisher
 [![Download tar.gz for x64 from GitHub](img/github-targz-x64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-etd-linux-x64.tar.gz)
 [![Download tar.gz for arm64 from GitHub](img/github-targz-arm64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-etd-linux-arm64.tar.gz)
 
-The AppImage runs anywhere, requires no installation, has automatic updates and can optionally add itself to the application launcher for convenience. Just make it executable before running it:
+The AppImage runs anywhere, requires no installation, has **automatic updates** and can optionally
+add itself to the **application launcher** for convenience. Just make it executable before running:
 
 ```
 chmod +x pano-scrobbler-etd-linux-*.AppImage
