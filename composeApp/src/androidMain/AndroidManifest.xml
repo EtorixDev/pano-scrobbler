@@ -132,7 +132,8 @@
         <activity
             android:name="dev.etorix.panoscrobbler.widget.ChartsWidgetConfigActivity"
             android:configChanges="screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
-            android:exported="true"
+            android:exported="false"
+            android:permission="android.permission.BIND_APPWIDGET"
             android:theme="@style/AppThemeWithWallpaper"
             android:windowSoftInputMode="adjustPan">
             <intent-filter>
@@ -196,6 +197,13 @@
             android:authorities="${applicationId}.automation"
             android:exported="true"
             android:process=":bgScrobbler" />
+
+        <provider
+            android:name="dev.etorix.panoscrobbler.widget.AppWidgetImageProvider"
+            android:authorities="${applicationId}.image"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET" />
+        <!-- launchers have this permission-->
 
         <provider
             android:name="androidx.core.content.FileProvider"

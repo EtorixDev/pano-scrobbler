@@ -2,6 +2,7 @@ package dev.etorix.panoscrobbler.widget
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.HeaderViewListAdapter
 import android.widget.ImageView
 import android.widget.ListView
 import android.widget.TextView
@@ -37,15 +38,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import dev.etorix.panoscrobbler.R
+import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.navigation.enumSaver
-import dev.etorix.panoscrobbler.pref.SpecificWidgetPrefs
+import dev.etorix.panoscrobbler.pref.WidgetPrefs
+import dev.etorix.panoscrobbler.ui.ButtonWithSpinner
 import dev.etorix.panoscrobbler.ui.LabeledSwitch
+import dev.etorix.panoscrobbler.ui.accountTypeLabel
 import dev.etorix.panoscrobbler.utils.PlatformStuff
-import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
+import pano_scrobbler.composeapp.generated.resources.album_art
 import pano_scrobbler.composeapp.generated.resources.appwidget_alpha
 import pano_scrobbler.composeapp.generated.resources.appwidget_period
 import pano_scrobbler.composeapp.generated.resources.appwidget_refresh_every
@@ -53,20 +57,51 @@ import pano_scrobbler.composeapp.generated.resources.appwidget_shadow
 import pano_scrobbler.composeapp.generated.resources.cancel
 import pano_scrobbler.composeapp.generated.resources.num_hours
 import pano_scrobbler.composeapp.generated.resources.ok
+import pano_scrobbler.composeapp.generated.resources.scrobble_services
 
 @Composable
 fun ChartsWidgetConfigScreen(
     isPinned: Boolean,
-    prefs: SpecificWidgetPrefs,
+    prefs: WidgetPrefs.SpecificWidgetPrefs,
     refreshIntervalHours: Int,
-    onSave: (prefs: SpecificWidgetPrefs, refreshIntervalHours: Int, reFetch: Boolean) -> Unit,
+    onSave: (
+        prefs: WidgetPrefs.SpecificWidgetPrefs,
+        refreshIntervalHours: Int,
+        reFetch: Boolean,
+    ) -> Unit,
     onCancel: () -> Unit,
 ) {
 
     var period by rememberSaveable(saver = enumSaver()) { mutableStateOf(prefs.period) }
     var bgAlpha by rememberSaveable { mutableFloatStateOf(prefs.bgAlpha) }
     var shadow by rememberSaveable { mutableStateOf(prefs.shadow) }
+    var images by rememberSaveable { mutableStateOf(prefs.images) }
     var selectedRefreshIntervalHours by rememberSaveable { mutableStateOf(refreshIntervalHours) }
+    val accountTypesWithUsernames by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { prefs ->
+        prefs.scrobbleAccounts
+            .distinctBy { it.type }
+            .filterNot {
+                it.type in arrayOf(
+                    AccountType.PLEROMA,
+                    AccountType.FILE,
+                )
+            }
+            .associate {
+                it.type to it.user.name
+            }
+    }
+    val accountTypesWithLabels = accountTypesWithUsernames.mapValues { (k, v) ->
+        accountTypeLabel(k) + ": $v"
+    }
+
+    var accountType by rememberSaveable {
+        mutableStateOf(
+            if (prefs.accountType in accountTypesWithLabels)
+                prefs.accountType
+            else
+                accountTypesWithLabels.keys.firstOrNull() ?: AccountType.LASTFM
+        )
+    }
     val firstDayOfWeek by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.firstDayOfWeek }
     val scrollState = rememberScrollState()
     val refreshIntervalOptions = remember {
@@ -87,6 +122,7 @@ fun ChartsWidgetConfigScreen(
         if (shadow) {
             WidgetPreviewWithShadow(
                 bgAlpha = bgAlpha,
+                images = images,
                 modifier = Modifier
                     .size(300.dp, 270.dp)
                     .align(Alignment.CenterHorizontally)
@@ -94,6 +130,7 @@ fun ChartsWidgetConfigScreen(
         } else {
             WidgetPreviewWithoutShadow(
                 bgAlpha = bgAlpha,
+                images = images,
                 modifier = Modifier
                     .size(300.dp, 270.dp)
                     .align(Alignment.CenterHorizontally)
@@ -112,14 +149,32 @@ fun ChartsWidgetConfigScreen(
                     .verticalScroll(scrollState)
                     .padding(start = 16.dp, end = 16.dp, top = 16.dp)
             ) {
-                Text(
-                    text = stringResource(Res.string.appwidget_period),
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(Res.string.scrobble_services),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+
+                    ButtonWithSpinner(
+                        prefixText = null,
+                        itemToTexts = accountTypesWithLabels,
+                        selected = accountType,
+                        onItemSelected = { accountType = it },
+                    )
+                }
+
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically
                 ) {
+                    Text(
+                        text = stringResource(Res.string.appwidget_period),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
                     widgetPeriod.forEach { (thisPeriod, thisTimePeriod) ->
                         FilterChip(
                             label = { Text(thisTimePeriod.name) },
@@ -129,16 +184,26 @@ fun ChartsWidgetConfigScreen(
                     }
                 }
 
-                Text(
-                    text = stringResource(Res.string.appwidget_alpha),
-                    style = MaterialTheme.typography.titleMedium
-                )
+                Column {
+                    Text(
+                        text = stringResource(Res.string.appwidget_alpha) +
+                                ": ${"%.0f".format(bgAlpha * 100)}%",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Slider(
+                        value = bgAlpha,
+                        onValueChange = { bgAlpha = it },
+                        valueRange = 0f..1f,
+                        steps = 100,
+                    )
+                }
 
-                Slider(
-                    value = bgAlpha,
-                    onValueChange = { bgAlpha = it },
-                    valueRange = 0f..1f,
-                    steps = 100,
+                LabeledSwitch(
+                    text = stringResource(Res.string.album_art),
+                    checked = images,
+                    onCheckedChange = { images = it },
+                    textStyle = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 LabeledSwitch(
@@ -200,12 +265,14 @@ fun ChartsWidgetConfigScreen(
                 TextButton(onClick = {
                     onSave(
                         prefs.copy(
+                            accountType = accountType,
                             period = period,
+                            images = images,
                             bgAlpha = bgAlpha,
                             shadow = shadow
                         ),
                         selectedRefreshIntervalHours,
-                        prefs.period != period
+                        prefs.period != period || accountType != prefs.accountType
                     )
                 }) {
                     Text(text = stringResource(Res.string.ok))
@@ -220,6 +287,7 @@ fun ChartsWidgetConfigScreen(
 private fun WidgetPreview(
     shadow: Boolean,
     bgAlpha: Float,
+    images: Boolean,
     modifier: Modifier = Modifier,
 ) {
     AndroidView(
@@ -251,8 +319,12 @@ private fun WidgetPreview(
 
         update = { layout ->
             val bg = layout.findViewById<ImageView>(R.id.appwidget_bg)
-
             bg.alpha = bgAlpha
+
+            val listView = layout.findViewById<ListView>(R.id.appwidget_list)
+            ((listView.adapter as? HeaderViewListAdapter)
+                ?.wrappedAdapter as? FakeChartsAdapter)
+                ?.setShowImages(images)
         },
         modifier = modifier
             .padding(horizontal = 16.dp)
@@ -263,11 +335,13 @@ private fun WidgetPreview(
 @Composable
 fun WidgetPreviewWithShadow(
     bgAlpha: Float,
+    images: Boolean,
     modifier: Modifier = Modifier,
 ) {
     WidgetPreview(
         shadow = true,
         bgAlpha = bgAlpha,
+        images = images,
         modifier = modifier
     )
 }
@@ -275,11 +349,13 @@ fun WidgetPreviewWithShadow(
 @Composable
 fun WidgetPreviewWithoutShadow(
     bgAlpha: Float,
+    images: Boolean,
     modifier: Modifier = Modifier,
 ) {
     WidgetPreview(
         shadow = false,
         bgAlpha = bgAlpha,
+        images = images,
         modifier = modifier
     )
 }

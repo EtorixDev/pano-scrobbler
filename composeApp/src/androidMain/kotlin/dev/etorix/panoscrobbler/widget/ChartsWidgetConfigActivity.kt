@@ -13,7 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import dev.etorix.panoscrobbler.pref.SpecificWidgetPrefs
+import dev.etorix.panoscrobbler.pref.WidgetPrefs
 import dev.etorix.panoscrobbler.themes.AppTheme
 import dev.etorix.panoscrobbler.themes.LocalThemeAttributes
 import dev.etorix.panoscrobbler.utils.AndroidStuff
@@ -70,7 +70,7 @@ class ChartsWidgetConfigActivity : ComponentActivity() {
 
                     ChartsWidgetConfigScreen(
                         isPinned = isPinned,
-                        prefs = prefs.widgets[appWidgetId] ?: SpecificWidgetPrefs(),
+                        prefs = prefs.widgets[appWidgetId] ?: WidgetPrefs.SpecificWidgetPrefs(),
                         refreshIntervalHours = prefs.refreshIntervalHours,
                         onSave = ::savePrefsAndFinish,
                         onCancel = ::cancel
@@ -81,7 +81,7 @@ class ChartsWidgetConfigActivity : ComponentActivity() {
     }
 
     private fun savePrefsAndFinish(
-        prefs: SpecificWidgetPrefs,
+        prefs: WidgetPrefs.SpecificWidgetPrefs,
         refreshIntervalHours: Int,
         reFetch: Boolean,
     ) {
@@ -102,8 +102,8 @@ class ChartsWidgetConfigActivity : ComponentActivity() {
 
             if (!exists || reFetch || intervalChanged)
                 ChartsWidgetUpdaterWorker.schedule(
-                    this@ChartsWidgetConfigActivity.applicationContext,
-                    runImmediately = !exists || reFetch,
+                    context = this@ChartsWidgetConfigActivity.applicationContext,
+                    specificWidgetId = if (!exists || reFetch) appWidgetId else null,
                     refreshIntervalHours = refreshIntervalHours,
                     forceReschedule = !exists || intervalChanged,
                 )

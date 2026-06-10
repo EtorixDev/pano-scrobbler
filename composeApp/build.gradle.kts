@@ -119,7 +119,7 @@ kotlin {
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.okhttp)
                 implementation(libs.aboutlibraries.core)
-                implementation(libs.kotlin.csv.jvm)
+                implementation(libs.kotlin.csv)
                 implementation(libs.kermit)
                 implementation(libs.datastore.core)
                 implementation(libs.paging.common)
@@ -316,6 +316,7 @@ compose.desktop {
             "-Dpano.native.components.path=$libraryPath",
             "--enable-native-access=ALL-UNNAMED",
             if (os.isLinux) "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED" else null,
+            "-H:+UnlockExperimentalVMOptions",
             "-Dfile.encoding=UTF-8",
             "-Dnative.encoding=UTF-8",
 //            "-XX:NativeMemoryTracking=detail",

@@ -90,11 +90,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import dev.etorix.panoscrobbler.api.AccountType
+import dev.etorix.panoscrobbler.api.lastfm.ApiException
 import dev.etorix.panoscrobbler.icons.ArrowDropDown
 import dev.etorix.panoscrobbler.icons.Close
 import dev.etorix.panoscrobbler.icons.Error
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.Info
+import dev.etorix.panoscrobbler.icons.OpenInBrowser
 import dev.etorix.panoscrobbler.icons.Person
 import dev.etorix.panoscrobbler.icons.Refresh
 import dev.etorix.panoscrobbler.icons.Search
@@ -108,12 +110,15 @@ import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
 import dev.etorix.panoscrobbler.utils.redactedMessage
 import kotlinx.coroutines.delay
+import kotlinx.serialization.SerializationException
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.delete
 import pano_scrobbler.composeapp.generated.resources.disable
 import pano_scrobbler.composeapp.generated.resources.enable
+import pano_scrobbler.composeapp.generated.resources.fix_it_action
 import pano_scrobbler.composeapp.generated.resources.lastfm
 import pano_scrobbler.composeapp.generated.resources.librefm
 import pano_scrobbler.composeapp.generated.resources.like_instance
@@ -127,6 +132,7 @@ import pano_scrobbler.composeapp.generated.resources.profile_pic
 import pano_scrobbler.composeapp.generated.resources.retry
 import pano_scrobbler.composeapp.generated.resources.scrobble_to_file
 import pano_scrobbler.composeapp.generated.resources.search
+import pano_scrobbler.composeapp.generated.resources.unsupported_api
 import pano_scrobbler.composeapp.generated.resources.yes
 import java.util.Calendar
 import java.util.Locale
@@ -766,8 +772,17 @@ fun ListLoadError(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val errorText = remember(throwable) {
-        throwable.redactedMessage
+    val accountType by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.currentAccountType }
+    val profileLink by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.currentAccount?.user?.url }
+    val displayProfileLink =
+        (accountType == AccountType.CUSTOM_LISTENBRAINZ || accountType == AccountType.GNUFM) &&
+                (throwable is ApiException || throwable is SerializationException) &&
+                profileLink != null
+
+    val errorText = if (displayProfileLink) {
+        stringResource(Res.string.unsupported_api)
+    } else {
+        remember(throwable) { throwable.redactedMessage }
     }
 
     Row(
@@ -791,13 +806,28 @@ fun ListLoadError(
                 .weight(1f)
                 .padding(horizontal = 16.dp)
         )
-        IconButton(
-            onClick = onRetry,
-        ) {
-            Icon(
-                imageVector = Icons.Refresh,
-                contentDescription = stringResource(Res.string.retry)
-            )
+        if (displayProfileLink) {
+            IconButton(
+                onClick = {
+                    val url = profileLink!!.toHttpUrl()
+                    val topPrivateDomain = url.topPrivateDomain()
+                    PlatformStuff.openInBrowser(url.scheme + "://" + topPrivateDomain)
+                },
+            ) {
+                Icon(
+                    imageVector = Icons.OpenInBrowser,
+                    contentDescription = stringResource(Res.string.fix_it_action)
+                )
+            }
+        } else {
+            IconButton(
+                onClick = onRetry,
+            ) {
+                Icon(
+                    imageVector = Icons.Refresh,
+                    contentDescription = stringResource(Res.string.retry)
+                )
+            }
         }
     }
 }

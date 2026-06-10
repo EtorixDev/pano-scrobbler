@@ -9,7 +9,7 @@ import android.widget.RemoteViews
 import androidx.core.widget.RemoteViewsCompat
 import dev.etorix.panoscrobbler.R
 import dev.etorix.panoscrobbler.main.MainDialogActivity
-import dev.etorix.panoscrobbler.pref.SpecificWidgetPrefs
+import dev.etorix.panoscrobbler.pref.WidgetPrefs
 import dev.etorix.panoscrobbler.utils.AndroidStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import kotlinx.coroutines.flow.first
@@ -29,15 +29,8 @@ class ChartsWidgetProvider : AppWidgetProvider() {
 
         // There may be multiple widgets active, so update all of them
         appWidgetIds.forEach { appWidgetId ->
-            val specificWidgetPrefs = prefs.widgets[appWidgetId] ?: return
-            val chartsData = prefs.charts[specificWidgetPrefs.period]
-            val specificChartsData = when (specificWidgetPrefs.tab) {
-                Stuff.TYPE_ARTISTS -> chartsData?.artists
-                Stuff.TYPE_ALBUMS -> chartsData?.albums
-                Stuff.TYPE_TRACKS -> chartsData?.tracks
-                else -> null
-            }
-            val timePeriodString = chartsData?.timePeriodString
+            val specificWidgetPrefs = prefs.widgets[appWidgetId] ?: return@forEach
+            val specificChartsData = prefs.chartsData[specificWidgetPrefs.dataKey]
 
             updateAppWidget(
                 context,
@@ -45,7 +38,6 @@ class ChartsWidgetProvider : AppWidgetProvider() {
                 appWidgetId,
                 specificWidgetPrefs,
                 specificChartsData,
-                timePeriodString
             )
         }
     }
@@ -81,12 +73,18 @@ class ChartsWidgetProvider : AppWidgetProvider() {
                         runBlocking {
                             AndroidStuff.widgetPrefs.updateData { prefs ->
                                 val widgets = prefs.widgets.toMutableMap()
-                                val specificWidgetPrefs =
-                                    widgets[appWidgetId] ?: SpecificWidgetPrefs()
-                                widgets[appWidgetId] = specificWidgetPrefs.copy(tab = tab)
+                                val specificWidgetPrefs = widgets.getOrElse(appWidgetId) {
+                                    WidgetPrefs.SpecificWidgetPrefs()
+                                }.copy(tab = tab)
+
+                                if (prefs.chartsData[specificWidgetPrefs.dataKey]?.canFetchAgain(prefs.refreshIntervalHours) != false)
+                                    ChartsWidgetUpdaterWorker.schedule(context, appWidgetId)
+
+                                widgets[appWidgetId] = specificWidgetPrefs
                                 prefs.copy(widgets = widgets)
                             }
                         }
+
                     }
                 }
         }
@@ -99,9 +97,8 @@ internal fun updateAppWidget(
     context: Context,
     appWidgetManager: AppWidgetManager,
     appWidgetId: Int,
-    prefs: SpecificWidgetPrefs,
-    specificChartsData: List<ChartsWidgetListItem>?,
-    timePeriodString: String?,
+    prefs: WidgetPrefs.SpecificWidgetPrefs,
+    specificChartsData: WidgetPrefs.ChartsData?,
     scrollToTop: Boolean = false,
 ) {
 
@@ -119,13 +116,21 @@ internal fun updateAppWidget(
     val items = RemoteViewsCompat.RemoteCollectionItems.Builder().apply {
         setHasStableIds(true)
         setViewTypeCount(2)
-        addItem(0, ChartsListUtils.createHeader(timePeriodString ?: ""))
+        addItem(0, ChartsListUtils.createHeader(specificChartsData?.timePeriodString ?: ""))
 
         specificChartsData
+            ?.data
             ?.forEachIndexed { i, item ->
                 addItem(
                     item.hashCode().toLong(),
-                    ChartsListUtils.createMusicItem(tab, i, item)
+                    ChartsListUtils.createMusicItem(
+                        appWidgetId,
+                        prefs.dataKey,
+                        tab,
+                        prefs.images && tab != Stuff.TYPE_ARTISTS,
+                        i,
+                        item
+                    )
                 )
             }
     }.build()
@@ -141,7 +146,7 @@ internal fun updateAppWidget(
         rv.setInt(R.id.appwidget_status, "setText", R.string.appwidget_loading)
     else {
         val text = context.getString(R.string.charts_no_data) + "\n\n" +
-                timePeriodString
+                specificChartsData.timePeriodString
         rv.setTextViewText(R.id.appwidget_status, text)
     }
 

@@ -42,6 +42,7 @@
 
     <!--  strings for unfinalized stuff  -->
 
+    <string name="unsupported_api">This API may not be supported by the server. View on web.</string>
     <string name="exit_reasons">Exit reasons</string>
     <string name="edit_continue_simple">If found, continue editing with regex rules &amp; presets</string>
     <string name="edit_continue_regex">If found, continue editing with other regex rules &amp; presets</string>
