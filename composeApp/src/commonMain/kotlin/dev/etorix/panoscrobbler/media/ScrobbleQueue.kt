@@ -30,6 +30,7 @@ import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.parse_error
 import pano_scrobbler.composeapp.generated.resources.scrobble_ignored
 import kotlin.math.min
+import kotlin.time.Duration.Companion.milliseconds
 
 
 class ScrobbleQueue(
@@ -146,7 +147,7 @@ class ScrobbleQueue(
                 (previousNowPlayingExpired || wasScrobbledBeforePrepare)
             ) {
                 val npResults =
-                    withTimeoutOrNull(submitAtTime - PlatformStuff.monotonicTimeMs() - 5000) {
+                    withTimeoutOrNull((submitAtTime - PlatformStuff.monotonicTimeMs() - 5000).milliseconds) {
                         ScrobbleEverywhere.nowPlaying(nowPlayingSd)
                     }
 
@@ -205,7 +206,7 @@ class ScrobbleQueue(
 
             // tick every n milliseconds
             while (submitAtTime > PlatformStuff.monotonicTimeMs() || hash == lockedHash) {
-                delay(tickEveryMs)
+                delay(tickEveryMs.milliseconds)
             }
 
             npArtFetchJob?.cancel()
@@ -301,7 +302,7 @@ class ScrobbleQueue(
         scrobbleTasks[trackInfo.hash] = scope.launch(Dispatchers.IO) {
             // some players put the previous song and then switch to the current song in like 150ms
             // potentially wasting an api call. sleep and throw cancellation exception in that case
-            delay(Stuff.META_WAIT)
+            delay(Stuff.META_WAIT.milliseconds)
 
             if (trackInfo.scrobbledState in
                 PlayingTrackInfo.ScrobbledState.PREPROCESSED..PlayingTrackInfo.ScrobbledState.NOW_PLAYING_SUBMITTED

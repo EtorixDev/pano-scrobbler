@@ -41,6 +41,9 @@ class PlayingTrackInfo(
     var origAlbumArtist: String = ""
         private set
 
+    var trackNumber: Int = 0
+        private set
+
     // null = not fetched, empty = fetched but no art
     var artUrl: String? = null
         private set
@@ -64,7 +67,6 @@ class PlayingTrackInfo(
 
     var userLoved: Boolean = false
         private set
-    val extras = mutableMapOf<String, String>()
 
     // cached values
     var timelineStartTime: Long = cachedTrackInfo?.timelineStartTime ?: 0L
@@ -79,18 +81,15 @@ class PlayingTrackInfo(
     var lastScrobbleHash: Int = cachedTrackInfo?.lastScrobbleHash ?: 0
         private set
 
-//    fun resetMeta() =
-//        putOriginals("", "", "", "", 0, null, null, emptyMap())
-
     fun putOriginals(
         artist: String,
         title: String,
         album: String,
         albumArtist: String,
+        trackNumber: Int,
         durationMillis: Long,
         normalizedUrlHost: String?,
         artUrl: String?,
-        extraData: Map<String, String> = emptyMap(),
     ) {
         origArtist = artist
         this.artist = artist
@@ -100,6 +99,7 @@ class PlayingTrackInfo(
         this.album = album
         origAlbumArtist = albumArtist
         this.albumArtist = albumArtist
+        this.trackNumber = trackNumber
 
         this.durationMillis = durationMillis
         hash = Objects.hash(albumArtist, artist, album, title, appId, notiKey)
@@ -107,11 +107,9 @@ class PlayingTrackInfo(
 
         this.artUrl = artUrl
 
-        extras.clear()
-        extras.putAll(extraData)
-
         scrobbledState = ScrobbledState.NONE
         msid = null
+        playStartTime = 0L // new track identity - needs a fresh start time
     }
 
     fun setArtUrl(artUrl: String?) {
@@ -165,7 +163,9 @@ class PlayingTrackInfo(
         }
 
         isPlaying = true
-        playStartTime = System.currentTimeMillis()
+
+        if (playStartTime <= 0L)
+            playStartTime = System.currentTimeMillis()
     }
 
     fun updateUserProps(
@@ -178,6 +178,7 @@ class PlayingTrackInfo(
 
     fun resetTimePlayed() {
         timePlayed = 0L
+        playStartTime = System.currentTimeMillis()
     }
 
     fun addTimePlayed() {
@@ -252,5 +253,9 @@ class PlayingTrackInfo(
 
     fun cancelled() {
         scrobbledState = ScrobbledState.CANCELLED
+    }
+
+    override fun toString(): String {
+        return "PlayingTrackInfo(appId='$appId', notiKey='$notiKey', title='$title', origTitle='$origTitle', album='$album', origAlbum='$origAlbum', artist='$artist', origArtist='$origArtist', albumArtist='$albumArtist', origAlbumArtist='$origAlbumArtist', trackNumber=$trackNumber, artUrl=$artUrl, normalizedUrlHost=$normalizedUrlHost, msid=$msid, durationMillis=$durationMillis, hash=${hash.toHexString()}, isPlaying=$isPlaying, userPlayCount=$userPlayCount, userLoved=$userLoved, timelineStartTime=$timelineStartTime, playStartTime=$playStartTime, scrobbledState=$scrobbledState, timePlayed=$timePlayed, lastScrobbleHash=${lastScrobbleHash.toHexString()})"
     }
 }

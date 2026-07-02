@@ -25,6 +25,7 @@ import pano_scrobbler.composeapp.generated.resources.top_artists
 import pano_scrobbler.composeapp.generated.resources.top_tracks
 import pano_scrobbler.composeapp.generated.resources.weekly
 import java.util.Calendar
+import kotlin.time.Duration.Companion.days
 
 enum class DigestType {
     DIGEST_DAILY,
@@ -138,20 +139,20 @@ class DigestWorker(
                 }
             }
 
-            val periodString = lastfmPeriod.toTimePeriod().let {
-                when (lastfmPeriod) {
-                    LastfmPeriod.WEEK ->
-                        getString(Res.string.weekly)
+            val fiveDaysBack = System.currentTimeMillis() - 5.days.inWholeMilliseconds
+
+            val periodString = when (lastfmPeriod) {
+                LastfmPeriod.WEEK ->
+                    getString(Res.string.weekly)
 //                        PanoTimeFormatter.dateRange(it.start, it.end)
 
-                    LastfmPeriod.MONTH ->
-                        PanoTimeFormatter.month(it.start, short = false)
+                LastfmPeriod.MONTH ->
+                    PanoTimeFormatter.month(fiveDaysBack, short = false)
 
-                    LastfmPeriod.YEAR ->
-                        PanoTimeFormatter.year(it.start)
+                LastfmPeriod.YEAR ->
+                    PanoTimeFormatter.year(fiveDaysBack)
 
-                    else -> throw IllegalArgumentException("Invalid period")
-                }
+                else -> throw IllegalArgumentException("Invalid period")
             }
 
             val notificationTitle = getString(Res.string.s_top_scrobbles, periodString)

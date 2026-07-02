@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import dev.etorix.panoscrobbler.BuildKonfig
 import dev.etorix.panoscrobbler.main.ScrobblerState
 import dev.etorix.panoscrobbler.navigation.PanoRoute
-import dev.etorix.panoscrobbler.utils.AndroidStuff
 import dev.etorix.panoscrobbler.utils.AndroidStuff.toast
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
@@ -59,7 +58,7 @@ fun FixItDialog(
     val scope = rememberCoroutineScope()
     val showDkmaLayout = remember { !PlatformStuff.isTv }
     val canEnablePersistentNoti by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue {
-        !it.notiPersistent && AndroidStuff.canShowPersistentNotiIfEnabled
+        !it.notiPersistent
     }
 
     var exitReasonText by remember { mutableStateOf(killedReason?.formatted()) }

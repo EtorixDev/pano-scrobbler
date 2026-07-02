@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.PlainTooltip
@@ -36,7 +35,6 @@ import pano_scrobbler.composeapp.generated.resources.help
 import pano_scrobbler.composeapp.generated.resources.search
 import pano_scrobbler.composeapp.generated.resources.settings
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NavPopupDialog(
     user: UserCached,

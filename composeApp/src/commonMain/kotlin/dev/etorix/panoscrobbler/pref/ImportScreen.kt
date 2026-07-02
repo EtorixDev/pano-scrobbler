@@ -32,6 +32,7 @@ import dev.etorix.panoscrobbler.ui.FilePickerMode
 import dev.etorix.panoscrobbler.ui.FileType
 import dev.etorix.panoscrobbler.ui.LabeledCheckbox
 import dev.etorix.panoscrobbler.ui.PanoSnackbarVisuals
+import dev.etorix.panoscrobbler.utils.LocalNetworkPermissionsRequest
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.redactedMessage
@@ -119,7 +120,7 @@ fun ImportScreen(
                 var canStartServer by rememberSaveable { mutableStateOf(false) }
 
                 if (!canStartServer) {
-                    ImportScreenPermissionsRequest(onGranted = {
+                    LocalNetworkPermissionsRequest(onGranted = {
                         canStartServer = true
                     }, onDenied = {
                         errorText = missingPermText
@@ -300,9 +301,3 @@ fun ImportScreen(
         viewModel.setPlatformFile(it)
     }
 }
-
-@Composable
-expect fun ImportScreenPermissionsRequest(
-    onGranted: () -> Unit,
-    onDenied: () -> Unit,
-)

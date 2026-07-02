@@ -688,12 +688,12 @@ open class LastFm(userAccount: UserAccountSerializable) : Scrobblable(userAccoun
 
             val apiRoot = userAccountTemp.apiRoot ?: Stuff.LASTFM_API_ROOT
 
-            val session = Requesters.lastfmUnauthedRequester.getSession(
+            return Requesters.lastfmUnauthedRequester.getSession(
                 apiRoot,
                 apiKey,
                 apiSecret,
                 userAccountTemp.authKey
-            ).onSuccess { session ->
+            ).mapCatching { session ->
                 // store lastfm cookies
 
                 val lastfmUrl = Url(Stuff.LASTFM_URL)
@@ -734,9 +734,9 @@ open class LastFm(userAccount: UserAccountSerializable) : Scrobblable(userAccoun
 
                         Scrobblables.add(account)
                     }
-            }
 
-            return session
+                session
+            }
         }
     }
 }

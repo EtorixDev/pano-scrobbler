@@ -1,4 +1,4 @@
-package dev.etorix.panoscrobbler.pref
+package dev.etorix.panoscrobbler.utils
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -13,12 +13,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import dev.etorix.panoscrobbler.ui.AlertDialogOk
 import dev.etorix.panoscrobbler.utils.AndroidStuff
+import io.ktor.http.Url
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.missing_local_network_permission
 
+actual suspend fun determineLocalNetworkPermissionException(url: String?): Throwable? {
+    url ?: return null
+
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN ||
+        AndroidStuff.applicationContext.checkSelfPermission(
+            Manifest.permission.ACCESS_LOCAL_NETWORK
+        ) == PackageManager.PERMISSION_GRANTED
+    )
+        return null
+
+    if (isLocal(Url(url)))
+        return LocalNetworkPermissionNeededException()
+    return null
+}
+
 @Composable
-actual fun ImportScreenPermissionsRequest(
+actual fun LocalNetworkPermissionsRequest(
     onGranted: () -> Unit,
     onDenied: () -> Unit,
 ) {

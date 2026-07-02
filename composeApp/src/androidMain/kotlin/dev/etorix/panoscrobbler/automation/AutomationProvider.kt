@@ -11,7 +11,6 @@ import co.touchlab.kermit.Logger
 import dev.etorix.panoscrobbler.BuildKonfig
 import dev.etorix.panoscrobbler.MasterSwitchQS
 import dev.etorix.panoscrobbler.media.NLService
-import dev.etorix.panoscrobbler.media.PlayingTrackNotifyEvent
 import dev.etorix.panoscrobbler.utils.AndroidStuff.toast
 import dev.etorix.panoscrobbler.utils.PanoNotifications
 import dev.etorix.panoscrobbler.utils.Stuff
@@ -94,18 +93,12 @@ class AutomationProvider : ContentProvider() {
 
     private fun nowPlayingDataCursor(): Cursor {
         val data = PanoNotifications.getNowPlayingFromBackgroundProcess()
-        val cursor = MatrixCursor(
-            arrayOf(
-                PlayingTrackNotifyEvent.TrackPlaying::origScrobbleData.name,
-                PlayingTrackNotifyEvent.TrackPlaying::hash.name,
-            )
-        )
+        val cursor = MatrixCursor(arrayOf("result"))
 
         if (data != null) {
             cursor.addRow(
                 arrayOf(
-                    Stuff.myJson.encodeToString(data.first),
-                    data.second.toString(),
+                    Stuff.myJson.encodeToString(data),
                 )
             )
         }

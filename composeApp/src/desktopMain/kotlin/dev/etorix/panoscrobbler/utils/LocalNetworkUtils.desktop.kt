@@ -1,10 +1,12 @@
-package dev.etorix.panoscrobbler.pref
+package dev.etorix.panoscrobbler.utils
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 
+actual suspend fun determineLocalNetworkPermissionException(url: String?): Throwable? = null
+
 @Composable
-actual fun ImportScreenPermissionsRequest(
+actual fun LocalNetworkPermissionsRequest(
     onGranted: () -> Unit,
     onDenied: () -> Unit,
 ) {

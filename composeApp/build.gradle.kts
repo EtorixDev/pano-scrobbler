@@ -12,6 +12,7 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URI
 import java.security.MessageDigest
+import java.util.Locale
 import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.io.encoding.Base64
 
@@ -316,15 +317,10 @@ compose.desktop {
             "-Dpano.native.components.path=$libraryPath",
             "--enable-native-access=ALL-UNNAMED",
             if (os.isLinux) "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED" else null,
-            "-H:+UnlockExperimentalVMOptions",
             "-Dfile.encoding=UTF-8",
             "-Dnative.encoding=UTF-8",
 //            "-XX:NativeMemoryTracking=detail",
             "-XX:+UseSerialGC",
-            "-XX:+UseAdaptiveSizePolicy",
-//            "-XX:+UseZGC",
-//            "-XX:ZUncommitDelay=60",
-            "-XX:+UseStringDeduplication",
             "-Xms32m",
             "-Xmx512m",
         )
@@ -536,6 +532,18 @@ tasks.register<Exec>("generateRc") {
     }
 }
 
+val copyReachabilityMetadata by tasks.registering(Copy::class) {
+    val osDir = if (os.isWindows) "windows" else "linux"
+    from("rechability-metadata/$osDir")
+    into(layout.buildDirectory.dir("generated/reachability-metadata/META-INF/native-image/$APP_ID/$APP_NAME_NO_SPACES"))
+}
+
+kotlin.sourceSets.getByName("desktopMain").resources.srcDir(
+    copyReachabilityMetadata.map {
+        it.destinationDir.parentFile.parentFile.parentFile.parentFile
+        // points to: generated/reachability-metadata/
+    }
+)
 // graalvm plugin doesn't seem to support this project structure, so directly use the command
 tasks.register<Exec>("buildNativeImage") {
     val graalvmHome = System.getenv("GRAALVM_HOME")
@@ -566,9 +574,6 @@ tasks.register<Exec>("buildNativeImage") {
     val outputDir = file("build/compose/native/$resourcesDirName")
     val outputFile = File(outputDir, APP_NAME_NO_SPACES)
 
-    val reachabilityFiles = file(
-        "rechability-metadata/" + if (os.isWindows) "windows" else "linux"
-    )
     val jawtDirName = if (os.isWindows)
         "bin"
     else
@@ -583,6 +588,8 @@ tasks.register<Exec>("buildNativeImage") {
     val winAppResFile =
         project.layout.buildDirectory.file("generated-rc/$APP_NAME_NO_SPACES.exe.res")
 
+    val localesTextFile = file("locales.txt")
+
     val nativeLibsDir = file("resources/$resourcesDirName/")
     val iconFile = file("src/desktopMain/composeResources/drawable/ic_launcher_with_bg.svg")
     val outputIconFileName = "$APP_NAME_NO_SPACES.svg"
@@ -592,7 +599,6 @@ tasks.register<Exec>("buildNativeImage") {
 
     inputs.file(jarFile)
     inputs.dir(nativeLibsDir)
-    inputs.dir(reachabilityFiles)
     inputs.file(licenseFile)
 
     outputs.dir(outputDir)
@@ -602,7 +608,6 @@ tasks.register<Exec>("buildNativeImage") {
             "$graalvmHome\\bin\\native-image.cmd"
         else
             "$graalvmHome/bin/native-image",
-        "--no-fallback",
 //        "-march=" + if (arch in archArm64) "armv8.1-a" else "x86-64-v2",
         if (arch in archAmd64) "-march=x86-64-v2" else null,
         if (os.isLinux && arch in archArm64) "-H:PageSize=16384" else null,
@@ -612,16 +617,18 @@ tasks.register<Exec>("buildNativeImage") {
         "-J-Dfile.encoding=UTF-8",
         "-J-Dnative.encoding=UTF-8",
         "-J-Dsun.java2d.dpiaware=true",
-        "-H:ConfigurationFileDirectories=" + reachabilityFiles.absolutePath,
+        "--exact-reachability-metadata",
+        "-H:MissingRegistrationReportingMode=Warn",
         "-R:MaxHeapSize=300M",
         "--initialize-at-build-time=kotlin.text.Charsets",
-        "--future-defaults=all",
+//        "--future-defaults=all",
         "-H:+AddAllCharsets",
         "-H:+ReportExceptionStackTraces",
 //        "-g",
 //        "--enable-monitoring=nmt",
         "--enable-native-access=ALL-UNNAMED",
         "--include-locales",
+        "-H:IncludeLocales=" + localesTextFile.readText().trim().replace("\n", ","),
 //        "--install-exit-handlers",
         // I use trustStoreType=Windows-ROOT at runtime
         if (os.isWindows) "-J-Djavax.net.ssl.trustStore=NONE" else null,
@@ -867,6 +874,7 @@ tasks.register("fetchCrowdinLanguages") {
     val tokenProvider = project.provider { localProperties["crowdin.token"]!! }
     val localesConfigFile = file("src/androidMain/res/xml/locales_config.xml")
     val localeUtilsFile = file("src/commonMain/kotlin/dev/etorix/panoscrobbler/utils/LocaleUtils.kt")
+    val localesTextFile = file("locales.txt")
 
     outputs.file(localesConfigFile)
     outputs.file(localeUtilsFile)
@@ -904,6 +912,24 @@ tasks.register("fetchCrowdinLanguages") {
                     } + "en"
                     ).sorted()
 
+            val localesWithNames = languagesFiltered.map {
+                val localeObj = Locale.forLanguageTag(it)
+                val displayLanguage = localeObj.getDisplayLanguage(localeObj)
+
+                val suffix = when (localeObj.language) {
+                    "zh" -> " " + localeObj.getDisplayScript(localeObj)
+                    "pt" -> localeObj.getDisplayCountry(localeObj)
+                        .ifEmpty { null }
+                        ?.let { " $it" } ?: ""
+
+                    else -> ""
+                }
+
+                it to displayLanguage + suffix
+            }.sortedWith { (k1, v1), (k2, v2) ->
+                v1.compareTo(v2, ignoreCase = true)
+            }
+
             // write to locale_config.xml
             val localesConfigText =
                 """<?xml version='1.0' encoding='UTF-8'?>
@@ -915,8 +941,8 @@ ${languagesFiltered.joinToString("\n") { "    <locale android:name=\"$it\" />" }
 
             // write to LocaleUtils.kt
             val localeUtilsPartialText = """
-    val localesSet = arrayOf(
-${languagesFiltered.joinToString("\n") { "        \"$it\"," }}
+    val localesMap = mapOf(
+${localesWithNames.joinToString(",\n") { "        \"${it.first}\" to \"${it.second}\"" }}
     )
 """
 
@@ -929,6 +955,9 @@ ${languagesFiltered.joinToString("\n") { "        \"$it\"," }}
                     end
                 )
             localeUtilsFile.writeText(newLocaleUtilsText)
+
+            // write to locales.txt
+            localesTextFile.writeText(languagesFiltered.joinToString("\n"))
 
             println("Crowdin languages fetched successfully.")
         } else {

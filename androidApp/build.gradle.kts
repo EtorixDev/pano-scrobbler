@@ -16,11 +16,11 @@ val aboutLibrariesVariant = when {
     else -> null
 }
 
-val APP_ID: String by rootProject.extra
-val VER_CODE: Int by rootProject.extra
-val VER_NAME: String by rootProject.extra
-val APP_NAME: String by rootProject.extra
-val APP_NAME_NO_SPACES: String by rootProject.extra
+val APP_ID = rootProject.extra["APP_ID"] as String
+val VER_CODE = rootProject.extra["VER_CODE"] as Int
+val VER_NAME = rootProject.extra["VER_NAME"] as String
+val APP_NAME = rootProject.extra["APP_NAME"] as String
+val APP_NAME_NO_SPACES = rootProject.extra["APP_NAME_NO_SPACES"] as String
 
 val localProperties = gradleLocalProperties(rootDir, project.providers)
     .map { it.key to it.value.toString() }

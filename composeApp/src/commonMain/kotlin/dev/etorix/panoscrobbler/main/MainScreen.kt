@@ -124,6 +124,7 @@ import pano_scrobbler.composeapp.generated.resources.download
 import pano_scrobbler.composeapp.generated.resources.reload
 import pano_scrobbler.composeapp.generated.resources.update_available
 import pano_scrobbler.composeapp.generated.resources.update_downloaded
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -329,7 +330,7 @@ fun PanoAppContent(
 
     // show changelog if needed
     LaunchedEffect(Unit) {
-        delay(500)
+        delay(500.milliseconds)
 
         val changelog = Res.readBytes("files/changelog.md").decodeToString()
         val changelogHashcode = changelog.hashCode()
@@ -633,7 +634,6 @@ fun PanoAppContent(
 }
 
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun PanoFab(
     fabData: PanoFabData,
@@ -681,7 +681,7 @@ private fun PanoFab(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun PanoTopAppBar(
     title: String,

@@ -1,5 +1,6 @@
 package dev.etorix.panoscrobbler.navigation
 
+import androidx.annotation.IntRange
 import androidx.navigation3.runtime.NavKey
 import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.api.DrawerData
@@ -84,7 +85,10 @@ sealed interface PanoRoute : NavKey {
     data object LoginListenBrainz : PanoRoute
 
     @Serializable
-    data object LoginCustomListenBrainz : PanoRoute
+    data class LoginCustomListenBrainz(
+        @IntRange(1, 3)
+        val slot: Int
+    ) : PanoRoute
 
     @Serializable
     data object LoginPleroma : PanoRoute
@@ -314,6 +318,7 @@ sealed interface PanoRoute : NavKey {
         data class EditScrobble(
             val origScrobbleData: ScrobbleData,
             val origTrack: Track? = null,
+            val scrobbleData: ScrobbleData = origScrobbleData,
             val msid: String? = null,
             val hash: Int? = null, // from notification
             val key: String? = null, // from main ui
@@ -331,6 +336,8 @@ sealed interface PanoRoute : NavKey {
             AccountType.LASTFM,
             AccountType.LISTENBRAINZ,
             AccountType.CUSTOM_LISTENBRAINZ,
+            AccountType.CUSTOM_LISTENBRAINZ_2,
+            AccountType.CUSTOM_LISTENBRAINZ_3,
                 -> listOf(
                 PanoTab.Scrobbles(),
                 PanoTab.Following,

@@ -43,6 +43,7 @@ import dev.etorix.panoscrobbler.themes.DayNightMode
 import dev.etorix.panoscrobbler.ui.PanoLazyColumn
 import dev.etorix.panoscrobbler.ui.SearchField
 import dev.etorix.panoscrobbler.ui.SimpleHeaderItem
+import dev.etorix.panoscrobbler.ui.accountTypeLabel
 import dev.etorix.panoscrobbler.ui.accountTypeStringRes
 import dev.etorix.panoscrobbler.ui.getActivityOrNull
 import dev.etorix.panoscrobbler.ui.horizontalOverscanPadding
@@ -135,6 +136,7 @@ import pano_scrobbler.composeapp.generated.resources.system
 import pano_scrobbler.composeapp.generated.resources.when_not_using
 import java.util.Calendar
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 
 
 @Composable
@@ -219,7 +221,7 @@ fun PrefsScreen(
     var localeChanged by remember { mutableStateOf(false) }
 
     LaunchedEffect(searchTerm, localeChanged) {
-        delay(500)
+        delay(500.milliseconds)
 
         if (searchActive) {
             val fk = mutableSetOf<String>()
@@ -735,14 +737,14 @@ fun PrefsScreen(
 
             val localesMap = remember(locale) {
                 val autoEntry = mapOf("auto" to autoString)
-                LocaleUtils.localesMap().let {
+                LocaleUtils.localesMap.let {
                     autoEntry + it
                 }
             }
 
             DropdownPref(
                 text = title,
-                selectedValue = locale,
+                selectedValue = locale ?: "auto",
                 values = localesMap.keys,
                 toLabel = { localesMap[it] ?: autoString },
                 copyToSave = {
@@ -807,7 +809,7 @@ fun PrefsScreen(
                     formatRes
                 ) { title ->
                     AccountPref(
-                        title,
+                        accountTypeLabel(accountType),
                         type = accountType,
                         usernamesMap = scrobblableLabels,
                         onNavigate = onNavigate

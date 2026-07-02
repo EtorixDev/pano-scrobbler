@@ -16,7 +16,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -112,7 +111,6 @@ import pano_scrobbler.composeapp.generated.resources.track
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RegexEditsAddScreen(
     mainViewModel: MainViewModel,
@@ -862,12 +860,26 @@ private fun SearchFields(
 private fun ExtractOptions(
     modifier: Modifier
 ) {
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+
+    val captureGroupsHighlighter = remember {
+        HighlighterVisualTransformation(
+            stringsToHighlight = listOf(
+                RegexEdit.Field.track.name,
+                RegexEdit.Field.album.name,
+                RegexEdit.Field.artist.name,
+                RegexEdit.Field.albumArtist.name,
+            ),
+            highlightColor = tertiaryColor
+        )
+    }
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
     ) {
         Text(
-            text = stringResource(Res.string.edit_extract_desc),
+            text = captureGroupsHighlighter.highlight(stringResource(Res.string.edit_extract_desc)),
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.fillMaxWidth()
         )

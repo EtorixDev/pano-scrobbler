@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -105,6 +104,7 @@ import pano_scrobbler.composeapp.generated.resources.scrobbler_off
 import pano_scrobbler.composeapp.generated.resources.scrobbles
 import pano_scrobbler.composeapp.generated.resources.time_jump
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 
 private enum class ScrobblesType {
     RECENTS,
@@ -610,7 +610,7 @@ fun ScrobblesScreen(
                                         updateScrobblerState()
 
                                         innerScope.launch {
-                                            delay(500)
+                                            delay(500.milliseconds)
                                             if (scrobblerState == ScrobblerState.Disabled)
                                                 onNavigate(PanoRoute.Prefs)
                                             else
@@ -626,7 +626,8 @@ fun ScrobblesScreen(
                         is ScrobblerState.Killed -> {
                             item("notice") {
                                 DismissableNotice(
-                                    title = stringResource(Res.string.not_running),
+                                    title = stringResource(Res.string.not_running) + ": " +
+                                            scrobblerState.reason?.shortText().orEmpty(),
                                     onClick = { onNavigate(PanoRoute.Modal.FixIt(scrobblerState.reason)) },
                                     modifier = Modifier.animateItem()
                                 )
@@ -713,7 +714,7 @@ fun ScrobblesScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ScrobblesTypeSelectorButton(
     type: ScrobblesType?,
@@ -756,7 +757,7 @@ private fun ScrobblesTypeSelectorButton(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ScrobblesTypeSelector(
     selectedType: ScrobblesType,

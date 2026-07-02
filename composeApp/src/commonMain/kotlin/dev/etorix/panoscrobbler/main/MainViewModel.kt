@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
 import java.util.Calendar
+import kotlin.time.Duration.Companion.seconds
 
 class MainViewModel : ViewModel() {
 
@@ -107,7 +108,7 @@ class MainViewModel : ViewModel() {
     fun updateScrobblerServiceState(requestRebind: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             if (requestRebind)
-                delay(2000)
+                delay(2.seconds)
 
             val state = PlatformStuff.checkScrobblerState(requestRebind)
             _scrobblerStateFlow.value = state
@@ -118,8 +119,9 @@ class MainViewModel : ViewModel() {
                 killedReasonReported = true
                 val message = state.reason.formatted()
                 val pss = " ${state.reason.pssMb} MB"
+                val importance = " ${state.reason.importance} i"
                 val notiState = if (!state.reason.fgNoti) " noFgNoti" else ""
-                Logger.e(AppExitException(message + pss + notiState)) { message }
+                Logger.e(AppExitException(message + pss + importance + notiState)) { message }
             }
         }
     }

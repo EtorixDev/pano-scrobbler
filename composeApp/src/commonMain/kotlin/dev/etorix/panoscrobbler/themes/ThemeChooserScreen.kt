@@ -184,7 +184,6 @@ private fun ContrastMode.Label() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ThemeSwatch(
     themeVariants: ThemeVariants,
