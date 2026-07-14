@@ -91,7 +91,6 @@ class ScrobbleQueue(
 
     fun scrobble(
         trackInfo: PlayingTrackInfo,
-        appIsAllowListed: Boolean,
         delay: Long,
         timestampOverride: Long? = null,
     ) {
@@ -286,15 +285,6 @@ class ScrobbleQueue(
                     nowPlaying = true,
                 )
             )
-        }
-
-        if (!appIsAllowListed) {
-            scope.launch {
-                PanoNotifications.notifyAppDetected(
-                    trackInfo.appId,
-                    PlatformStuff.loadApplicationLabel(trackInfo.appId)
-                )
-            }
         }
 
         prune()

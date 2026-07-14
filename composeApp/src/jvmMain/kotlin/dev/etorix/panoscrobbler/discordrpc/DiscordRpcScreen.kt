@@ -1,0 +1,352 @@
+package dev.etorix.panoscrobbler.discordrpc
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import dev.etorix.panoscrobbler.BuildKonfig
+import dev.etorix.panoscrobbler.icons.Icons
+import dev.etorix.panoscrobbler.icons.ResetSettings
+import dev.etorix.panoscrobbler.pref.DropdownPref
+import dev.etorix.panoscrobbler.pref.MainPrefs
+import dev.etorix.panoscrobbler.pref.SliderPref
+import dev.etorix.panoscrobbler.pref.SwitchPref
+import dev.etorix.panoscrobbler.ui.HighlighterVisualTransformation
+import dev.etorix.panoscrobbler.ui.PanoOutlinedTextField
+import dev.etorix.panoscrobbler.ui.horizontalOverscanPadding
+import dev.etorix.panoscrobbler.utils.PlatformStuff
+import dev.etorix.panoscrobbler.utils.Stuff
+import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import pano_scrobbler.composeapp.generated.resources.Res
+import pano_scrobbler.composeapp.generated.resources.album_art
+import pano_scrobbler.composeapp.generated.resources.album_art_now_playing
+import pano_scrobbler.composeapp.generated.resources.album_art_now_playing_desc
+import pano_scrobbler.composeapp.generated.resources.appwidget_show
+import pano_scrobbler.composeapp.generated.resources.available_placeholders
+import pano_scrobbler.composeapp.generated.resources.button_url
+import pano_scrobbler.composeapp.generated.resources.discord_app_name
+import pano_scrobbler.composeapp.generated.resources.discord_compact_view_line
+import pano_scrobbler.composeapp.generated.resources.enable
+import pano_scrobbler.composeapp.generated.resources.hide
+import pano_scrobbler.composeapp.generated.resources.lastfm
+import pano_scrobbler.composeapp.generated.resources.librefm
+import pano_scrobbler.composeapp.generated.resources.line_n
+import pano_scrobbler.composeapp.generated.resources.listenbrainz
+import pano_scrobbler.composeapp.generated.resources.loved
+import pano_scrobbler.composeapp.generated.resources.profile
+import pano_scrobbler.composeapp.generated.resources.reset
+import pano_scrobbler.composeapp.generated.resources.show_paused_for
+import pano_scrobbler.composeapp.generated.resources.show_track_url
+
+
+@Composable
+fun DiscordRpcScreen(
+    modifier: Modifier = Modifier,
+) {
+    val settings by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.discordRpc }
+    val defaultSettings = remember { MainPrefs.DiscordRpcSettings() }
+    var line1Format by remember(settings.line1Format) { mutableStateOf(settings.line1Format) }
+    var line2Format by remember(settings.line2Format) { mutableStateOf(settings.line2Format) }
+    var line3Format by remember(settings.line3Format) { mutableStateOf(settings.line3Format) }
+    var nameFormat by remember(settings.nameFormat) { mutableStateOf(settings.nameFormat) }
+    val buttonType by remember(settings.buttonType) {
+        mutableStateOf(
+            MainPrefs.DiscordRpcSettings.ButtonType.entries.find { it.name == settings.buttonType }
+                ?: MainPrefs.DiscordRpcSettings.ButtonType.PANO_SCROBBLER
+        )
+    }
+    val line by remember(settings.statusLine) {
+        mutableStateOf(
+            when (settings.statusLine) {
+                1 -> MainPrefs.DiscordRpcSettings.Line.Line1
+                2 -> MainPrefs.DiscordRpcSettings.Line.Line2
+                else -> MainPrefs.DiscordRpcSettings.Line.None
+            }
+        )
+    }
+
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val visualTransformation = remember {
+        HighlighterVisualTransformation(
+            stringsToHighlight = DiscordRpcPlaceholder.entries.map { "\$" + it.name },
+            highlightColor = tertiaryColor
+        )
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            Stuff.appScope.launch {
+                PlatformStuff.mainPrefs.updateData {
+                    it.copy(
+                        discordRpc = it.discordRpc.copy(
+                            line1Format = line1Format.trim()
+                                .ifEmpty { defaultSettings.line1Format },
+                            line2Format = line2Format.trim()
+                                .ifEmpty { defaultSettings.line2Format },
+                            line3Format = line3Format.trim(), // line 3 can be empty
+                            nameFormat = nameFormat.trim(), // name can be empty
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
+    ) {
+        SwitchPref(
+            text = stringResource(Res.string.enable),
+            value = settings.enabled,
+            copyToSave = {
+                copy(
+                    discordRpc = settings.copy(enabled = it)
+                )
+            }
+        )
+
+        SwitchPref(
+            text = stringResource(Res.string.album_art),
+            value = settings.albumArt,
+            enabled = settings.enabled,
+            copyToSave = {
+                copy(
+                    discordRpc = settings.copy(albumArt = it)
+                )
+            }
+        )
+
+        SwitchPref(
+            text = stringResource(Res.string.album_art_now_playing),
+            summary = stringResource(Res.string.album_art_now_playing_desc),
+            value = settings.albumArtFromNowPlaying,
+            enabled = settings.enabled && settings.albumArt,
+            copyToSave = {
+                copy(
+                    discordRpc = settings.copy(albumArtFromNowPlaying = it)
+                )
+            }
+        )
+
+        SwitchPref(
+            text = stringResource(Res.string.show_track_url),
+            value = settings.detailsUrl,
+            enabled = settings.enabled,
+            copyToSave = {
+                copy(
+                    discordRpc = settings.copy(detailsUrl = it)
+                )
+            }
+        )
+
+        SwitchPref(
+            text = stringResource(Res.string.appwidget_show) + ": " + stringResource(Res.string.loved),
+            value = settings.lovedState,
+            enabled = settings.enabled,
+            copyToSave = {
+                copy(
+                    discordRpc = settings.copy(lovedState = it)
+                )
+            }
+        )
+
+        Text(
+            stringResource(
+                Res.string.available_placeholders,
+                DiscordRpcPlaceholder.entries.joinToString { "\$" + it.name }
+            ),
+            color = tertiaryColor,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalOverscanPadding())
+        )
+
+        PanoOutlinedTextField(
+            label = { Text(stringResource(Res.string.line_n, 1)) },
+            value = line1Format,
+            onValueChange = {
+                line1Format = it
+            },
+            visualTransformation = visualTransformation,
+            isError = line1Format.trim().isEmpty(),
+            trailingIcon = {
+                IconButton(
+                    enabled = line1Format != defaultSettings.line1Format,
+                    onClick = {
+                        line1Format = defaultSettings.line1Format
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.ResetSettings,
+                        contentDescription = stringResource(Res.string.reset)
+                    )
+                }
+            },
+            enabled = settings.enabled,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalOverscanPadding())
+        )
+
+        PanoOutlinedTextField(
+            label = { Text(stringResource(Res.string.line_n, 2)) },
+            value = line2Format,
+            onValueChange = {
+                line2Format = it
+            },
+            visualTransformation = visualTransformation,
+            isError = line2Format.trim().isEmpty(),
+            trailingIcon = {
+                IconButton(
+                    enabled = line2Format != defaultSettings.line2Format,
+                    onClick = {
+                        line2Format = defaultSettings.line2Format
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.ResetSettings,
+                        contentDescription = stringResource(Res.string.reset)
+                    )
+                }
+            },
+            enabled = settings.enabled,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalOverscanPadding())
+        )
+
+        PanoOutlinedTextField(
+            label = { Text(stringResource(Res.string.line_n, 3)) },
+            value = line3Format,
+            onValueChange = {
+                line3Format = it
+            },
+            visualTransformation = visualTransformation,
+            trailingIcon = {
+                IconButton(
+                    enabled = line3Format != defaultSettings.line3Format,
+                    onClick = {
+                        line3Format = defaultSettings.line3Format
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.ResetSettings,
+                        contentDescription = stringResource(Res.string.reset)
+                    )
+                }
+            },
+            enabled = settings.enabled,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalOverscanPadding())
+        )
+
+        PanoOutlinedTextField(
+            label = { Text(stringResource(Res.string.discord_app_name)) },
+            value = nameFormat,
+            onValueChange = {
+                nameFormat = it
+            },
+            visualTransformation = visualTransformation,
+            trailingIcon = {
+                IconButton(
+                    enabled = nameFormat != defaultSettings.nameFormat,
+                    onClick = {
+                        nameFormat = defaultSettings.nameFormat
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.ResetSettings,
+                        contentDescription = stringResource(Res.string.reset)
+                    )
+                }
+            },
+            enabled = settings.enabled,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalOverscanPadding())
+        )
+
+        DropdownPref(
+            text = stringResource(Res.string.discord_compact_view_line),
+            selectedValue = line,
+            values = MainPrefs.DiscordRpcSettings.Line.entries,
+            toLabel = {
+                when (it) {
+                    MainPrefs.DiscordRpcSettings.Line.Line1 -> stringResource(Res.string.line_n, 1)
+                    MainPrefs.DiscordRpcSettings.Line.Line2 -> stringResource(Res.string.line_n, 2)
+                    MainPrefs.DiscordRpcSettings.Line.None -> stringResource(Res.string.discord_app_name)
+                }
+            },
+            copyToSave = {
+                copy(
+                    discordRpc = settings.copy(
+                        statusLine = it.ordinal
+                    )
+                )
+            },
+            enabled = settings.enabled,
+        )
+
+        DropdownPref(
+            text = stringResource(Res.string.button_url),
+            selectedValue = buttonType,
+            values = MainPrefs.DiscordRpcSettings.ButtonType.entries,
+            toLabel = {
+                when (it) {
+                    MainPrefs.DiscordRpcSettings.ButtonType.PANO_SCROBBLER -> BuildKonfig.APP_NAME
+                    MainPrefs.DiscordRpcSettings.ButtonType.LASTFM_PROFILE ->
+                        stringResource(Res.string.lastfm) + " " + stringResource(Res.string.profile)
+
+                    MainPrefs.DiscordRpcSettings.ButtonType.LISTENBRAINZ_PROFILE ->
+                        stringResource(Res.string.listenbrainz) + " " + stringResource(Res.string.profile)
+
+                    MainPrefs.DiscordRpcSettings.ButtonType.LIBREFM_PROFILE ->
+                        stringResource(Res.string.librefm) + " " + stringResource(Res.string.profile)
+
+                    MainPrefs.DiscordRpcSettings.ButtonType.NONE ->
+                        stringResource(Res.string.hide)
+                }
+            },
+            copyToSave = {
+                copy(
+                    discordRpc = settings.copy(
+                        buttonType = it.name
+                    )
+                )
+            },
+            enabled = settings.enabled,
+        )
+
+        SliderPref(
+            text = stringResource(Res.string.show_paused_for),
+            value = settings.showPausedForSecs.toFloat(),
+            enabled = settings.enabled,
+            min = 0,
+            max = 600,
+            default = defaultSettings.showPausedForSecs,
+            increments = 10,
+            stringRepresentation = { Stuff.humanReadableDuration(it * 1000L) },
+            copyToSave = {
+                copy(
+                    discordRpc = settings.copy(showPausedForSecs = it)
+                )
+            },
+        )
+    }
+}

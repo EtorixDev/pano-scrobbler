@@ -11,7 +11,6 @@ import org.jetbrains.compose.reload.gradle.ComposeHotRun
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URI
-import java.security.MessageDigest
 import java.util.Locale
 import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.io.encoding.Base64
@@ -59,6 +58,25 @@ val localProperties = gradleLocalProperties(rootDir, project.providers)
     .map { it.key to it.value.toString() }
     .toMap()
 
+fun commonJvmArgs(): List<String> {
+    val libPath = File(
+        project.layout.projectDirectory.dir("resources").asFile,
+        resourcesDirName
+    ).absolutePath
+
+    return listOfNotNull(
+        "-Dpano.native.components.path=$libPath",
+        "--enable-native-access=ALL-UNNAMED",
+        if (os.isLinux) "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED" else null,
+        "-Dfile.encoding=UTF-8",
+        "-Dnative.encoding=UTF-8",
+//        "-XX:+UseSerialGC",
+//        "-Xms32m",
+//        "-Xmx512m",
+//        "-XX:NativeMemoryTracking=detail",
+    )
+}
+
 kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xreturn-value-checker=check")
@@ -80,10 +98,9 @@ kotlin {
         withHostTest {}
     }
 
-    jvm("desktop")
+    jvm()
 
     sourceSets {
-        val desktopMain by getting
 
         androidMain.dependencies {
 //            implementation(libs.core)
@@ -97,51 +114,49 @@ kotlin {
             implementation(projects.extrasAndroid)
         }
 
-        commonMain {
-            dependencies {
-                implementation(libs.kotlin.stdlib)
-                implementation(libs.kotlinx.coroutines.core)
-                implementation(libs.runtime)
-                implementation(libs.foundation)
-                implementation(libs.material3)
-                implementation(libs.ui)
-                implementation(libs.resources)
-                implementation(libs.tooling.preview)
-                implementation(libs.kotlinx.serialization.json)
-                implementation(libs.lifecycle.viewmodel.nav3)
-                implementation(libs.lifecycle.viewmodel)
-                implementation(libs.lifecycle.runtime)
-                implementation(libs.coil.compose)
-                implementation(libs.coil.network.ktor)
-                implementation(libs.ktor.client.core)
-                implementation(libs.ktor.serialization.kotlinx.json)
-                implementation(libs.ktor.client.auth)
-                implementation(libs.ktor.client.content.negotiation)
-                implementation(libs.ktor.client.okhttp)
-                implementation(libs.okhttp)
-                implementation(libs.aboutlibraries.core)
-                implementation(libs.kotlin.csv)
-                implementation(libs.kermit)
-                implementation(libs.datastore.core)
-                implementation(libs.paging.common)
-                implementation(libs.paging.compose)
-                implementation(libs.nav3.ui)
-                implementation(libs.adaptive)
-                implementation(libs.adaptive.layout)
-                implementation(libs.adaptive.nav3)
-                implementation(libs.koalaplot.core)
-                implementation(libs.nanohttpd)
-                implementation(libs.room.runtime)
-                implementation(libs.cryptohash)
-                implementation(projects.extrasCommon)
-            }
+        commonMain.dependencies {
+            implementation(libs.kotlin.stdlib)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.runtime)
+            implementation(libs.foundation)
+            implementation(libs.material3)
+            implementation(libs.ui)
+            implementation(libs.resources)
+            implementation(libs.tooling.preview)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.lifecycle.viewmodel.nav3)
+            implementation(libs.lifecycle.viewmodel)
+            implementation(libs.lifecycle.runtime)
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.ktor.client.auth)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.client.okhttp)
+            implementation(libs.okhttp)
+            implementation(libs.aboutlibraries.core)
+            implementation(libs.kotlin.csv)
+            implementation(libs.kermit)
+            implementation(libs.datastore.core)
+            implementation(libs.paging.common)
+            implementation(libs.paging.compose)
+            implementation(libs.nav3.ui)
+            implementation(libs.adaptive)
+            implementation(libs.adaptive.layout)
+            implementation(libs.adaptive.nav3)
+            implementation(libs.koalaplot.core)
+            implementation(libs.nanohttpd)
+            implementation(libs.room.runtime)
+            implementation(libs.cryptohash)
+            implementation(projects.extrasCommon)
         }
 
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
 
-        desktopMain.dependencies {
+        jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(projects.extrasNonplay)
@@ -159,7 +174,7 @@ kotlin {
 dependencies {
 //    "baselineProfile"(projects.baselineprofile)
     add("kspAndroid", libs.room.compiler)
-    add("kspDesktop", libs.room.compiler)
+    add("kspJvm", libs.room.compiler)
     "androidRuntimeClasspath"(libs.tooling)
 }
 
@@ -252,7 +267,7 @@ buildkonfig {
 //            buildConfigField(STRING, "nullableField", "NonNull-value", nullable = true)
         }
 
-        create("desktop") {
+        create("jvm") {
             buildConfigField(
                 INT, "OS_ORDINAL",
                 when {
@@ -291,8 +306,8 @@ aboutLibraries {
     }
 
     exports {
-        create("desktop") {
-            outputFile = file("src/desktopMain/composeResources/files/aboutlibraries.json")
+        create("jvm") {
+            outputFile = file("src/jvmMain/composeResources/files/aboutlibraries.json")
         }
     }
 
@@ -368,29 +383,13 @@ compose.desktop {
                 iconFile = file("app-icons/pano-scrobbler.icns")
             }
         }
-
-//        buildTypes.release {
-//            proguard {
-//                obfuscate = false
-//                optimize = false
-//                joinOutputJars = true
-//                configurationFiles.from(project.file("proguard-rules-desktop.pro"))
-//            }
-//        }
     }
 }
 
 tasks.withType<ComposeHotRun>().configureEach {
-    val libraryPath =
-        File(project.layout.projectDirectory.dir("resources").asFile, resourcesDirName).absolutePath
-
     isAutoReloadEnabled = true
     mainClass = "dev.etorix.panoscrobbler.main.MainKt"
-    jvmArgs = (jvmArgs.orEmpty()) + listOfNotNull(
-        "-Dpano.native.components.path=$libraryPath",
-        "--enable-native-access=ALL-UNNAMED",
-        if (os.isLinux) "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED" else null,
-    )
+    jvmArgs = commonJvmArgs()
     val appDataRoot = when {
         os.isWindows -> {
             System.getenv("APPDATA")?.ifEmpty { null }
@@ -402,53 +401,11 @@ tasks.withType<ComposeHotRun>().configureEach {
                 ?: (System.getProperty("user.home") + "/.local/share")
         }
 
-        os.isMacOsX -> {
-            System.getProperty("user.home") + "/Library/Application Support"
-        }
-
         else -> throw IllegalStateException("unsupported os")
     }
 
     val appDataDir = File(appDataRoot, "$APP_NAME_NO_SPACES-debug").absolutePath
     args = listOf("--data-dir", appDataDir)
-}
-
-tasks.register<DefaultTask>("generateSha256") {
-    val distDir = file("../dist")
-
-    doLast {
-        distDir.listFiles { file ->
-            file.isFile && !file.name.endsWith(".sha256") && !file.name.endsWith(".txt")
-        }?.map { file ->
-            val digest = MessageDigest.getInstance("SHA-256")
-            file.inputStream().use { fis ->
-                val buffer = ByteArray(8192)
-                var bytesRead: Int
-                while (fis.read(buffer).also { bytesRead = it } != -1) {
-                    digest.update(buffer, 0, bytesRead)
-                }
-            }
-            val hash = digest.digest().joinToString("") { "%02x".format(it) }
-            "$hash  ${file.name}"
-        }?.let {
-            val text = it.joinToString("\n")
-            val sumFile = File(distDir, "sha256sums.txt")
-            sumFile.writeText(text)
-
-            println("sha256sums.txt generated")
-        }
-    }
-}
-
-tasks.register<Copy>("copyReleaseDmg") {
-    val fileName = "$APP_NAME_NO_SPACES-$resourcesDirName.dmg"
-    from("build/compose/binaries/main-release/dmg")
-    into("../dist")
-    include("*.dmg")
-    rename(
-        "(.*).dmg",
-        fileName
-    )
 }
 
 tasks.register<Exec>("packageInno") {
@@ -532,13 +489,13 @@ tasks.register<Exec>("generateRc") {
     }
 }
 
-val copyReachabilityMetadata by tasks.registering(Copy::class) {
+val copyReachabilityMetadata = tasks.register<Copy>("copyReachabilityMetadata") {
     val osDir = if (os.isWindows) "windows" else "linux"
     from("rechability-metadata/$osDir")
     into(layout.buildDirectory.dir("generated/reachability-metadata/META-INF/native-image/$APP_ID/$APP_NAME_NO_SPACES"))
 }
 
-kotlin.sourceSets.getByName("desktopMain").resources.srcDir(
+kotlin.sourceSets.getByName("jvmMain").resources.srcDir(
     copyReachabilityMetadata.map {
         it.destinationDir.parentFile.parentFile.parentFile.parentFile
         // points to: generated/reachability-metadata/
@@ -591,7 +548,7 @@ tasks.register<Exec>("buildNativeImage") {
     val localesTextFile = file("locales.txt")
 
     val nativeLibsDir = file("resources/$resourcesDirName/")
-    val iconFile = file("src/desktopMain/composeResources/drawable/ic_launcher_with_bg.svg")
+    val iconFile = file("src/jvmMain/composeResources/drawable/ic_launcher_with_bg.svg")
     val outputIconFileName = "$APP_NAME_NO_SPACES.svg"
     val desktopFile = file("$APP_NAME_NO_SPACES.desktop")
     val licenseFile = file("../LICENSE")
@@ -1085,10 +1042,6 @@ tasks.register<Copy>("copyMds") {
 
 tasks.configureEach {
     when (name) {
-        "packageReleaseDmg" -> {
-            if (os.isMacOsX) finalizedBy("copyReleaseDmg")
-        }
-
         "packageUberJarForCurrentOS" -> {
             if (os.isLinux) {
                 finalizedBy("packageLinuxAppImageAndTarball")
@@ -1118,7 +1071,7 @@ tasks.configureEach {
             mustRunAfter(":androidApp:exportLibraryDefinitions")
         }
 
-        "copyNonXmlValueResourcesForDesktopMain" -> {
+        "copyNonXmlValueResourcesForJvmMain" -> {
             mustRunAfter(":composeApp:exportLibraryDefinitions")
         }
 

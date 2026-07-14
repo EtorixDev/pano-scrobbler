@@ -27,7 +27,7 @@ captures
 /composeApp/*.json
 /androidApp/*.json
 /composeApp/src/commonTest/kotlin/dev/etorix/panoscrobbler/AuthTest.kt
-/composeApp/src/desktopTest/kotlin/dev/etorix/panoscrobbler/DesktopAuthTests.kt
+/composeApp/src/jvmTest/kotlin/dev/etorix/panoscrobbler/DesktopAuthTests.kt
 /dist
 androidApp/src/release/generated
 androidApp/src/releaseGithub/generated

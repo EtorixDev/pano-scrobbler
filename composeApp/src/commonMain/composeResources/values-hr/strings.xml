@@ -392,8 +392,12 @@
     <string name="when_using" formatted="true" comment="%1$s is the web service or media player name">Kada se koristi %1$s</string>
     <string name="when_not_using" formatted="true" comment="%1$s is the web service or media player name">Kada se ne koristi %1$s</string>
     <string name="as_text" comment="Like copy as text, but in short">Kao tekst</string>
+    <string name="automation_cli">Argumentni naredbenog retka</string>
+    <string name="automation_cli_info">Pokrenite izvršnu datoteku pano-scrobbler s nekim od ovih argumenata naredbenog retka kada je već pokrenuta jedna instanca.</string>
     <string name="album_art_now_playing_desc">Zahtijeva prijavu na last.fm</string>
     <string name="spotify_consent">Dohvatiti slike izvođača sa Spotifya?</string>
+    <string name="search_in_media_player" comment="This launches and searches in the media player app directly instead of opening a browser">Pretraži izravno u medijskom reproduktoru</string>
+    <string name="forget_unchecked_apps" comment="Shown in the 'Scrobble From' apps list on desktop">Zaboravi neoznačene aplikacije</string>
     <string name="discord_app_name" comment="usually the media player app name, shown in discord rich presence">Naziv aplikacije</string>
     <string name="help">Pomoć</string>
 </resources>

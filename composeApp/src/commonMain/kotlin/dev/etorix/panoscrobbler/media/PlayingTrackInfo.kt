@@ -2,6 +2,7 @@ package dev.etorix.panoscrobbler.media
 
 import dev.etorix.panoscrobbler.api.lastfm.ScrobbleData
 import dev.etorix.panoscrobbler.utils.MetadataUtils
+import dev.etorix.panoscrobbler.utils.PlatformStuff
 import java.util.Objects
 import kotlin.math.abs
 
@@ -81,6 +82,8 @@ class PlayingTrackInfo(
     var lastScrobbleHash: Int = cachedTrackInfo?.lastScrobbleHash ?: 0
         private set
 
+    val sessionStartTime = PlatformStuff.monotonicTimeMs()
+
     fun putOriginals(
         artist: String,
         title: String,
@@ -109,7 +112,7 @@ class PlayingTrackInfo(
 
         scrobbledState = ScrobbledState.NONE
         msid = null
-        playStartTime = 0L // new track identity - needs a fresh start time
+        playStartTime = if (isPlaying) System.currentTimeMillis() else 0L
     }
 
     fun setArtUrl(artUrl: String?) {
@@ -199,6 +202,8 @@ class PlayingTrackInfo(
 
     fun resumed() {
         isPlaying = true
+        if (playStartTime <= 0L)
+            playStartTime = System.currentTimeMillis()
     }
 
     fun toScrobbleData(useOriginals: Boolean) = ScrobbleData(

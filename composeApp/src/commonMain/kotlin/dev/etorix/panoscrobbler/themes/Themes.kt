@@ -1,7 +1,6 @@
 package dev.etorix.panoscrobbler.themes
 
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -25,6 +24,7 @@ data class ThemePreviewSettings(
     val random: Boolean,
     val dayNightMode: DayNightMode,
     val contrastMode: ContrastMode,
+    val alpha: Float,
 )
 
 object ThemePreviewController {
@@ -46,7 +46,6 @@ object ThemePreviewController {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AppTheme(
     onInitDone: () -> Unit = {},
@@ -58,6 +57,9 @@ fun AppTheme(
     val random by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeRandom }
     val dayNightMode by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeDayNight }
     val contrastMode by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeContrast }
+    val alpha by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue {
+        if (!PlatformStuff.isTv) it.themeAlpha.coerceIn(0.5f, 1f) else 1f
+    }
     val isSystemInDarkTheme by isSystemInDarkThemeNative()
     val previewSettings = ThemePreviewController.previewSettings
 
@@ -66,6 +68,7 @@ fun AppTheme(
     val activeRandom = previewSettings?.random ?: random
     val activeDayNightMode = previewSettings?.dayNightMode ?: dayNightMode
     val activeContrastMode = previewSettings?.contrastMode ?: contrastMode
+    val activeAlpha = previewSettings?.alpha ?: alpha
 
     if (prefsVersion == 0)
         return
@@ -77,7 +80,7 @@ fun AppTheme(
     val isDark = activeDayNightMode == DayNightMode.DARK ||
             (activeDayNightMode == DayNightMode.SYSTEM && isSystemInDarkTheme)
 
-    val themeAttributes = remember(isDark, activeContrastMode, activeThemeName) {
+    val themeAttributes = remember(isDark, activeContrastMode, activeThemeName, activeAlpha) {
         val otherColorSchemes = ThemeUtils.themesMap.values
             .filter { it.name != activeThemeName }
             .map {
@@ -90,6 +93,7 @@ fun AppTheme(
 
         ThemeAttributes(
             isDark = isDark,
+            isTranslucent = activeAlpha < 1f,
             contrastMode = activeContrastMode,
             allOnSecondaryContainerColors = otherColorSchemes.map { it.onSecondaryContainer },
             allSecondaryContainerColors = otherColorSchemes.map { it.secondaryContainer },
@@ -98,7 +102,7 @@ fun AppTheme(
 
     val colorScheme: ColorScheme = when {
         activeDynamic && PlatformStuff.supportsDynamicColors -> {
-            getDynamicColorScheme(isDark)
+            getDynamicColorScheme(isDark).withAlpha(activeAlpha)
         }
 
         else -> {
@@ -111,7 +115,7 @@ fun AppTheme(
                 theme = theme,
                 isDark = isDark,
                 contrastMode = activeContrastMode,
-            )
+            ).withAlpha(activeAlpha)
         }
     }
 
@@ -146,7 +150,23 @@ private fun getColorScheme(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+// Alpha is intentionally constrained by callers to the range 0.5f..1f.
+private fun ColorScheme.withAlpha(alpha: Float): ColorScheme {
+    fun boostAlpha(value: Float, boost: Float) = value + (1f - value) * boost
+
+    if (alpha == 1f) return this
+
+    val highAlpha = boostAlpha(alpha, 0.75f)
+    return copy(
+        background = background.copy(alpha = alpha),
+        surface = surface.copy(alpha = alpha),
+        surfaceContainer = surfaceContainer.copy(alpha = highAlpha),
+        secondaryContainer = secondaryContainer.copy(alpha = highAlpha),
+        tertiaryContainer = tertiaryContainer.copy(alpha = highAlpha),
+        inverseSurface = inverseSurface.copy(alpha = highAlpha),
+    )
+}
+
 @Composable
 fun AppPreviewTheme(content: @Composable () -> Unit) {
     MaterialExpressiveTheme {

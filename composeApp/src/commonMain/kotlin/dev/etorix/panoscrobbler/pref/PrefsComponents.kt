@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SplitButtonDefaults
@@ -39,6 +39,7 @@ import dev.etorix.panoscrobbler.api.Scrobblables
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.KeyboardArrowDown
 import dev.etorix.panoscrobbler.icons.Lock
+import dev.etorix.panoscrobbler.icons.ResetSettings
 import dev.etorix.panoscrobbler.icons.automirrored.KeyboardArrowLeft
 import dev.etorix.panoscrobbler.icons.automirrored.KeyboardArrowRight
 import dev.etorix.panoscrobbler.navigation.PanoRoute
@@ -54,6 +55,7 @@ import pano_scrobbler.composeapp.generated.resources.move_left
 import pano_scrobbler.composeapp.generated.resources.move_right
 import pano_scrobbler.composeapp.generated.resources.no_apps_enabled
 import pano_scrobbler.composeapp.generated.resources.pref_logout
+import pano_scrobbler.composeapp.generated.resources.reset
 import pano_scrobbler.composeapp.generated.resources.sure_tap_again
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.seconds
@@ -294,12 +296,12 @@ fun AppIconsPref(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SliderPref(
     text: String,
     value: Float,
     copyToSave: MainPrefs.(Int) -> MainPrefs,
+    default: Int,
     min: Int,
     max: Int,
     increments: Int,
@@ -375,6 +377,17 @@ fun SliderPref(
                 modifier = Modifier.padding(start = 16.dp)
             )
 
+            IconButton(
+                enabled = enabled && internalValue.roundToInt() != default,
+                onClick = {
+                    scope.launch { mainPrefs.updateData { it.copyToSave(default) } }
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.ResetSettings,
+                    contentDescription = stringResource(Res.string.reset)
+                )
+            }
         }
     }
 }

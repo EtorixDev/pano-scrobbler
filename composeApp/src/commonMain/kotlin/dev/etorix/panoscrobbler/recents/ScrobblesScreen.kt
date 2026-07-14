@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedToggleButton
@@ -142,6 +141,10 @@ fun ScrobblesScreen(
     else
         remember { mutableStateOf(emptyList<PendingScrobble>() to 0) }
     val (pendingScrobbles, pendingScrobblesCount) = pendingScrobblesWithCount
+    val pendingScrobbleLastErrored by if (user.isSelf)
+        viewModel.pendingScrobbleLastErrored.collectAsStateWithLifecycle()
+    else
+        remember { mutableStateOf(null) }
     val total by viewModel.total.collectAsStateWithLifecycle()
     val pkgMap by viewModel.pkgMap.collectAsStateWithLifecycle()
     val scrobblerState by scrobblerStateFlow.collectAsStateWithLifecycle()
@@ -667,6 +670,7 @@ fun ScrobblesScreen(
                         headerText = pendingScrobblesHeader,
                         headerIcon = Icons.HourglassEmpty,
                         items = pendingScrobbles,
+                        lastErrored = pendingScrobbleLastErrored,
                         expanded = if (pendingScrobblesCount <= viewModel.pendingScrobblesPreviewCount)
                             null
                         else
@@ -714,7 +718,6 @@ fun ScrobblesScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ScrobblesTypeSelectorButton(
     type: ScrobblesType?,
@@ -757,7 +760,6 @@ private fun ScrobblesTypeSelectorButton(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ScrobblesTypeSelector(
     selectedType: ScrobblesType,

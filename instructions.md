@@ -125,7 +125,8 @@ Currently, the builds skip this step.
   as your JAVA_HOME and GRAALVM_HOME (both should be set). Also
   have [Inno Setup](https://jrsoftware.org/isdl.php) installed in Program Files on Windows.
 
-- Run `./gradlew composeApp:exportLibraryDefinitions composeApp:packageUberJarForCurrentOS -PaboutLibraries.exportVariant=desktop`
+- Run
+  `./gradlew composeApp:exportLibraryDefinitions composeApp:packageUberJarForCurrentOS -PaboutLibraries.exportVariant=jvm`
 
 - Packaged desktop builds also enable the in-app updater against this fork's GitHub releases by
   default. Set `updates.enabled=false` in `local.properties` if you want to suppress that for a

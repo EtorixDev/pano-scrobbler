@@ -13,12 +13,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButtonShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import dev.etorix.panoscrobbler.BuildKonfig
 import dev.etorix.panoscrobbler.icons.Check
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.themes.colors.ThemeVariants
@@ -38,6 +39,7 @@ import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
+import pano_scrobbler.composeapp.generated.resources.appwidget_alpha
 import pano_scrobbler.composeapp.generated.resources.auto
 import pano_scrobbler.composeapp.generated.resources.contrast
 import pano_scrobbler.composeapp.generated.resources.dark
@@ -57,6 +59,7 @@ fun ThemeChooserScreen(
     val persistedDayNightMode by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeDayNight }
     val persistedRandom by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeRandom }
     val persistedContrastMode by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeContrast }
+    val persistedAlpha by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeAlpha }
     val isAppInNightMode = LocalThemeAttributes.current.isDark
 
     val persistedSettings = remember(
@@ -65,6 +68,7 @@ fun ThemeChooserScreen(
         persistedDayNightMode,
         persistedRandom,
         persistedContrastMode,
+        persistedAlpha,
     ) {
         ThemePreviewSettings(
             themeName = persistedThemeName,
@@ -72,6 +76,7 @@ fun ThemeChooserScreen(
             random = persistedRandom,
             dayNightMode = persistedDayNightMode,
             contrastMode = persistedContrastMode,
+            alpha = persistedAlpha,
         )
     }
 
@@ -89,6 +94,20 @@ fun ThemeChooserScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier
     ) {
+        if (BuildKonfig.DEBUG && !PlatformStuff.isTv) {
+            Text(
+                text = stringResource(Res.string.appwidget_alpha) +
+                        ": ${"%.0f".format(previewSettings.alpha * 100)}%",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Slider(
+                value = previewSettings.alpha,
+                onValueChange = { alpha -> updatePreview { copy(alpha = alpha) } },
+                valueRange = 0.5f..1f,
+                steps = 9,
+            )
+        }
+
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),

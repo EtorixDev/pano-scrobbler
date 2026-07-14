@@ -33,6 +33,9 @@
     <plurals name="num_matches" comment="regex pattern matches">
         <item quantity="other">%1$d cocok</item>
     </plurals>
+    <plurals name="num_hours">
+        <item quantity="other">%1$d jam</item>
+    </plurals>
     <string name="yes">Ya</string>
     <string name="no">Tidak</string>
     <string name="reset">Atur ulang</string>
@@ -79,8 +82,8 @@
     <string name="share_sig">(melalui Pano Scrobbler ETD)</string>
     <string name="share">Bagikan</string>
     <string name="legend" comment="Chart legend - descriptions of the symbols used">Legendaris</string>
-    <string name="grid" comment="Grid view">Kisi (Grid)</string>
-    <string name="list" comment="Single column list view">Daftar (List)</string>
+    <string name="grid" comment="Grid view">Kisi</string>
+    <string name="list" comment="Single column list view">Daftar</string>
     <string name="more_info">Info lainnya</string>
     <string name="more" comment="More options menu in short">Selengkapnya</string>
     <string name="hide">Sembunyikan</string>
@@ -110,7 +113,7 @@
     <string name="delete_all">Hapus semua</string>
     <string name="love" comment="Love/like a song">Suka</string>
     <string name="hate" comment="Hate or dislike a song">Tidak Suka</string>
-    <string name="unhate" comment="Undo a hate/dislike and make it neutral. This is not the same as Like">Tidak benci</string>
+    <string name="unhate" comment="Undo a hate/dislike and make it neutral. This is not the same as Like">Batalkan tidak suka</string>
     <string name="unlove" comment="Undo a love/like and make it neutral. This is not the same as Dislike">Batalkan suka</string>
     <string name="pending_scrobbles">Scrobble yang Tertunda</string>
     <string name="following" comment="accounts you are following on lastfm">Mengikuti</string>
@@ -258,6 +261,7 @@
     <string name="server_url" comment="For self hosted scrobbling services">URL Server</string>
     <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">Anda dapat menemukan token autentikasi Anda di: %1$s</string>
     <string name="pref_now_playing">Kirim sekarang sedang diputar</string>
+    <string name="pref_fetch_missing_album" formatted="true" comment="%1= the name of a service like last.fm, Deezer etc">Dapatkan metadata album yang hilang dari %1$s</string>
     <string name="pref_locale">Bahasa</string>
     <string name="pref_misc">Lainnya.</string>
     <string name="pref_first_day_of_week" comment="Sunday, Monday etc">Seminggu dimulai</string>
@@ -279,6 +283,7 @@
     <string name="regex_rules">Aturan regex</string>
     <string name="pref_blocked_metadata" comment="Block things from scrobbling">Metadata yang blokir</string>
     <string name="any_value" comment="as in any value, starts with lowercase in english because it will be enclosed in angle brackets">apa saja</string>
+    <string name="existing_value" comment="starts with lowercase in english because it will be enclosed in angle brackets">Data yang ada</string>
     <string name="pref_translate">Terjemahkan aplikasi ini</string>
     <string name="pref_translate_credits">Kredit penerjemah</string>
     <string name="pref_oss_credits">Kredit sumber terbuka</string>
@@ -286,6 +291,8 @@
     <string name="no_updates">Tidak ada pembaruan tersedia</string>
     <string name="pref_notify_updates">Pembaruan otomatis</string>
     <string name="update_downloaded">Pembaruan terunduh</string>
+    <string name="pref_search_url_template">Templat pencari pranala</string>
+    <string name="pref_search_url_template_desc" comment="Do not translate $query as the user has to enter it as it is">Gunakan $query sebagai penampung kata kunci</string>
     <string name="update_available" formatted="true" comment="%1= the version number">Pembaruan tersedia: %1$s</string>
     <string name="downloading">Mengunduh</string>
     <string name="download" comment="Its a verb">Unduh</string>
@@ -328,7 +335,7 @@
     <string name="scan_qr">Pindai ini untuk masuk</string>
     <string name="copy_from">Salin dari</string>
     <string name="nothing" comment="nothing/none">Tidak ada</string>
-    <string name="borders" comment="Borders between images in the generated collage">Batas (Border)</string>
+    <string name="borders" comment="Borders between images in the generated collage">Bingkai</string>
     <string name="ok">OK</string>
     <string name="cancel">Batal</string>
     <string name="back">Kembali</string>

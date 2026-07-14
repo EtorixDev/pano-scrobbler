@@ -44,6 +44,8 @@ data class MainPrefs(
     val blockedPackages: Set<String> = emptySet(),
     val allowedAutomationPackages: Set<String> = emptySet(),
     val seenApps: Map<String, String> = emptyMap(),
+    val seenHostnames: Set<String> = emptySet(),
+    val blockedHostnames: Set<String> = emptySet(),
     private val regexPresetsApps: Map<String, Set<String>> = mapOf(
         RegexPreset.parse_title.name to Stuff.DEFAULT_IGNORE_ARTIST_META_WITHOUT_FALLBACK,
         RegexPreset.parse_title_with_fallback.name to Stuff.DEFAULT_IGNORE_ARTIST_META_WITH_FALLBACK
@@ -68,6 +70,7 @@ data class MainPrefs(
     val themeDynamic: Boolean = false,
     val themeRandom: Boolean = false,
     val themeDayNight: DayNightMode = DayNightMode.DARK,
+    val themeAlpha: Float = 1f,
     val appListWasRun: Boolean = false,
     val lastHomePagerTab: Int = 0,
     val lastChartsPeriodType: TimePeriodType = TimePeriodType.CONTINUOUS,
@@ -131,7 +134,7 @@ data class MainPrefs(
     @Serializable
     data class DiscordRpcSettings(
         val enabled: Boolean = false,
-        val statusLine: Int = 2,
+        val statusLine: Int = Line.Line2.ordinal,
         val albumArt: Boolean = true,
         val albumArtFromNowPlaying: Boolean = true,
         val line1Format: String = $$"$title",
@@ -141,16 +144,31 @@ data class MainPrefs(
         val showPausedForSecs: Int = 60,
         val detailsUrl: Boolean = true,
         val lovedState: Boolean = true,
-    )
+        val buttonType: String = ButtonType.PANO_SCROBBLER.name,
+    ) {
+        enum class ButtonType {
+            PANO_SCROBBLER, LASTFM_PROFILE, LISTENBRAINZ_PROFILE, LIBREFM_PROFILE, NONE
+        }
+
+        enum class Line {
+            None,
+            Line1,
+            Line2,
+        }
+    }
 
     @Serializable
     data class ProxySettings(
-        val enabled: Boolean = false,
+        val type: Type = Type.SYSTEM,
         val host: String = "127.0.0.1",
         val port: Int = 1080,
         val user: String = "",
         val pass: String = "",
     ) {
+        enum class Type {
+            SYSTEM, HTTP, SOCKS5
+        }
+
         val hasAuth get() = user.isNotEmpty() && pass.isNotEmpty()
     }
 
@@ -179,6 +197,7 @@ data class MainPrefs(
         val themeContrast: ContrastMode = defaultMainPrefs.themeContrast,
         val themeRandom: Boolean = defaultMainPrefs.themeRandom,
         val themeDayNight: DayNightMode = defaultMainPrefs.themeDayNight,
+        val themeAlpha: Float = defaultMainPrefs.themeAlpha,
         @JsonNames("search_in_source")
         val searchInSource: Boolean = defaultMainPrefs.searchInSource,
         @JsonNames("scrobble_spotify_remote")
@@ -277,6 +296,7 @@ data class MainPrefs(
         themeContrast = prefs.themeContrast,
         themeRandom = prefs.themeRandom,
         themeDayNight = prefs.themeDayNight,
+        themeAlpha = prefs.themeAlpha,
         searchInSource = prefs.searchInSource,
         scrobbleSpotifyRemote = prefs.scrobbleSpotifyRemote,
         spotifyArtistSearchApproximate = prefs.spotifyArtistSearchApproximate,
@@ -311,6 +331,7 @@ data class MainPrefs(
         themeContrast = themeContrast,
         themeRandom = themeRandom,
         themeDayNight = themeDayNight,
+        themeAlpha = themeAlpha,
         searchInSource = searchInSource,
         scrobbleSpotifyRemote = scrobbleSpotifyRemote,
         spotifyArtistSearchApproximate = spotifyArtistSearchApproximate,
@@ -353,11 +374,11 @@ data class MainPrefs(
         const val FILE_NAME = "main-prefs.json"
         const val PREF_DELAY_SECS_MIN = 30
         const val PREF_DELAY_SECS_MAX = 360
-        private const val PREF_DELAY_SECS_DEFAULT = 180
-        private const val PREF_DELAY_PER_DEFAULT = 50
+        const val PREF_DELAY_SECS_DEFAULT = 240
+        const val PREF_DELAY_PER_DEFAULT = 50
         const val PREF_DELAY_PER_MIN = 30
         const val PREF_DELAY_PER_MAX = 95
-        private const val PREF_MIN_DURATON_SECS_DEFAULT = 30
+        const val PREF_MIN_DURATON_SECS_DEFAULT = 30
         const val PREF_MIN_DURATON_SECS_MIN = 10
         const val PREF_MIN_DURATON_SECS_MAX = 60
 

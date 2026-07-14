@@ -48,9 +48,6 @@ abstract class MediaListener(
 
     private var scrobbleLockKey: MediaTrackerKey? = null
 
-    private fun keyOf(tracker: SessionTracker): MediaTrackerKey? =
-        sessionTrackers.entries.find { it.value === tracker }?.key
-
     private fun PlayingTrackInfo.isEligibleForScrobble() = isPlaying &&
             title.isNotEmpty() &&
             artist.isNotEmpty() &&
@@ -122,7 +119,7 @@ abstract class MediaListener(
             .filter {
                 it.trackInfo.isEligibleForScrobble() && !scrobbleQueue.has(it.trackInfo.hash)
             }
-            .minByOrNull { it.trackInfo.playStartTime }
+            .minByOrNull { it.trackInfo.sessionStartTime }
             ?.scrobble()
     }
 
@@ -168,6 +165,7 @@ abstract class MediaListener(
     abstract fun shouldScrobble(rawAppId: String): Boolean
 
     abstract inner class SessionTracker(
+        private val key: MediaTrackerKey,
         val trackInfo: PlayingTrackInfo,
     ) {
 
@@ -185,18 +183,16 @@ abstract class MediaListener(
             // if self was muted, clear the muted hash too
             unmute(clearMutedHash = isMuted)
 
-            // calc delay
-            val delayMillis = scrobbleTimingPrefs.value.delaySecs * 1000L
-            val delayFraction = scrobbleTimingPrefs.value.delayPercent / 100.0
-            val delayMillisFraction = if (trackInfo.durationMillis > 0)
-                (trackInfo.durationMillis * delayFraction).toLong()
-            else // Assume 2 min track if duration is unknown. This happens mostly with radio apps
-                (120_000 * delayFraction).toLong()
-
             // don't scrobble < n seconds
             // -subtract some to round off. Sometimes 30 second tracks are reported as 29988ms
-            var finalDelay = min(delayMillisFraction, delayMillis)
-                .coerceAtLeast(scrobbleTimingPrefs.value.minDurationSecs * 1000L - 600L)
+            var finalDelay = if (trackInfo.durationMillis > 0) {
+                min(
+                    trackInfo.durationMillis * scrobbleTimingPrefs.value.delayPercent / 100,
+                    scrobbleTimingPrefs.value.delaySecs.seconds.inWholeMilliseconds
+                ).coerceAtLeast(scrobbleTimingPrefs.value.minDurationSecs * 1000L - 600L)
+            } else {
+                30.seconds.inWholeMilliseconds
+            }
 
             finalDelay = (finalDelay - if (scrobbleTimingPrefs.value.useTrackProgress)
                 trackInfo.effectiveProgressMillis() else trackInfo.timePlayed)
@@ -209,24 +205,22 @@ abstract class MediaListener(
                     null
                 }
 
-            keyOf(this)?.let { key ->
-                claimScrobbleLock(
-                    requesterKey = key,
-                    onWon = {
-                        scrobbleQueue.scrobble(
-                            trackInfo = trackInfo,
-                            appIsAllowListed = trackInfo.appId in allowedPackages.value,
-                            delay = finalDelay,
-                            timestampOverride = inferredStartTimestamp,
-                        )
-                    },
-                    onLost = { winnerTrackInfo ->
-                        scrobbleQueue.remove(trackInfo.hash)
-                        if (winnerTrackInfo.notiKey != trackInfo.notiKey)
-                            PanoNotifications.removeNotificationByKey(trackInfo.notiKey)
-                    },
-                )
-            }
+            claimScrobbleLock(
+                requesterKey = key,
+                onWon = {
+                    onBeforeScrobble()
+                    scrobbleQueue.scrobble(
+                        trackInfo = trackInfo,
+                        delay = finalDelay,
+                        timestampOverride = inferredStartTimestamp,
+                    )
+                },
+                onLost = { winnerTrackInfo ->
+                    scrobbleQueue.remove(trackInfo.hash)
+                    if (winnerTrackInfo.notiKey != trackInfo.notiKey)
+                        PanoNotifications.removeNotificationByKey(trackInfo.notiKey)
+                },
+            )
         }
 
 
@@ -286,9 +280,7 @@ abstract class MediaListener(
             // do not scrobble again
             lastPlaybackState = CommonPlaybackState.None
 
-            keyOf(this)?.let {
-                releaseScrobbleLockIfHeldBy(it)
-            }
+            releaseScrobbleLockIfHeldBy(key)
         }
 
         fun playbackStateChanged(
@@ -338,7 +330,8 @@ abstract class MediaListener(
                         trackInfo.resumed()
 
                         if (trackInfo.hash != trackInfo.lastScrobbleHash ||
-                            (playbackInfo.position >= 0L && isPossiblyAtStart && timelineChanged)
+                            (playbackInfo.position >= 0L && isPossiblyAtStart &&
+                                    (!notifyTimelineUpdates || timelineChanged))
                         )
                             trackInfo.resetTimePlayed()
 
@@ -391,7 +384,7 @@ abstract class MediaListener(
             if (isMuted)
                 unmute(clearMutedHash = false)
 
-            keyOf(this)?.let { releaseScrobbleLockIfHeldBy(it) }
+            releaseScrobbleLockIfHeldBy(key)
         }
 
         abstract fun love()
@@ -399,6 +392,7 @@ abstract class MediaListener(
         abstract fun unlove()
         abstract fun skip()
         abstract fun stop()
+        abstract fun onBeforeScrobble()
     }
 
     companion object {

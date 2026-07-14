@@ -233,7 +233,7 @@ fun RegexEditsAddScreen(
                     appIds = appItems.map { it.appId }.toSet(),
                     blockPlayerAction = blockPlayerAction,
                     caseSensitive = caseSensitive,
-                    continueMatching = continueMatching
+                    continueMatching = false
                 )
             }
 
@@ -562,12 +562,14 @@ fun RegexEditsAddScreen(
                 }
             )
 
-            LabeledCheckbox(
-                checked = continueMatching,
-                onCheckedChange = { continueMatching = it },
-                text = stringResource(Res.string.edit_continue_regex),
-                modifier = Modifier.fillMaxWidth()
-            )
+            if (regexMode != RegexMode.Block) {
+                LabeledCheckbox(
+                    checked = continueMatching,
+                    onCheckedChange = { continueMatching = it },
+                    text = stringResource(Res.string.edit_continue_regex),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             LabeledCheckbox(
                 checked = caseSensitive,
@@ -579,7 +581,6 @@ fun RegexEditsAddScreen(
 
         Surface(
             tonalElevation = 4.dp,
-            shadowElevation = 4.dp,
             shape = CircleShape,
             modifier = Modifier.fillMaxWidth()
         ) {
