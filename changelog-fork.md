@@ -1,1 +1,1 @@
-- Merged upstream.
+- Fixed editor bug introduced by merge mistake.

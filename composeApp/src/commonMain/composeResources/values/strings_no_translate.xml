@@ -52,8 +52,6 @@
     <string name="rate_limit_warn">Submitting too many scrobbles in a day may cause the scrobbling service to reject them, increasing your backlog.</string>
     <string name="unsupported_api">This API may not be supported by the server. View on web.</string>
     <string name="exit_reasons">Exit reasons</string>
-    <string name="edit_continue_simple">If found, continue editing with regex rules &amp; presets</string>
-    <string name="edit_continue_regex">If found, continue editing with other regex rules &amp; presets</string>
     <string name="pref_use_track_progress" translatable="false">Use track progress</string>
     <string name="pref_use_track_progress_desc" translatable="false">…instead of time since tracking started, if available</string>
     <string name="pref_sync_edits_across_services" translatable="false">Sync edits across services</string>
