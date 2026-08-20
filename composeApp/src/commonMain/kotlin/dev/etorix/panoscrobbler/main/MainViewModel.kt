@@ -129,13 +129,6 @@ class MainViewModel : ViewModel() {
     override fun onCleared() {
     }
 
-
-    fun onSetPackagesSelection(checked: List<AppItem>, unchecked: List<AppItem>) {
-        viewModelScope.launch {
-            _selectedPackages.emit(checked to unchecked)
-        }
-    }
-
     fun notifyPullToRefresh(id: Int) {
         viewModelScope.launch {
             _pullToRefreshTriggered.emit(id)

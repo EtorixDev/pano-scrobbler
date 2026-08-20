@@ -1,17 +1,12 @@
 package dev.etorix.panoscrobbler.help
 
 import android.os.Build
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.SplitButtonDefaults
 import androidx.compose.material3.SplitButtonLayout
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,6 +17,8 @@ import androidx.compose.ui.Modifier
 import dev.etorix.panoscrobbler.icons.Check
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.KeyboardArrowDown
+import dev.etorix.panoscrobbler.ui.AlertDialogOk
+import dev.etorix.panoscrobbler.ui.PanoDropdownMenu
 import dev.etorix.panoscrobbler.utils.AndroidStuff
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
@@ -65,7 +62,7 @@ actual fun HelpSaveLogsButton(
             ) {
                 Text(stringResource(Res.string.save_logs))
 
-                DropdownMenu(
+                PanoDropdownMenu(
                     expanded = menuShown,
                     onDismissRequest = { menuShown = false },
                 ) {
@@ -130,24 +127,16 @@ actual fun HelpSaveLogsButton(
         }
 
         if (exitReasonsText != null) {
-            AlertDialog(
-                text = {
-                    Text(
-                        text = exitReasonsText,
-                        modifier = Modifier.verticalScroll(rememberScrollState())
-                    )
-                },
+            AlertDialogOk(
+                text = exitReasonsText,
+                confirmText = stringResource(Res.string.copy),
+                scrollable = true,
                 onDismissRequest = {
                     exitReasonsShown = false
                 },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            PlatformStuff.copyToClipboard(exitReasonsText)
-                        }
-                    ) {
-                        Text(text = stringResource(Res.string.copy))
-                    }
+                onConfirmation = {
+                    PlatformStuff.copyToClipboard(exitReasonsText)
+                    exitReasonsShown = false
                 }
             )
         }

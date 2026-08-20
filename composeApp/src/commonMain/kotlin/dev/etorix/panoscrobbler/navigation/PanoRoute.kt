@@ -3,7 +3,6 @@ package dev.etorix.panoscrobbler.navigation
 import androidx.annotation.IntRange
 import androidx.navigation3.runtime.NavKey
 import dev.etorix.panoscrobbler.api.AccountType
-import dev.etorix.panoscrobbler.api.DrawerData
 import dev.etorix.panoscrobbler.api.UserAccountTemp
 import dev.etorix.panoscrobbler.api.UserCached
 import dev.etorix.panoscrobbler.api.lastfm.Album
@@ -32,6 +31,12 @@ sealed interface PanoRoute : NavKey {
 
     @Serializable
     sealed interface DeepLinkable : PanoRoute
+
+    @Serializable
+    sealed interface HasSearch : PanoRoute
+
+    @Serializable
+    sealed interface SearchRequestsFocus : HasSearch
 
     sealed interface HasTabs : PanoRoute {
         fun getTabsList(accountType: AccountType): List<PanoTab>
@@ -64,7 +69,7 @@ sealed interface PanoRoute : NavKey {
     data object OssCredits : PanoRoute
 
     @Serializable
-    data object Prefs : PanoRoute, DeepLinkable
+    data object Prefs : PanoRoute, DeepLinkable, HasSearch
 
     @Serializable
     data object DeleteAccount : PanoRoute
@@ -102,7 +107,7 @@ sealed interface PanoRoute : NavKey {
         val packagesOverride: List<String>? = null,
         val preSelectedPackages: List<String>,
         val isSingleSelect: Boolean,
-    ) : PanoRoute, HasFab {
+    ) : PanoRoute, HasFab, HasSearch {
         override fun getFabData() = PanoFabData(
             Res.string.done,
             Icons.Check,
@@ -112,10 +117,17 @@ sealed interface PanoRoute : NavKey {
     }
 
     @Serializable
-    data class SimpleEditsAdd(val simpleEdit: SimpleEdit?) : PanoRoute
+    data class SimpleEditsAdd(val simpleEdit: SimpleEdit?) : PanoRoute, HasFab {
+        override fun getFabData() = PanoFabData(
+            Res.string.done,
+            Icons.Check,
+            true,
+            null
+        )
+    }
 
     @Serializable
-    data object SimpleEdits : PanoRoute, HasFab {
+    data object SimpleEdits : PanoRoute, HasFab, HasSearch {
         override fun getFabData() = PanoFabData(
             Res.string.add,
             Icons.Add,
@@ -138,10 +150,17 @@ sealed interface PanoRoute : NavKey {
     }
 
     @Serializable
-    data class RegexEditsAdd(val regexEdit: RegexEdit?) : PanoRoute
+    data class RegexEditsAdd(val regexEdit: RegexEdit?) : PanoRoute, HasFab {
+        override fun getFabData() = PanoFabData(
+            Res.string.done,
+            Icons.Check,
+            true,
+            null
+        )
+    }
 
     @Serializable
-    data object BlockedMetadatas : PanoRoute, HasFab {
+    data object BlockedMetadatas : PanoRoute, HasFab, HasSearch {
         override fun getFabData() = PanoFabData(
             Res.string.add,
             Icons.Add,
@@ -155,14 +174,7 @@ sealed interface PanoRoute : NavKey {
     }
 
     @Serializable
-    data object ThemeChooser : PanoRoute, HasFab {
-        override fun getFabData() = PanoFabData(
-            Res.string.done,
-            Icons.Check,
-            true,
-            null
-        )
-    }
+    data object ThemeChooser : PanoRoute
 
     @Serializable
     data class ImageSearch(
@@ -170,13 +182,13 @@ sealed interface PanoRoute : NavKey {
         val originalArtist: Artist? = null,
         val album: Album? = null,
         val originalAlbum: Album? = null,
-    ) : PanoRoute, DeepLinkable
+    ) : PanoRoute, DeepLinkable, HasSearch
 
     @Serializable
     data object Onboarding : PanoRoute
 
     @Serializable
-    data object Search : PanoRoute, DeepLinkable
+    data object Search : PanoRoute, DeepLinkable, HasSearch, SearchRequestsFocus
 
     @Serializable
     data class WebView(
@@ -243,7 +255,7 @@ sealed interface PanoRoute : NavKey {
     data object AutomationInfo : PanoRoute
 
     @Serializable
-    data class Help(val searchTerm: String = "") : PanoRoute
+    data class Help(val searchTerm: String = "") : PanoRoute, HasSearch
 
     @Serializable
     data object PrivacyPolicy : PanoRoute
@@ -252,7 +264,7 @@ sealed interface PanoRoute : NavKey {
     data object DiscordRpcSettings : PanoRoute
 
     @Serializable
-    data object ArtistsWithDelimiters : PanoRoute
+    data object ArtistsWithDelimiters : PanoRoute, HasSearch
 
     @Serializable
     data object Blank : PanoRoute
@@ -261,10 +273,7 @@ sealed interface PanoRoute : NavKey {
     sealed interface Modal : PanoRoute {
 
         @Serializable
-        data class NavPopup(
-            val otherUser: UserCached?,
-            val initialDrawerData: DrawerData,
-        ) : Modal
+        data class NavPopup(val otherUser: UserCached?) : Modal
 
         @Serializable
         data class Changelog(val text: String) : Modal
@@ -329,6 +338,25 @@ sealed interface PanoRoute : NavKey {
 
         @Serializable
         data object ProxyPref : Modal
+
+        @Serializable
+        data class TimePicker(
+            val initialHour: Int,
+            val initialMinute: Int,
+        ) : Modal
+
+        @Serializable
+        data class DateRangePicker(
+            val selectedDateRange: Pair<Long, Long>?,
+            val allowedRange: Pair<Long, Long>,
+        ) : Modal
+
+        @Serializable
+        data class DatePicker(
+            val selectedDate: Long?,
+            val allowedRange: Pair<Long, Long>,
+            val weeksOnly: Boolean,
+        ) : Modal
     }
 
     fun homePagerTabData(accountType: AccountType): List<PanoTab> {
@@ -339,7 +367,7 @@ sealed interface PanoRoute : NavKey {
             AccountType.CUSTOM_LISTENBRAINZ_2,
             AccountType.CUSTOM_LISTENBRAINZ_3,
                 -> listOf(
-                PanoTab.Scrobbles(),
+                PanoTab.Scrobbles,
                 PanoTab.Following,
                 PanoTab.Charts,
                 PanoTab.Profile,
@@ -348,7 +376,7 @@ sealed interface PanoRoute : NavKey {
             AccountType.LIBREFM,
             AccountType.GNUFM,
                 -> listOf(
-                PanoTab.Scrobbles(),
+                PanoTab.Scrobbles,
                 PanoTab.Charts,
                 PanoTab.Profile,
             )
@@ -356,7 +384,7 @@ sealed interface PanoRoute : NavKey {
             AccountType.PLEROMA,
             AccountType.FILE,
                 -> listOf(
-                PanoTab.Scrobbles(showChips = false),
+                PanoTab.ScrobblesNoSubtabs,
                 PanoTab.Profile,
             )
         }

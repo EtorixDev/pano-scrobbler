@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -33,8 +34,9 @@ import dev.etorix.panoscrobbler.navigation.enumSaver
 import dev.etorix.panoscrobbler.ui.ErrorText
 import dev.etorix.panoscrobbler.ui.InlineCheckButton
 import dev.etorix.panoscrobbler.ui.LabeledCheckbox
-import dev.etorix.panoscrobbler.ui.OutlinedToggleIconButtons
+import dev.etorix.panoscrobbler.ui.OutlinedToggleButtons
 import dev.etorix.panoscrobbler.ui.PanoOutlinedTextField
+import dev.etorix.panoscrobbler.ui.PanoToggleButtonsMode
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -209,6 +211,7 @@ private fun BlockedMetadataAddContent(
         ErrorText(errorText)
 
         OutlinedButton(
+            shapes = ButtonDefaults.shapes(),
             onClick = {
                 val newBlockedMetadata = BlockedMetadata(
                     _id = blockedMetadata?._id ?: 0,
@@ -247,8 +250,8 @@ fun ColumnScope.BlockPlayerActions(
         color = MaterialTheme.colorScheme.secondary,
     )
 
-    OutlinedToggleIconButtons(
-        items = listOf(
+    OutlinedToggleButtons(
+        texts = listOf(
             stringResource(Res.string.skip),
             stringResource(Res.string.mute),
             stringResource(Res.string.do_nothing),
@@ -265,6 +268,7 @@ fun ColumnScope.BlockPlayerActions(
         },
         selectedIndex = blockPlayerAction.ordinal,
         enabled = enabled,
+        mode = PanoToggleButtonsMode.Icon
     )
 }
 

@@ -7,10 +7,9 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation3.runtime.result.ResultEffect
 import dev.etorix.panoscrobbler.api.lastfm.ScrobbleData
 import dev.etorix.panoscrobbler.db.RegexEdit
 import dev.etorix.panoscrobbler.icons.Add
@@ -34,7 +34,7 @@ import dev.etorix.panoscrobbler.icons.Block
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.Mic
 import dev.etorix.panoscrobbler.icons.MusicNote
-import dev.etorix.panoscrobbler.main.MainViewModel
+import dev.etorix.panoscrobbler.navigation.SelectedPackagesResult
 import dev.etorix.panoscrobbler.navigation.jsonSerializableSaver
 import dev.etorix.panoscrobbler.panoicons.AlbumArtist
 import dev.etorix.panoscrobbler.panoicons.PanoIcons
@@ -57,7 +57,6 @@ import pano_scrobbler.composeapp.generated.resources.track
 
 @Composable
 fun RegexEditsTestScreen(
-    mainViewModel: MainViewModel,
     onNavigateToAppList: () -> Unit,
     onNavigateToRegexEditsAdd: (RegexEdit) -> Unit,
     modifier: Modifier = Modifier,
@@ -71,10 +70,8 @@ fun RegexEditsTestScreen(
     var albumArtist by rememberSaveable { mutableStateOf("") }
     val gotMatches = regexMatches?.scrobbleData != null || regexMatches?.blockPlayerAction != null
 
-    LaunchedEffect(Unit) {
-        mainViewModel.selectedPackages.collect { (checked, _) ->
-            appItem = checked.firstOrNull()
-        }
+    ResultEffect<SelectedPackagesResult> { res ->
+        appItem = res.checked.firstOrNull()
     }
 
     LaunchedEffect(track, album, artist, albumArtist, appItem) {
@@ -167,6 +164,7 @@ fun RegexEditsTestScreen(
                         contentDescription = stringResource(Res.string.add)
                     )
                 },
+                shapes = InputChipDefaults.shapes(),
                 selected = false,
             )
         }
@@ -233,7 +231,9 @@ fun RegexEditsTestScreen(
                         Text(stringResource(Res.string.edit_regex_rules_matched))
 
                         matchedRegexEdits.forEach { regexEdit ->
-                            AssistChip(
+                            InputChip(
+                                selected = false,
+                                shapes = InputChipDefaults.shapes(),
                                 onClick = {
                                     onNavigateToRegexEditsAdd(regexEdit)
                                 },

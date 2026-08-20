@@ -40,6 +40,7 @@ import kotlin.time.Duration.Companion.days
 @Serializable
 data class MainPrefs(
     val scrobblerEnabled: Boolean = true,
+    val scrobblerPausedTill: Long = -1,
     val allowedPackages: Set<String> = emptySet(),
     val blockedPackages: Set<String> = emptySet(),
     val allowedAutomationPackages: Set<String> = emptySet(),
@@ -71,6 +72,8 @@ data class MainPrefs(
     val themeRandom: Boolean = false,
     val themeDayNight: DayNightMode = DayNightMode.DARK,
     val themeAlpha: Float = 1f,
+    val themeBlurSubWindow: Boolean = false,
+    val themeBlurMainWindow: Boolean = false,
     val appListWasRun: Boolean = false,
     val lastHomePagerTab: Int = 0,
     val lastChartsPeriodType: TimePeriodType = TimePeriodType.CONTINUOUS,
@@ -198,6 +201,8 @@ data class MainPrefs(
         val themeRandom: Boolean = defaultMainPrefs.themeRandom,
         val themeDayNight: DayNightMode = defaultMainPrefs.themeDayNight,
         val themeAlpha: Float = defaultMainPrefs.themeAlpha,
+        val themeBlurMainWindow: Boolean = defaultMainPrefs.themeBlurMainWindow,
+        val themeBlurSubWindow: Boolean = defaultMainPrefs.themeBlurSubWindow,
         @JsonNames("search_in_source")
         val searchInSource: Boolean = defaultMainPrefs.searchInSource,
         @JsonNames("scrobble_spotify_remote")
@@ -297,6 +302,8 @@ data class MainPrefs(
         themeRandom = prefs.themeRandom,
         themeDayNight = prefs.themeDayNight,
         themeAlpha = prefs.themeAlpha,
+        themeBlurMainWindow = prefs.themeBlurMainWindow,
+        themeBlurSubWindow = prefs.themeBlurSubWindow,
         searchInSource = prefs.searchInSource,
         scrobbleSpotifyRemote = prefs.scrobbleSpotifyRemote,
         spotifyArtistSearchApproximate = prefs.spotifyArtistSearchApproximate,
@@ -332,6 +339,8 @@ data class MainPrefs(
         themeRandom = themeRandom,
         themeDayNight = themeDayNight,
         themeAlpha = themeAlpha,
+        themeBlurMainWindow = themeBlurMainWindow,
+        themeBlurSubWindow = themeBlurSubWindow,
         searchInSource = searchInSource,
         scrobbleSpotifyRemote = scrobbleSpotifyRemote,
         spotifyArtistSearchApproximate = spotifyArtistSearchApproximate,
@@ -381,6 +390,9 @@ data class MainPrefs(
         const val PREF_MIN_DURATON_SECS_DEFAULT = 30
         const val PREF_MIN_DURATON_SECS_MIN = 10
         const val PREF_MIN_DURATON_SECS_MAX = 60
+        const val PREF_MIN_ALPHA = 0.3f
+        const val PREF_MID_ALPHA = 0.6f
+        const val PREF_MAX_ALPHA = 1f
 
         fun migrations() = listOf<DataMigration<MainPrefs>>(
             MainPrefsMigration6(),

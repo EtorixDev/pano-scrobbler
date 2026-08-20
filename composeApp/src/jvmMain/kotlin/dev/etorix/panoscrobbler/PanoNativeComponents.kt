@@ -188,7 +188,7 @@ object PanoNativeComponents {
     external fun notify(title: String, body: String)
 
     @JvmStatic
-    external fun setTrayLinux(
+    external fun setTray(
         tooltip: String,
         pngBytes: ByteArray,
         invert: Boolean,
@@ -203,7 +203,7 @@ object PanoNativeComponents {
     external fun setEnvironmentVariable(key: String, value: String)
 
     @JvmStatic
-    external fun setHwndWindows(hwnd: Long)
+    external fun applyWindowEffects(handle: Long, isDark: Boolean, isBlur: Boolean)
 
     @JvmStatic
     external fun sendIpcCommand(command: String, arg: String): Boolean

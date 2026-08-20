@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SplitButtonDefaults
@@ -43,6 +42,7 @@ import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.navigation.jsonSerializableSaver
 import dev.etorix.panoscrobbler.ui.ErrorText
 import dev.etorix.panoscrobbler.ui.MusicEntryListItem
+import dev.etorix.panoscrobbler.ui.PanoDropdownMenu
 import dev.etorix.panoscrobbler.ui.getMusicEntryPlaceholderItem
 import dev.etorix.panoscrobbler.ui.shimmerWindowBounds
 import dev.etorix.panoscrobbler.utils.PlatformStuff
@@ -128,6 +128,7 @@ fun RandomScreen(
             TimePeriodSelector(
                 user = user,
                 viewModel = chartsPeriodViewModel,
+                onNavigate = onNavigate,
                 onSelected = { curr, prev, _ ->
                     timePeriod = curr
                     load(type)
@@ -256,7 +257,7 @@ private fun RandomTypeSelector(
             },
         )
 
-        DropdownMenu(
+        PanoDropdownMenu(
             expanded = typeSelectorIsShown,
             onDismissRequest = { typeSelectorIsShown = false }
         ) {

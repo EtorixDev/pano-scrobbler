@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
@@ -198,6 +199,7 @@ fun CollageGeneratorDialog(
                 )
 
                 OutlinedButton(
+                    shapes = ButtonDefaults.shapes(),
                     onClick = {
                         shareTextToCopy?.let { PlatformStuff.copyToClipboard(it) }
                     },
@@ -309,6 +311,7 @@ fun CollageGeneratorDialog(
                         generateCollage()
                         saveCollageClicked = true
                     },
+                    shapes = ButtonDefaults.shapes(),
                     modifier = if (showSavedMessage) Modifier.alpha(0.5f) else Modifier,
                 ) {
                     Icon(
@@ -327,6 +330,7 @@ fun CollageGeneratorDialog(
 
                 if (shareEnabled) {
                     OutlinedButton(
+                        shapes = ButtonDefaults.shapes(),
                         onClick = {
                             generateCollage()
                             shareCollageClicked = true

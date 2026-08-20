@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -68,6 +67,7 @@ import dev.etorix.panoscrobbler.pref.AppItem
 import dev.etorix.panoscrobbler.ui.ExpandableHeaderItem
 import dev.etorix.panoscrobbler.ui.ListLoadError
 import dev.etorix.panoscrobbler.ui.MusicEntryListItem
+import dev.etorix.panoscrobbler.ui.PanoDropdownMenu
 import dev.etorix.panoscrobbler.ui.accountTypeLabel
 import dev.etorix.panoscrobbler.ui.getMusicEntryPlaceholderItem
 import dev.etorix.panoscrobbler.ui.shimmerWindowBounds
@@ -149,7 +149,7 @@ private fun TrackDropdownMenu(
         }
     }
 
-    DropdownMenu(
+    PanoDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
         modifier = modifier
@@ -307,6 +307,12 @@ private fun TrackDropdownMenu(
                                 )
                             },
                         )
+
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .fillMaxWidth()
+                        )
                     }
 
                     DropdownMenuItem(
@@ -388,6 +394,12 @@ private fun TrackDropdownMenu(
                                     style = MaterialTheme.typography.titleMediumEmphasized
                                 )
                             },
+                        )
+
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .fillMaxWidth()
                         )
                     }
 
@@ -505,7 +517,7 @@ fun PendingDropdownMenu(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    DropdownMenu(
+    PanoDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
         modifier = modifier
@@ -655,7 +667,7 @@ fun LazyListScope.scrobblesListItems(
             val isPlaceholder = item == null
             val isExpanded = !isPlaceholder && expandedKey() == item.key
 
-            var menuVisible by remember { mutableStateOf(false) }
+            var menuShown by remember { mutableStateOf(false) }
 
             val appItem = remember(track) {
                 if (showScrobbleSources) {
@@ -753,11 +765,12 @@ fun LazyListScope.scrobblesListItems(
                                 viewModel.shareTrack(t, shareSig)
                             }
                         } else null,
-                        expanded = menuVisible,
-                        onDismissRequest = { menuVisible = false }
+                        expanded = menuShown,
+                        onDismissRequest = { menuShown = false }
                     )
                 },
-                onMenuClick = { menuVisible = true },
+                menuShown = menuShown,
+                onMenuToggle = { menuShown = it },
                 modifier = Modifier
                     .animateItem()
                     .then(
@@ -863,7 +876,7 @@ fun LazyListScope.pendingScrobblesListItems(
                 userHated = item.event == ScrobbleEvent.unlove,
             )
         }
-        var menuVisible by remember { mutableStateOf(false) }
+        var menuShown by remember { mutableStateOf(false) }
         val appItem = remember(item) {
             if (showScrobbleSources)
                 item.scrobbleData.appId?.let { AppItem(it, PlatformStuff.loadApplicationLabel(it)) }
@@ -874,13 +887,14 @@ fun LazyListScope.pendingScrobblesListItems(
             musicEntry,
             appItem = appItem,
             onEntryClick = { onItemClick(musicEntry) },
-            onMenuClick = { menuVisible = true },
+            onMenuToggle = { menuShown = it },
+            menuShown = menuShown,
             isPending = true,
             menuContent = {
                 PendingDropdownMenu(
                     pendingScrobble = item,
-                    expanded = menuVisible,
-                    onDismissRequest = { menuVisible = false },
+                    expanded = menuShown,
+                    onDismissRequest = { menuShown = false },
                     onLove = {
                         viewModel.viewModelScope.launch(Dispatchers.IO) {
                             val track = Track(

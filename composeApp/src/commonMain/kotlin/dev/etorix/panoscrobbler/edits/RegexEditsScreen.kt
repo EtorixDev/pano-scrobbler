@@ -11,12 +11,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.SplitButtonDefaults
 import androidx.compose.material3.SplitButtonLayout
 import androidx.compose.material3.Text
@@ -60,9 +62,11 @@ import dev.etorix.panoscrobbler.ui.AppIcon
 import dev.etorix.panoscrobbler.ui.DraggableItem
 import dev.etorix.panoscrobbler.ui.EmptyTextWithImportButtonOnTv
 import dev.etorix.panoscrobbler.ui.LabeledCheckbox
+import dev.etorix.panoscrobbler.ui.PanoDropdownMenu
 import dev.etorix.panoscrobbler.ui.PanoLazyColumn
 import dev.etorix.panoscrobbler.ui.backgroundForShimmer
 import dev.etorix.panoscrobbler.ui.dragContainer
+import dev.etorix.panoscrobbler.ui.myIconButtonColors
 import dev.etorix.panoscrobbler.ui.panoContentPadding
 import dev.etorix.panoscrobbler.ui.rememberDragDropState
 import dev.etorix.panoscrobbler.utils.PlatformStuff
@@ -201,6 +205,7 @@ private fun RegexEditsList(
                         .fillMaxWidth(),
                 ) {
                     OutlinedButton(
+                        shapes = ButtonDefaults.shapes(),
                         onClick = {
                             onNavigate(PanoRoute.RegexEditsTest)
                         },
@@ -336,7 +341,8 @@ private fun PresetItem(
         )
 
         if (onNavigateSettings != null) {
-            IconButton(
+            OutlinedIconButton(
+                shapes = IconButtonDefaults.shapes(),
                 onClick = onNavigateSettings
             ) {
                 Icon(
@@ -457,16 +463,19 @@ private fun RegexEditItem(
             }
         }
 
-        IconButton(
-            onClick = { dropdownShown = true },
+        IconToggleButton(
+            checked = dropdownShown,
+            onCheckedChange = { dropdownShown = it },
             enabled = !forShimmer,
+            shapes = IconButtonDefaults.toggleableShapes(),
+            colors = IconButtonDefaults.myIconButtonColors()
         ) {
             Icon(
                 imageVector = Icons.MoreVert,
                 contentDescription = stringResource(Res.string.item_options),
             )
 
-            DropdownMenu(
+            PanoDropdownMenu(
                 expanded = dropdownShown,
                 onDismissRequest = { dropdownShown = false },
             ) {

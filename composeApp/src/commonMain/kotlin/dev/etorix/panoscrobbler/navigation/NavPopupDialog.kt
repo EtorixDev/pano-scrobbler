@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
@@ -87,6 +88,7 @@ fun NavPopupDialog(
                     state = rememberTooltipState(),
                 ) {
                     OutlinedIconButton(
+                        shapes = IconButtonDefaults.shapes(),
                         onClick = {
                             onNavigate(PanoRoute.Search)
                         },

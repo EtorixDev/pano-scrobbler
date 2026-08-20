@@ -4,42 +4,54 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorPosition
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedToggleButton
 import androidx.compose.material3.PlainTooltip
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.ToggleButtonColors
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
@@ -58,8 +70,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.ColorPainter
@@ -79,24 +89,22 @@ import androidx.compose.ui.platform.LocalLocaleList
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.api.lastfm.ApiException
 import dev.etorix.panoscrobbler.icons.ArrowDropDown
-import dev.etorix.panoscrobbler.icons.Close
 import dev.etorix.panoscrobbler.icons.Error
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.Info
 import dev.etorix.panoscrobbler.icons.OpenInBrowser
 import dev.etorix.panoscrobbler.icons.Person
 import dev.etorix.panoscrobbler.icons.Refresh
-import dev.etorix.panoscrobbler.icons.Search
 import dev.etorix.panoscrobbler.icons.ToggleOff
 import dev.etorix.panoscrobbler.icons.ToggleOn
 import dev.etorix.panoscrobbler.navigation.LocalNavigationType
@@ -107,6 +115,7 @@ import dev.etorix.panoscrobbler.utils.LocalNetworkHandshakeExceptionWrapper
 import dev.etorix.panoscrobbler.utils.LocalNetworkPermissionNeededException
 import dev.etorix.panoscrobbler.utils.LocalNetworkPermissionsRequest
 import dev.etorix.panoscrobbler.utils.PlatformStuff
+import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
 import dev.etorix.panoscrobbler.utils.redactedMessage
 import kotlinx.coroutines.delay
@@ -117,7 +126,6 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.add_exception
-import pano_scrobbler.composeapp.generated.resources.delete
 import pano_scrobbler.composeapp.generated.resources.disable
 import pano_scrobbler.composeapp.generated.resources.enable
 import pano_scrobbler.composeapp.generated.resources.fix_it_action
@@ -134,7 +142,6 @@ import pano_scrobbler.composeapp.generated.resources.pref_import
 import pano_scrobbler.composeapp.generated.resources.profile_pic
 import pano_scrobbler.composeapp.generated.resources.retry
 import pano_scrobbler.composeapp.generated.resources.scrobble_to_file
-import pano_scrobbler.composeapp.generated.resources.search
 import pano_scrobbler.composeapp.generated.resources.unsupported_api
 import pano_scrobbler.composeapp.generated.resources.yes
 import java.util.Calendar
@@ -150,6 +157,7 @@ fun AlertDialogOk(
     onDismissRequest: () -> Unit = onConfirmation,
     title: String? = null,
     confirmText: String = stringResource(Res.string.ok),
+    scrollable: Boolean = false,
 ) {
     AlertDialog(
         title = if (title != null) {
@@ -159,7 +167,16 @@ fun AlertDialogOk(
         } else
             null,
         text = {
-            Text(text = text)
+            if (LocalThemeAttributes.current.blurSubWindow)
+                ApplyWindowBlur(
+                    behind = Stuff.BLUR_BACKDROP_RADIUS_DP,
+                    bg = Stuff.BLUR_FROSTED_RADIUS_DP
+                )
+
+            Text(
+                text = text,
+                modifier = if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier
+            )
         },
         icon = {
             Icon(
@@ -172,6 +189,7 @@ fun AlertDialogOk(
         },
         confirmButton = {
             TextButton(
+                shapes = ButtonDefaults.shapes(),
                 onClick = {
                     onConfirmation()
                 }
@@ -182,75 +200,138 @@ fun AlertDialogOk(
     )
 }
 
-@Composable
-fun OutlinedToggleButtons(
-    items: List<String>,
-    selectedIndex: Int,
-    onSelected: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    SingleChoiceSegmentedButtonRow(modifier = modifier) {
-        items.forEachIndexed { index, item ->
-            SegmentedButton(
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = items.size),
-                selected = selectedIndex == index,
-                onClick = {
-                    if (selectedIndex != index) {
-                        onSelected(index)
-                    }
-                },
-            ) {
-                Text(text = item)
-            }
-        }
-    }
+enum class PanoToggleButtonsMode {
+    Text,
+    Icon,
+    Both,
+    BothVertical
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun OutlinedToggleIconButtons(
-    items: List<String>,
-    icons: List<ImageVector>,
+fun OutlinedToggleButtons(
+    texts: Collection<String>,
     selectedIndex: Int,
     onSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    icons: Collection<ImageVector?> = List(texts.size) { null },
+    horizontalArrangement: Arrangement.Horizontal = ButtonGroupDefaults.HorizontalArrangement,
     enabled: Boolean = true,
+    mode: PanoToggleButtonsMode = PanoToggleButtonsMode.Text,
+    colors: ToggleButtonColors = ToggleButtonDefaults.outlinedToggleButtonColors(),
+    border: Boolean = true,
+    canReClick: Boolean = false,
+    textStyle: TextStyle? = null,
 ) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(
-            ButtonGroupDefaults.ConnectedSpaceBetween,
-            Alignment.CenterHorizontally
-        ),
-        modifier = modifier
+    val interactionSources =
+        remember(texts.size) { List(texts.size) { MutableInteractionSource() } }
+
+    ButtonGroup(
+        modifier = modifier,
+        horizontalArrangement = horizontalArrangement,
+        overflowIndicator = { menuState ->
+            ButtonGroupDefaults.OverflowIndicator(
+                menuState = menuState,
+                colors = IconButtonDefaults.filledTonalIconButtonColors()
+            )
+        },
     ) {
-        (items zip icons).forEachIndexed { index, pair ->
-            val (text, icon) = pair
+        (texts.zip(icons)).forEachIndexed { index, itemToIcon ->
+            val (text, icon) = itemToIcon
+            val checked = index == selectedIndex
 
-            val checked = selectedIndex == index
+            val iconVisible = (checked || mode != PanoToggleButtonsMode.Text) && icon != null
+            val textVisible = checked || mode != PanoToggleButtonsMode.Icon
+            val contentDescription = if (!textVisible && iconVisible) text else null
 
-            OutlinedToggleButton(
-                checked = checked,
-                enabled = enabled,
-                onCheckedChange = {
-                    if (it)
-                        onSelected(index)
+            val compressionLimit = ButtonDefaults.contentPaddingFor(ButtonDefaults.MinHeight)
+
+            customItem(
+                buttonGroupContent = {
+                    OutlinedToggleButton(
+                        onCheckedChange = {
+                            if (!checked && it || canReClick) {
+                                onSelected(index)
+                            }
+                        },
+                        checked = checked,
+                        enabled = enabled,
+                        shapes = when (index) {
+                            0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                            texts.size - 1 -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                            else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                        },
+                        contentPadding = compressionLimit,
+                        interactionSource = interactionSources[index],
+                        colors = colors,
+                        border = if (border && !checked) ButtonDefaults.outlinedButtonBorder(enabled) else null,
+                        modifier = Modifier
+                            .animateWidth(
+                                interactionSource = interactionSources[index],
+                                compressionLimit = compressionLimit,
+                            ) then (
+                                if (mode == PanoToggleButtonsMode.BothVertical)
+                                    Modifier.widthIn(min = 84.dp)
+                                else
+                                    Modifier
+                                )
+                    ) {
+                        if (mode == PanoToggleButtonsMode.BothVertical) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                if (iconVisible)
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = contentDescription,
+                                    )
+
+                                Text(
+                                    text = text,
+                                    style = textStyle ?: LocalTextStyle.current,
+                                    softWrap = false,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Visible,
+                                )
+                            }
+                        } else {
+                            if (iconVisible) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = contentDescription
+                                )
+
+                                if (textVisible)
+                                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            }
+
+                            if (textVisible) {
+                                Text(
+                                    text = text,
+                                    style = textStyle ?: LocalTextStyle.current,
+                                    softWrap = false,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Visible,
+                                )
+                            }
+                        }
+                    }
                 },
-                shapes = when (index) {
-                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                    items.size - 1 -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                },
-            ) {
-                if (checked) {
-                    Icon(icon, contentDescription = text)
-                    Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
-                    Text(text = text, maxLines = 1)
-                } else {
-                    Icon(
-                        icon,
-                        contentDescription = text
+                menuContent = {
+                    DropdownMenuItem(
+                        leadingIcon = icon?.let {
+                            { Icon(imageVector = it, contentDescription = null) }
+                        },
+                        text = { Text(text) },
+                        onClick = {
+                            if (!checked || canReClick) {
+                                onSelected(index)
+                            }
+                        },
+                        interactionSource = interactionSources[index],
                     )
                 }
-            }
+            )
         }
     }
 }
@@ -330,61 +411,14 @@ fun TextWithIcon(
     }
 }
 
-
 @Composable
-fun SearchField(
-    searchTerm: String,
-    onSearchTermChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    label: String = stringResource(Res.string.search),
-    icon: ImageVector = Icons.Search,
-    autoFocus: Boolean = false,
-    contentPadding: PaddingValues = PaddingValues(8.dp),
+fun SearchEffect(
+    searchFieldState: TextFieldState,
+    onSearch: (String) -> Unit,
 ) {
-    val focusRequester = remember { FocusRequester() }
-
-    LaunchedEffect(autoFocus) {
-        if (autoFocus) {
-            focusRequester.requestFocus()
-        }
+    LaunchedEffect(searchFieldState.text) {
+        onSearch(searchFieldState.text.toString())
     }
-
-    PanoOutlinedTextField(
-        value = searchTerm,
-        onValueChange = {
-            onSearchTermChange(it)
-        },
-        label = { Text(label) },
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(contentPadding)
-            .then(
-                if (autoFocus) Modifier.focusRequester(focusRequester)
-                else Modifier
-            ),
-        leadingIcon = { Icon(icon, contentDescription = null) },
-        trailingIcon = if (!PlatformStuff.isTv) {
-            {
-                if (searchTerm.isNotEmpty()) {
-                    IconButton(onClick = {
-                        onSearchTermChange("")
-                    }) {
-                        Icon(
-                            Icons.Close,
-                            contentDescription = stringResource(Res.string.delete)
-                        )
-                    }
-                }
-            }
-        } else
-            null,
-        keyboardOptions = KeyboardOptions.Default.copy(
-            imeAction = ImeAction.Done
-        ),
-        singleLine = true,
-        enabled = enabled
-    )
 }
 
 @Composable
@@ -426,6 +460,7 @@ fun PanoOutlinedTextField(
                     }
                 } else
                     Modifier,
+        shape = TextFieldDefaults.roundedShape,
         enabled = enabled && (!PlatformStuff.isTv || enabledOnTv),
 //        readOnly = PlatformStuff.isTv,
         placeholder = placeholder,
@@ -466,7 +501,7 @@ fun <T> ButtonWithSpinner(
         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
         Icon(Icons.ArrowDropDown, contentDescription = null)
 
-        DropdownMenu(
+        PanoDropdownMenu(
             expanded = dropDownShown,
             onDismissRequest = { dropDownShown = false }
         ) {
@@ -507,6 +542,7 @@ fun IconButtonWithTooltip(
             FilledTonalIconButton(
                 onClick = onClick,
                 enabled = enabled,
+                shapes = IconButtonDefaults.shapes(),
             ) {
                 Icon(
                     imageVector = icon,
@@ -516,6 +552,7 @@ fun IconButtonWithTooltip(
             }
         } else {
             IconButton(
+                shapes = IconButtonDefaults.shapes(),
                 onClick = onClick,
                 enabled = enabled,
             ) {
@@ -536,39 +573,25 @@ fun ButtonWithIcon(
     text: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    contentColorOverride: Color? = null,
 ) {
     OutlinedButton(
+        shapes = ButtonDefaults.shapes(),
         onClick = onClick,
         contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
         enabled = enabled,
         modifier = modifier
     ) {
+        val contentColor = contentColorOverride ?: LocalContentColor.current
         Icon(
             icon,
             contentDescription = null,
+            tint = contentColor,
             modifier = Modifier.size(ButtonDefaults.IconSize)
         )
         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-        Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis, color = contentColor)
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DialogParent(
-    onDismiss: () -> Unit,
-    content: @Composable (modifier: Modifier) -> Unit,
-) {
-    BasicAlertDialog(
-        onDismissRequest = onDismiss,
-        content = {
-            Surface(
-                shape = MaterialTheme.shapes.extraLarge,
-            ) {
-                content(Modifier.padding(24.dp))
-            }
-        }
-    )
 }
 
 @Composable
@@ -621,6 +644,7 @@ fun EmptyTextWithImportButtonOnTv(
 
             if (PlatformStuff.isTv) {
                 OutlinedButton(
+                    shapes = ButtonDefaults.shapes(),
                     onClick = onButtonClick,
                     modifier = Modifier.padding(top = 16.dp)
                 ) {
@@ -720,6 +744,7 @@ fun VerifyButton(
                     CircularWavyProgressIndicator()
                 } else {
                     OutlinedButton(
+                        shapes = ButtonDefaults.shapes(),
                         onClick = {
                             verifying = true
                             errorText = null
@@ -821,7 +846,7 @@ fun ListLoadError(
         )
         Text(
             text = errorText,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.error,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -829,8 +854,10 @@ fun ListLoadError(
                 .weight(1f)
                 .padding(horizontal = 16.dp)
         )
+
         if (displayProfileLink) {
             IconButton(
+                shapes = IconButtonDefaults.shapes(),
                 onClick = {
                     val url = profileLink!!.toHttpUrl()
                     val topPrivateDomain = url.topPrivateDomain()
@@ -844,6 +871,7 @@ fun ListLoadError(
             }
         } else {
             IconButton(
+                shapes = IconButtonDefaults.shapes(),
                 onClick = onRetry,
             ) {
                 Icon(
@@ -891,7 +919,7 @@ fun YesNoDropdown(
     onNo: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    DropdownMenu(
+    PanoDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
         modifier = modifier
@@ -909,6 +937,36 @@ fun YesNoDropdown(
                 onNo()
                 onDismissRequest()
             },
+        )
+    }
+}
+
+@Composable
+fun PanoDropdownMenu(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    offset: DpOffset = DpOffset.Zero,
+    content: @Composable (ColumnScope.() -> Unit)
+) {
+    // the outer offset param does nothing on android
+    DropdownMenuPopup(
+        expanded = expanded,
+        onDismissRequest = onDismissRequest,
+        modifier = modifier,
+        popupPositionProvider =
+            MenuDefaults.rememberDropdownMenuPopupPositionProvider(
+                MenuAnchorPosition.Below,
+                offset
+            ),
+    ) {
+        DropdownMenuGroup(
+            shapes = MenuDefaults.groupShapes(),
+            tonalElevation = 2.dp,
+            content = content,
+            modifier = Modifier
+                .width(IntrinsicSize.Max)
+                .verticalScroll(rememberScrollState())
         )
     }
 }
@@ -945,6 +1003,7 @@ fun InlineCheckButton(
     onCheckedChange: (Boolean) -> Unit,
 ) {
     IconButton(
+        shapes = IconButtonDefaults.shapes(),
         onClick = { onCheckedChange(!checked) },
     ) {
         Icon(
@@ -1096,6 +1155,19 @@ fun accountTypeLabel(accountType: AccountType): String {
                 if (slot != null) " $slot" else ""
     }
 }
+
+@Composable
+fun IconButtonDefaults.myIconButtonColors() =
+    IconButtonDefaults.filledTonalIconToggleButtonColors()
+        .let {
+            IconButtonDefaults.iconToggleButtonVibrantColors(
+                checkedContainerColor = it.checkedContainerColor,
+                checkedContentColor = it.checkedContentColor,
+            )
+        }
+
+@Composable
+expect fun ApplyWindowBlur(behind: Int, bg: Int)
 
 @Composable
 expect fun isImeVisible(): Boolean

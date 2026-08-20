@@ -1,14 +1,11 @@
 package dev.etorix.panoscrobbler.navigation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.EntryProviderScope
 import dev.etorix.panoscrobbler.discordrpc.DiscordRpcScreen
-import dev.etorix.panoscrobbler.ui.addColumnPadding
+import dev.etorix.panoscrobbler.ui.navScrollableColumn
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
@@ -28,15 +25,10 @@ actual fun EntryProviderScope<PanoRoute>.panoPlatformSpecificNavGraph(
         }
     }
 
-    @Composable
-    fun modifier() = Modifier
-        .fillMaxSize()
-        .background(MaterialTheme.colorScheme.surface)
-
     entry<PanoRoute.DiscordRpcSettings> { route ->
         onSetTitleRes(route, Res.string.discord_rich_presence)
         DiscordRpcScreen(
-            modifier = modifier().addColumnPadding()
+            modifier = Modifier.navScrollableColumn()
         )
     }
 }

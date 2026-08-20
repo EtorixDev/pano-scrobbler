@@ -2,33 +2,28 @@ package dev.etorix.panoscrobbler.charts
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DateRangePicker
-import androidx.compose.material3.DateRangePickerDefaults
-import androidx.compose.material3.DateRangePickerState
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DropdownMenuPopup
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedToggleButton
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,11 +40,11 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.result.ResultEffect
 import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.api.UserCached
 import dev.etorix.panoscrobbler.api.lastfm.LastfmPeriod
@@ -66,10 +61,13 @@ import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.Refresh
 import dev.etorix.panoscrobbler.icons.automirrored.ArrowLeft
 import dev.etorix.panoscrobbler.icons.automirrored.ArrowRight
+import dev.etorix.panoscrobbler.navigation.DatePickerResult
+import dev.etorix.panoscrobbler.navigation.DateRangePickerResult
+import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.navigation.jsonSerializableSaver
-import dev.etorix.panoscrobbler.ui.PanoLazyColumn
+import dev.etorix.panoscrobbler.ui.LocalAppBarBg
+import dev.etorix.panoscrobbler.ui.PanoDropdownMenu
 import dev.etorix.panoscrobbler.ui.combineImageVectors
-import dev.etorix.panoscrobbler.ui.rememberLocaleWithCustomWeekday
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
 import dev.etorix.panoscrobbler.utils.Stuff.format
@@ -83,7 +81,6 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
-import pano_scrobbler.composeapp.generated.resources.cancel
 import pano_scrobbler.composeapp.generated.resources.charts_continuous
 import pano_scrobbler.composeapp.generated.resources.charts_custom
 import pano_scrobbler.composeapp.generated.resources.item_options
@@ -92,7 +89,6 @@ import pano_scrobbler.composeapp.generated.resources.months
 import pano_scrobbler.composeapp.generated.resources.num_months
 import pano_scrobbler.composeapp.generated.resources.num_weeks
 import pano_scrobbler.composeapp.generated.resources.num_years
-import pano_scrobbler.composeapp.generated.resources.ok
 import pano_scrobbler.composeapp.generated.resources.reload
 import pano_scrobbler.composeapp.generated.resources.weeks
 import pano_scrobbler.composeapp.generated.resources.years
@@ -183,6 +179,7 @@ private fun monthPickerMonths(
 fun TimePeriodSelector(
     user: UserCached,
     viewModel: ChartsPeriodVM,
+    onNavigate: (PanoRoute) -> Unit,
     onSelected: (timePeriod: TimePeriod, prevTimePeriod: TimePeriod?, Int) -> Unit,
     showRefreshButton: Boolean,
     modifier: Modifier = Modifier,
@@ -199,7 +196,10 @@ fun TimePeriodSelector(
     var typeSelectorShown by remember { mutableStateOf(false) }
     val accountType by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.currentAccountType }
     val listState = rememberLazyListState()
-    var selectedPeriodOffsetX by remember { mutableIntStateOf(0) }
+    var selectedPeriodOffset by remember { mutableStateOf(DpOffset.Zero) }
+    val validTimes = remember(timePeriods) {
+        timePeriodsList.associateBy { it.start.timeToUTC() }
+    }
     val density = LocalDensity.current
 
     LaunchedEffect(accountType, digestTimePeriod) {
@@ -263,9 +263,21 @@ fun TimePeriodSelector(
         }
     }
 
+    ResultEffect<DateRangePickerResult> { res ->
+        val timePeriod =
+            TimePeriod(res.startUtc.timeToLocal(), res.endUtc.timeToLocal())
+
+        viewModel.setCustomPeriodInput(timePeriod)
+    }
+
+    ResultEffect<DatePickerResult> { res ->
+        validTimes[res.dateMillis]?.let {
+            viewModel.setSelectedPeriod(it)
+        }
+    }
+
     Surface(
-        tonalElevation = 6.dp,
-        shape = MaterialTheme.shapes.large,
+        color = LocalAppBarBg.current,
         modifier = modifier
     ) {
         Row(
@@ -347,15 +359,25 @@ fun TimePeriodSelector(
                                 )
                             }
                         },
+                        shapes = FilterChipDefaults.shapes(),
                         label = { Text(text = timePeriod.name) },
-                        modifier = Modifier
-                            .onGloballyPositioned { coordinates ->
-                                if (timePeriod == selectedPeriod) {
-                                    selectedPeriodOffsetX =
-                                        coordinates.positionInParent().round().x +
-                                                coordinates.size.width / 2
+                        modifier = if (timePeriod == selectedPeriod) {
+                            Modifier
+                                .onGloballyPositioned { coordinates ->
+                                    val intOffset =
+                                        coordinates.positionInParent().round() +
+                                                IntOffset(
+                                                    coordinates.size.center.x,
+                                                    coordinates.size.height
+                                                )
+                                    selectedPeriodOffset = with(density) {
+                                        DpOffset(
+                                            intOffset.x.toDp(),
+                                            intOffset.y.toDp()
+                                        )
+                                    }
                                 }
-                            }
+                        } else Modifier
                     )
                 }
             }
@@ -363,51 +385,33 @@ fun TimePeriodSelector(
 
         when (dropdownTypeShown) {
             TimePeriodType.CUSTOM -> {
-                DateRangePickerModal(
-                    selectedDateRange = selectedPeriod?.start?.timeToUTC() to selectedPeriod?.end?.timeToUTC(),
+                val route = PanoRoute.Modal.DateRangePicker(
+                    selectedDateRange = selectedPeriod?.let { it.start.timeToUTC() to it.end.timeToUTC() },
                     allowedRange = user.registeredTime to System.currentTimeMillis(),
-                    onDateRangeSelected = { (startUtc, endUtc) ->
-                        if (startUtc != null && endUtc != null) {
-                            val timePeriod =
-                                TimePeriod(startUtc.timeToLocal(), endUtc.timeToLocal())
-
-                            viewModel.setCustomPeriodInput(timePeriod)
-                        }
-                    },
-                    onDismiss = { dropdownTypeShown = null }
                 )
+
+                onNavigate(route)
+                dropdownTypeShown = null
             }
 
             TimePeriodType.WEEK -> {
-                val validTimes = remember(timePeriods) {
-                    timePeriodsList.associateBy { it.start.timeToUTC() }
-                }
-
-                DatePickerModal(
+                val route = PanoRoute.Modal.DatePicker(
                     selectedDate = selectedPeriod?.start,
                     allowedRange = user.registeredTime to System.currentTimeMillis(),
-                    selectableDates = object : SelectableDates {
-                        override fun isSelectableDate(utcTimeMillis: Long) =
-                            utcTimeMillis in user.registeredTime..System.currentTimeMillis() && utcTimeMillis in validTimes
-                    },
-                    onDateSelected = {
-                        if (it != null && validTimes[it] != null)
-                            viewModel.setSelectedPeriod(validTimes[it]!!)
-                    },
-                    onDismiss = { dropdownTypeShown = null }
+                    weeksOnly = true,
                 )
+                onNavigate(route)
+                dropdownTypeShown = null
             }
 
             TimePeriodType.MONTH -> {
-                val validTimes = remember(timePeriods) { timePeriodsList.associateBy { it.start } }
-
                 MonthPickerPopup(
-                    offset = IntOffset(selectedPeriodOffsetX, 0),
+                    offset = selectedPeriodOffset,
                     selectedMillis = selectedPeriod?.start ?: System.currentTimeMillis(),
                     onDismissRequest = { dropdownTypeShown = null },
                     allowedRange = user.registeredTime to System.currentTimeMillis(),
                     onMonthMillisSelected = {
-                        validTimes[it]?.let {
+                        validTimes[it.timeToUTC()]?.let {
                             viewModel.setSelectedPeriod(it)
                         }
                     }
@@ -415,13 +419,9 @@ fun TimePeriodSelector(
             }
 
             TimePeriodType.CONTINUOUS, TimePeriodType.YEAR, TimePeriodType.LISTENBRAINZ -> {
-                val selectedPeriodOffsetXDp = with(density) {
-                    selectedPeriodOffsetX.toDp()
-                }
-
                 Box {
-                    DropdownMenu(
-                        offset = DpOffset(selectedPeriodOffsetXDp, 0.dp),
+                    PanoDropdownMenu(
+                        offset = selectedPeriodOffset,
                         expanded = dropdownTypeShown != null,
                         onDismissRequest = { dropdownTypeShown = null }
                     ) {
@@ -433,9 +433,7 @@ fun TimePeriodSelector(
                                 },
                                 enabled = timePeriod != selectedPeriod,
                                 text = {
-                                    Text(
-                                        text = timePeriod.name,
-                                    )
+                                    Text(timePeriod.name)
                                 },
                             )
                         }
@@ -456,7 +454,7 @@ private fun PeriodTypeSelector(
     onMenuItemClick: (TimePeriodType) -> Unit,
     onRefresh: (() -> Unit)?
 ) {
-    DropdownMenu(
+    PanoDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest
     ) {
@@ -489,82 +487,10 @@ private fun PeriodTypeSelector(
     }
 }
 
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DateRangePickerModal(
-    selectedDateRange: Pair<Long?, Long?>,
-    allowedRange: Pair<Long, Long>,
-    onDateRangeSelected: (Pair<Long?, Long?>) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val locale = rememberLocaleWithCustomWeekday()
-    val allowedRangeYears = remember { millisRangeToYears(allowedRange) }
-    val dateFormatter = remember { DatePickerDefaults.dateFormatter() }
-    val initialDisplayedMonthMillis =
-        remember { selectedDateRange.first ?: System.currentTimeMillis() }
-
-    val dateRangePickerState = remember {
-        DateRangePickerState(
-            locale = locale,
-            initialSelectedStartDateMillis = selectedDateRange.first,
-            initialSelectedEndDateMillis = selectedDateRange.second,
-            initialDisplayedMonthMillis = initialDisplayedMonthMillis,
-            yearRange = allowedRangeYears,
-            selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long) =
-                    utcTimeMillis in allowedRange.first..allowedRange.second
-            }
-        )
-    }
-
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onDateRangeSelected(
-                        Pair(
-                            dateRangePickerState.selectedStartDateMillis,
-                            dateRangePickerState.selectedEndDateMillis?.plus(24 * 60 * 60 * 1000 - 1)
-                        )
-                    )
-                    onDismiss()
-                }
-            ) {
-                Text(stringResource(Res.string.ok))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(Res.string.cancel))
-            }
-        }
-    ) {
-        DateRangePicker(
-            state = dateRangePickerState,
-            headline = {
-                // workaround for a text overflow bug in compose in pt locale
-                DateRangePickerDefaults.DateRangePickerHeadline(
-                    selectedStartDateMillis = dateRangePickerState.selectedStartDateMillis,
-                    selectedEndDateMillis = dateRangePickerState.selectedEndDateMillis,
-                    displayMode = dateRangePickerState.displayMode,
-                    dateFormatter = dateFormatter,
-                    modifier = Modifier.padding(bottom = 12.dp),
-                )
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(500.dp)
-                .padding(16.dp)
-        )
-    }
-}
-
-
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun MonthPickerPopup(
-    offset: IntOffset,
+    offset: DpOffset,
     selectedMillis: Long,
     allowedRange: Pair<Long, Long>,
     onDismissRequest: () -> Unit,
@@ -600,71 +526,68 @@ private fun MonthPickerPopup(
         }
     }
 
-    Popup(
+    DropdownMenuPopup(
         offset = offset,
-        properties = PopupProperties(
-            focusable = true,
-        ),
+        expanded = true,
         onDismissRequest = onDismissRequest
     ) {
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = MaterialTheme.shapes.large,
-            tonalElevation = 4.dp,
-            modifier = Modifier
-                .fillMaxHeight(0.6f)
-                .wrapContentWidth()
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.padding(24.dp)
+            DropdownMenuGroup(
+                shapes = MenuDefaults.groupShapes(),
+                modifier = Modifier
+                    .width(IntrinsicSize.Min)
+                    .verticalScroll(rememberScrollState())
             ) {
-                PanoLazyColumn {
-                    items(yearsMap.toList()) { (year, text) ->
-                        OutlinedToggleButton(
-                            checked = year == selectedYear,
-                            onCheckedChange = {
-                                if (it) {
-                                    selectedYear = year
+                yearsMap.forEach { (year, text) ->
+                    DropdownMenuItem(
+                        selected = year == selectedYear,
+                        shapes = MenuDefaults.itemShapes(),
+                        onClick = {
+                            selectedYear = year
 
-                                    cal.apply {
-                                        set(Calendar.YEAR, selectedYear)
-                                        set(Calendar.MONTH, selectedMonth)
-                                        set(Calendar.DAY_OF_MONTH, 1)
-                                    }
+                            cal.apply {
+                                set(Calendar.YEAR, selectedYear)
+                                set(Calendar.MONTH, selectedMonth)
+                                set(Calendar.DAY_OF_MONTH, 1)
+                            }
 
-                                    onMonthMillisSelected(cal.timeInMillis)
-                                }
-                            },
-//                        modifier = Modifier.fillMaxWidth(),
-                        ) {
+                            onMonthMillisSelected(cal.timeInMillis)
+                        },
+                        text = {
                             Text(text)
-                        }
-                    }
+                        },
+                    )
                 }
-                PanoLazyColumn {
-                    items(monthsMap.toList()) { (month, text) ->
-                        OutlinedToggleButton(
-                            checked = month == selectedMonth,
-                            onCheckedChange = {
-                                if (it) {
-                                    selectedMonth = month
+            }
 
-                                    cal.apply {
-                                        set(Calendar.YEAR, selectedYear)
-                                        set(Calendar.MONTH, selectedMonth)
-                                        set(Calendar.DAY_OF_MONTH, 1)
-                                    }
+            DropdownMenuGroup(
+                shapes = MenuDefaults.groupShapes(),
+                modifier = Modifier
+                    .width(IntrinsicSize.Min)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                monthsMap.forEach { (month, text) ->
+                    DropdownMenuItem(
+                        selected = month == selectedMonth,
+                        shapes = MenuDefaults.itemShapes(),
+                        onClick = {
+                            selectedMonth = month
 
-                                    onMonthMillisSelected(cal.timeInMillis)
-                                    onDismissRequest()
-                                }
-                            },
-//                        modifier = Modifier.fillMaxWidth(),
-                        ) {
+                            cal.apply {
+                                set(Calendar.YEAR, selectedYear)
+                                set(Calendar.MONTH, selectedMonth)
+                                set(Calendar.DAY_OF_MONTH, 1)
+                            }
+
+                            onMonthMillisSelected(cal.timeInMillis)
+                            onDismissRequest()
+                        },
+                        text = {
                             Text(text)
-                        }
-                    }
+                        },
+                    )
                 }
             }
         }

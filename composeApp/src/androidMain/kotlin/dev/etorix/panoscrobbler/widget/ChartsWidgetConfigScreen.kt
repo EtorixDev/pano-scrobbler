@@ -20,7 +20,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -179,6 +181,7 @@ fun ChartsWidgetConfigScreen(
                         FilterChip(
                             label = { Text(thisTimePeriod.name) },
                             selected = period == thisPeriod,
+                            shapes = FilterChipDefaults.shapes(),
                             onClick = { period = thisPeriod }
                         )
                     }
@@ -257,7 +260,10 @@ fun ChartsWidgetConfigScreen(
                 horizontalArrangement = Arrangement.End
             ) {
                 if (!isPinned) {
-                    TextButton(onClick = onCancel) {
+                    TextButton(
+                        shapes = ButtonDefaults.shapes(),
+                        onClick = onCancel
+                    ) {
                         Text(text = stringResource(Res.string.cancel))
                     }
                 }

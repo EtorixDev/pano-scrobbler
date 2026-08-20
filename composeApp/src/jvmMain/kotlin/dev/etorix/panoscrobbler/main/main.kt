@@ -15,13 +15,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingWindow
@@ -30,11 +29,11 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.pollSystemTheme
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
-import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
@@ -63,13 +62,17 @@ import dev.etorix.panoscrobbler.utils.PanoNotifications
 import dev.etorix.panoscrobbler.utils.PanoTrayUtils
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
+import dev.etorix.panoscrobbler.utils.Stuff.stateInWithCache
 import dev.etorix.panoscrobbler.utils.VariantStuff
+import dev.etorix.panoscrobbler.utils.findSkiaLayer
+import dev.etorix.panoscrobbler.utils.hackContentPane
 import dev.etorix.panoscrobbler.utils.setAppLocale
 import dev.etorix.panoscrobbler.work.DesktopWorkManager
 import dev.etorix.panoscrobbler.work.UpdaterWork
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNot
@@ -108,14 +111,16 @@ import java.awt.Point
 import java.awt.SystemTray
 import java.awt.Toolkit
 import java.awt.Window
+import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.awt.event.MouseListener
 import java.lang.reflect.Constructor
 import java.util.Locale
+import javax.swing.SwingUtilities
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+
 
 @OptIn(InternalResourceApi::class)
 private fun initHeadlessResourceEnvironment() {
@@ -235,7 +240,7 @@ fun main(args: Array<String>) {
     var trayData by mutableStateOf<PanoTrayUtils.TrayData?>(null)
     val trayIconIsDark = combine(
         PlatformStuff.mainPrefs.data.map { it.trayIconTheme },
-        // waits will the tokio event loop is started
+        // waits till the tokio event loop is started
         PanoNativeComponents.onDarkModeChangeFlow.filterNotNull()
     ) { trayIconThemePref, isDarkMode ->
         when (trayIconThemePref) {
@@ -243,6 +248,13 @@ fun main(args: Array<String>) {
             else -> trayIconThemePref == DayNightMode.DARK
         }
     }
+
+    val dayNightPref =
+        PlatformStuff.mainPrefs.data.stateInWithCache(Stuff.appScope) { it.themeDayNight }
+    val isTranslucent =
+        PlatformStuff.mainPrefs.data.stateInWithCache(Stuff.appScope) { it.themeAlpha < 1f }
+    val isBlur =
+        PlatformStuff.mainPrefs.data.stateInWithCache(Stuff.appScope) { it.themeBlurMainWindow }
 
     val trayIconSize = 128
     var trayIcons by
@@ -390,7 +402,7 @@ fun main(args: Array<String>) {
             menuItemTexts = trayItems.map { it.second }
         )
 
-        if (DesktopStuff.os == DesktopStuff.Os.Linux) {
+        if (DesktopStuff.os == DesktopStuff.Os.Linux || true) {
             trayData?.let { trayData ->
                 val pngBytes = when (trayData.iconType) {
                     PanoTrayUtils.TrayIconType.NOT_PLAYING -> trayIcons!!.first
@@ -398,7 +410,7 @@ fun main(args: Array<String>) {
                     PanoTrayUtils.TrayIconType.ERROR -> trayIcons!!.third
                 }
 
-                PanoNativeComponents.setTrayLinux(
+                PanoNativeComponents.setTray(
                     tooltip = trayData.tooltip,
                     pngBytes = pngBytes,
                     invert = !trayData.iconIsDark,
@@ -437,6 +449,7 @@ fun main(args: Array<String>) {
     }
 
     var firstCompositionDone = false
+    ComposeUiFlags.pollSystemTheme = false
 
     return application {
 
@@ -448,7 +461,7 @@ fun main(args: Array<String>) {
                     val awtAppClassNameField =
                         Class.forName("sun.awt.X11.XToolkit").getDeclaredField("awtAppClassName")
                     awtAppClassNameField.isAccessible = true
-                    awtAppClassNameField.set(null, "pano-scrobbler-etd")
+                    awtAppClassNameField.set(null, "pano-scrobbler")
                 } catch (e: Exception) {
                     Logger.e { "Failed to set AWT app class name: ${e.message}" }
                 }
@@ -468,9 +481,6 @@ fun main(args: Array<String>) {
             else
                 WindowPlacement.Floating
         )
-
-        val isTranslucent by PlatformStuff.mainPrefs.data.map { it.themeAlpha < 1f }
-            .collectAsState(initialPrefs.themeAlpha < 1f)
 
         LaunchedEffect(windowState.size, windowState.placement) {
             delay(5.seconds)
@@ -511,7 +521,7 @@ fun main(args: Array<String>) {
 //        }
 
         // the AWT tray doesn't work on KDE
-        if (DesktopStuff.os != DesktopStuff.Os.Linux && trayIcons != null) {
+        if (DesktopStuff.os != DesktopStuff.Os.Linux && trayIcons != null && false) {
             val trayState = rememberTrayState()
 
             var trayMouseListenerSet by remember { mutableStateOf(false) }
@@ -541,39 +551,22 @@ fun main(args: Array<String>) {
 
                     if (trayIcon != null) {
                         trayIcon.addMouseListener(
-                            object : MouseListener {
+                            object : MouseAdapter() {
                                 override fun mouseClicked(e: MouseEvent?) {
-                                    // open main window on left double click
-                                    when (e?.button) {
-                                        MouseEvent.BUTTON1 if e.clickCount == 1 -> {
-                                            trayMenuDelayJob = Stuff.appScope.launch {
-                                                delay(100.milliseconds)
-                                                trayMenuPos = e.locationOnScreen
-                                            }
-                                        }
-
-                                        MouseEvent.BUTTON3 -> {
-                                            trayMenuDelayJob?.cancel()
+                                    e ?: return
+                                    if (e.isPopupTrigger || SwingUtilities.isRightMouseButton(e)) {
+                                        // tray menu
+                                        trayMenuDelayJob?.cancel()
+                                        trayMenuPos = e.locationOnScreen
+                                    } else if (SwingUtilities.isLeftMouseButton(e) && e.clickCount == 1) {
+                                        trayMenuDelayJob = Stuff.appScope.launch {
+                                            delay(100.milliseconds)
                                             trayMenuPos = e.locationOnScreen
                                         }
-
-                                        else -> {
-                                            trayMenuDelayJob?.cancel()
-                                            trayMenuPos = null
-                                        }
+                                    } else {
+                                        trayMenuDelayJob?.cancel()
+                                        trayMenuPos = null
                                     }
-                                }
-
-                                override fun mousePressed(e: MouseEvent?) {
-                                }
-
-                                override fun mouseReleased(e: MouseEvent?) {
-                                }
-
-                                override fun mouseEntered(e: MouseEvent?) {
-                                }
-
-                                override fun mouseExited(e: MouseEvent?) {
                                 }
                             }
                         )
@@ -584,7 +577,7 @@ fun main(args: Array<String>) {
 
             if (trayMenuPos != null && trayData != null) {
                 TrayWindow(
-                    location = trayMenuPos!!,
+                    locationOnScreen = trayMenuPos!!,
                     menuItemIds = trayData!!.menuItemIds,
                     menuItemTexts = trayData!!.menuItemTexts,
                 ) {
@@ -594,8 +587,7 @@ fun main(args: Array<String>) {
         }
 
         LaunchedEffect(Unit) {
-            if (VariantStuff.githubApiUrl != null &&
-                !DesktopStuff.noUpdateCheck &&
+            if (!DesktopStuff.noUpdateCheck &&
                 PlatformStuff.mainPrefs.data.map { it.autoUpdates }
                     .first()
             ) {
@@ -605,68 +597,68 @@ fun main(args: Array<String>) {
             }
         }
 
-        LaunchedEffect(Unit) {
-            snapshotFlow { isTranslucent }.drop(1).collect {
-                if (windowCreated) {
-                    val wasShown = windowShown
-                    windowCreated = false
-                    delay(100.milliseconds)
-                    if (wasShown)
-                        windowCreated = true
-                }
-            }
-        }
-
         if (windowCreated) {
-            val useTransparentWindow = isTranslucent
+            LaunchedEffect(Unit) {
+                combine(isTranslucent, isBlur) { a, b -> a to b }
+                    .drop(1)
+                    .collect {
+                        val wasShown = windowShown
+                        Stuff.appScope.launch {
+                            windowCreated = false
+                            if (wasShown) {
+                                delay(100.milliseconds)
+                                windowCreated = true
+                            }
+                        }
+                    }
+            }
 
-            Window(
+            val isTranslucentAwtWindow = remember {
+                isTranslucent.value && !isBlur.value ||
+                        isBlur.value && DesktopStuff.os != DesktopStuff.Os.Windows
+            }
+
+            SwingWindow(
                 onCloseRequest = { windowShown = false },
                 state = windowState,
                 title = BuildKonfig.APP_NAME,
                 visible = windowShown,
-                transparent = useTransparentWindow,
-                decoration = if (useTransparentWindow)
+                transparent = isTranslucentAwtWindow,
+                decoration = if (isTranslucentAwtWindow)
                     WindowDecoration.Undecorated()
                 else
                     WindowDecoration.SystemDefault,
-                icon = painterResource(Res.drawable.ic_launcher_with_bg)
+                icon = painterResource(Res.drawable.ic_launcher_with_bg),
+                init = { window ->
+                    val isBlur = isBlur.value
+
+                    val isDark = dayNightPref.value == DayNightMode.DARK ||
+                            dayNightPref.value == DayNightMode.SYSTEM &&
+                            PanoNativeComponents.onDarkModeChangeFlow.value == true
+
+                    if (isBlur && !isTranslucentAwtWindow) {
+                        window.background = java.awt.Color.BLACK
+                        window.findSkiaLayer()?.transparency = true
+                        window.hackContentPane()
+                    }
+
+                    SwingUtilities.invokeLater {
+                        PanoNativeComponents.applyWindowEffects(
+                            window.windowHandle,
+                            isDark,
+                            isBlur
+                        )
+                    }
+                }
             ) {
                 val density = LocalDensity.current
 
-                val windowTitleActions = remember {
-                    object : WindowTitleActions {
-                        override fun minimize() {
-                            windowState.isMinimized = true
-                        }
-
-                        override fun maximizeRestore() {
-                            windowState.placement =
-                                if (windowState.placement == WindowPlacement.Maximized)
-                                    WindowPlacement.Floating
-                                else
-                                    WindowPlacement.Maximized
-                        }
-
-                        override fun close() {
-                            windowShown = false
-                        }
-                    }
-                }
-
                 LaunchedEffect(Unit) {
                     window.exceptionHandler = null
-                }
 
-                LaunchedEffect(Unit) {
-                    if (DesktopStuff.os == DesktopStuff.Os.Windows)
-                        PanoNativeComponents.setHwndWindows(window.windowHandle)
-                }
-
-                LaunchedEffect(Unit) {
                     if (!BuildKonfig.DEBUG) {
                         val minDim =
-                            if (DesktopStuff.os == DesktopStuff.Os.Windows && !isTranslucent)
+                            if (DesktopStuff.os == DesktopStuff.Os.Windows && !isTranslucentAwtWindow)
                                 with(density) { 480.dp.roundToPx() }
                             else
                                 480
@@ -681,9 +673,49 @@ fun main(args: Array<String>) {
                 }
 
                 AppTheme {
+                    if (DesktopStuff.os == DesktopStuff.Os.Windows) {
+                        LaunchedEffect(Unit) {
+                            combine(
+                                dayNightPref,
+                                PanoNativeComponents.onDarkModeChangeFlow.filterNotNull()
+                            ) { dayNight, isDarkMode ->
+                                dayNight == DayNightMode.DARK ||
+                                        dayNight == DayNightMode.SYSTEM && isDarkMode
+                            }
+                                .drop(1)
+                                .collectLatest { isDark ->
+                                    PanoNativeComponents.applyWindowEffects(
+                                        window.windowHandle,
+                                        isDark,
+                                        false
+                                    )
+                                }
+                        }
+                    }
+
                     PanoAppContent(
                         draggableWrapper = {
-                            if (useTransparentWindow) {
+                            if (isTranslucentAwtWindow) {
+                                val windowTitleActions = remember {
+                                    object : WindowTitleActions {
+                                        override fun minimize() {
+                                            windowState.isMinimized = true
+                                        }
+
+                                        override fun maximizeRestore() {
+                                            windowState.placement =
+                                                if (windowState.placement == WindowPlacement.Maximized)
+                                                    WindowPlacement.Floating
+                                                else
+                                                    WindowPlacement.Maximized
+                                        }
+
+                                        override fun close() {
+                                            windowShown = false
+                                        }
+                                    }
+                                }
+
                                 WindowDraggableArea(
                                     modifier = Modifier.pointerHoverIcon(PointerIcon(Cursor(Cursor.MOVE_CURSOR)))
                                 ) {
@@ -784,21 +816,21 @@ private suspend fun trayMenuClickListener(
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun TrayWindow(
-    location: Point,
+    locationOnScreen: Point,
     menuItemIds: List<String>,
     menuItemTexts: List<String>,
     onDismiss: () -> Unit,
 ) {
     // Screen (monitor) that the click happened on.
-    val graphicsConfig = remember(location) {
+    val graphicsConfig = remember(locationOnScreen) {
         val genv = GraphicsEnvironment.getLocalGraphicsEnvironment()
         val screenDevice = genv.screenDevices.firstOrNull { device ->
-            device.defaultConfiguration.bounds.contains(location)
+            device.defaultConfiguration.bounds.contains(locationOnScreen)
         } ?: genv.defaultScreenDevice
         screenDevice.defaultConfiguration
     }
 
-    val relativeOffset = remember(location, graphicsConfig) {
+    val relativeOffset = remember(locationOnScreen, graphicsConfig) {
         val screenBounds = graphicsConfig.bounds
         val insets = Toolkit.getDefaultToolkit().getScreenInsets(graphicsConfig)
         val scaleX = graphicsConfig.defaultTransform.scaleX.toFloat()
@@ -806,8 +838,8 @@ private fun TrayWindow(
 
         val usableXScaled = (screenBounds.x + insets.left) / scaleX
         val usableYScaled = (screenBounds.y + insets.top) / scaleY
-        val xScaled = location.x / scaleX
-        val yScaled = location.y / scaleY
+        val xScaled = locationOnScreen.x / scaleX
+        val yScaled = locationOnScreen.y / scaleY
 
         // in the same Dp-scaled units WindowPosition works in.
         IntOffset((xScaled - usableXScaled).toInt(), (yScaled - usableYScaled).toInt())
@@ -855,6 +887,7 @@ private fun TrayWindow(
 
         AppTheme {
             Surface(
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 1f),
                 shape = MaterialTheme.shapes.large,
             ) {
                 Column(

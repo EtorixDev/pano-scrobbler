@@ -235,13 +235,12 @@ fun ChartsOverviewScreen(
     }
 
     Column(
-        modifier = Modifier
-            .padding(panoContentPadding(sides = false))
-            .then(modifier)
+        modifier = modifier
     ) {
         TimePeriodSelector(
             user = user,
             viewModel = chartsPeriodViewModel,
+            onNavigate = onNavigate,
             onSelected = ::setInput,
             showRefreshButton = true,
             digestTimePeriod = digestTimePeriod,
@@ -251,6 +250,7 @@ fun ChartsOverviewScreen(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(scrollState)
+                .padding(panoContentPadding(sides = false))
         ) {
             if (BuildKonfig.SPOTIFY_API_AVAILABLE && !spotifyConsentLearnt) {
                 DismissableNotice(

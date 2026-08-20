@@ -12,11 +12,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.EntryProviderScope
+import androidx.navigation3.runtime.result.LocalResultEventBus
 import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.api.DrawerData
 import dev.etorix.panoscrobbler.charts.ChartsLegendDialog
 import dev.etorix.panoscrobbler.charts.CollageGeneratorDialog
+import dev.etorix.panoscrobbler.charts.DateDialog
+import dev.etorix.panoscrobbler.charts.DateRangeDialog
 import dev.etorix.panoscrobbler.charts.HiddenTagsDialog
+import dev.etorix.panoscrobbler.charts.TimeDialog
 import dev.etorix.panoscrobbler.db.SimpleEdit
 import dev.etorix.panoscrobbler.edits.BlockedMetadataAddDialog
 import dev.etorix.panoscrobbler.edits.SimpleEditsAddScreen
@@ -36,7 +40,6 @@ import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
 fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
     navigate: (PanoRoute) -> Unit,
     goBack: () -> Unit,
-    onSetDrawerData: (DrawerData) -> Unit,
     mainViewModel: MainViewModel,
 ) {
     modalEntry<PanoRoute.Modal.NavPopup> { route ->
@@ -46,39 +49,43 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
             PlatformStuff.mainPrefs.data
                 .collectAsStateWithInitialValue { it.currentAccount?.user }
 
+        val currentUser = user
+
         NavPopupDialog(
-            user = user ?: return@modalEntry,
-            initialDrawerData = route.initialDrawerData,
+            user = currentUser ?: return@modalEntry,
+            initialDrawerData = mainViewModel.drawerDataMap.getOrElse(currentUser) { DrawerData(0) },
             drawSnowfall = mainViewModel.isItChristmas,
-            onSetDrawerData = onSetDrawerData,
+            onSetDrawerData = {
+                mainViewModel.drawerDataMap[currentUser] = it
+            },
             onNavigate = navigate,
-            modifier = modalModifier()
+            modifier = Modifier.fillMaxWidth()
         )
     }
 
     modalEntry<PanoRoute.Modal.Changelog> { route ->
         ChangelogDialog(
             text = route.text,
-            modifier = modalModifier()
+            modifier = Modifier.navModal()
         )
     }
 
     modalEntry<PanoRoute.Modal.ChartsLegend> {
         ChartsLegendDialog(
-            modifier = modalModifier()
+            modifier = Modifier.navModal()
         )
     }
 
     modalEntry<PanoRoute.Modal.UpdateAvailable> { route ->
         UpdateAvailableDialog(
             updateAction = route.updateAction,
-            modifier = modalModifier()
+            modifier = Modifier.navModal()
         )
     }
 
     modalEntry<PanoRoute.Modal.HiddenTags> {
         HiddenTagsDialog(
-            modifier = modalModifier()
+            modifier = Modifier.navModal()
         )
     }
 
@@ -87,7 +94,7 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
             collageType = route.collageType,
             timePeriod = route.timePeriod,
             user = route.user,
-            modifier = modalModifier()
+            modifier = Modifier.navModal()
         )
     }
 
@@ -99,7 +106,7 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
             user = route.user,
             onNavigate = navigate,
             scrollState = scrollState,
-            modifier = modalModifier(padding = false)
+            modifier = Modifier.navModal(padding = false)
         )
     }
 
@@ -108,26 +115,26 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
         TagInfoDialog(
             tag = route.tag,
             scrollState = scrollState,
-            modifier = modalModifier()
+            modifier = Modifier.navModal()
         )
     }
 
     modalEntry<PanoRoute.Modal.ShowLink> { route ->
         ShowLinkDialog(
             url = route.url,
-            modifier = modalModifier(),
+            modifier = Modifier.navModal(),
         )
     }
 
     modalEntry<PanoRoute.Modal.MediaSearchPref> {
         MediaSearchPrefDialog(
-            modifier = modalModifier(),
+            modifier = Modifier.navModal(),
         )
     }
 
     modalEntry<PanoRoute.Modal.ProxyPref> {
         ProxyPrefDialog(
-            modifier = modalModifier(),
+            modifier = Modifier.navModal(),
         )
     }
 
@@ -137,7 +144,7 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
             ignoredArtist = route.ignoredArtist,
             hash = route.hash,
             onDismiss = goBack,
-            modifier = modalModifier()
+            modifier = Modifier.navModal()
         )
     }
 
@@ -158,39 +165,83 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
                 hasOrigAlbumArtist = false,
             ),
             origScrobbleData = route.origScrobbleData,
-            originalTrack = route.origTrack,
             msid = route.msid,
             hash = route.hash,
             key = route.key,
-            onDone = goBack,
+            onDone = {
+                goBack()
+            },
             onReauthenticate = {
                 goBack()
                 navigate(LoginDestinations.route(AccountType.LASTFM))
             },
             // this viewmodel should be scoped to the main viewmodel store owner
             viewModel = mainViewModel,
-            modifier = modalModifier()
+            modifier = Modifier.navModal()
+        )
+    }
+
+    modalEntry<PanoRoute.Modal.TimePicker> { route ->
+        val resultBus = LocalResultEventBus.current
+
+        TimeDialog(
+            h = route.initialHour,
+            m = route.initialMinute,
+            onTimeSelected = {
+                resultBus.sendResult(it)
+                goBack()
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+    }
+
+    modalEntry<PanoRoute.Modal.DateRangePicker> { route ->
+        val resultBus = LocalResultEventBus.current
+
+        DateRangeDialog(
+            selectedDateRange = route.selectedDateRange,
+            allowedRange = route.allowedRange,
+            onDateRangeSelected = {
+                resultBus.sendResult(it)
+                goBack()
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+    }
+
+    modalEntry<PanoRoute.Modal.DatePicker> { route ->
+        val resultBus = LocalResultEventBus.current
+
+        DateDialog(
+            selectedDate = route.selectedDate,
+            allowedRange = route.allowedRange,
+            weeksOnly = route.weeksOnly,
+            onDateSelected = {
+                resultBus.sendResult(it)
+                goBack()
+            },
+            modifier = Modifier
+                .fillMaxWidth()
         )
     }
 }
 
 
 @Composable
-fun modalModifier(
+fun Modifier.navModal(
     padding: Boolean = true,
     scrollState: ScrollState = rememberScrollState()
-): Modifier {
-    return Modifier
-        .fillMaxWidth()
-        .then(
-            if (padding)
-                Modifier.padding(horizontal = 24.dp)
-            else
-                Modifier
-        )
-        .padding(bottom = verticalOverscanPadding())
-        .verticalScroll(scrollState)
-}
+) = fillMaxWidth()
+    .then(
+        if (padding)
+            Modifier.padding(horizontal = 24.dp)
+        else
+            Modifier
+    )
+    .padding(bottom = verticalOverscanPadding())
+    .verticalScroll(scrollState)
 
 inline fun <reified K : PanoRoute.Modal> EntryProviderScope<PanoRoute>.modalEntry(
     noinline content: @Composable (K) -> Unit,

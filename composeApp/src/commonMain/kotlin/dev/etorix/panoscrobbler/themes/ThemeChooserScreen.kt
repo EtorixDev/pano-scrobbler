@@ -8,19 +8,25 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconToggleButtonShapes
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.TonalToggleButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,11 +35,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.etorix.panoscrobbler.BuildKonfig
 import dev.etorix.panoscrobbler.icons.Check
 import dev.etorix.panoscrobbler.icons.Icons
+import dev.etorix.panoscrobbler.icons.Lock
+import dev.etorix.panoscrobbler.icons.Palette
+import dev.etorix.panoscrobbler.pref.MainPrefs
+import dev.etorix.panoscrobbler.pref.SliderPref
 import dev.etorix.panoscrobbler.themes.colors.ThemeVariants
+import dev.etorix.panoscrobbler.ui.ButtonWithIcon
 import dev.etorix.panoscrobbler.ui.LabeledCheckbox
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
@@ -41,13 +54,19 @@ import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.appwidget_alpha
 import pano_scrobbler.composeapp.generated.resources.auto
+import pano_scrobbler.composeapp.generated.resources.blur
+import pano_scrobbler.composeapp.generated.resources.blur_main_window
+import pano_scrobbler.composeapp.generated.resources.blur_notice
+import pano_scrobbler.composeapp.generated.resources.blur_sub_window
 import pano_scrobbler.composeapp.generated.resources.contrast
 import pano_scrobbler.composeapp.generated.resources.dark
+import pano_scrobbler.composeapp.generated.resources.experimental
 import pano_scrobbler.composeapp.generated.resources.high
 import pano_scrobbler.composeapp.generated.resources.light
 import pano_scrobbler.composeapp.generated.resources.low
 import pano_scrobbler.composeapp.generated.resources.medium
-import pano_scrobbler.composeapp.generated.resources.random_on_start
+import pano_scrobbler.composeapp.generated.resources.pref_themes
+import pano_scrobbler.composeapp.generated.resources.random_text
 import pano_scrobbler.composeapp.generated.resources.system_colors
 
 @Composable
@@ -61,7 +80,6 @@ fun ThemeChooserScreen(
     val persistedContrastMode by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeContrast }
     val persistedAlpha by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeAlpha }
     val isAppInNightMode = LocalThemeAttributes.current.isDark
-
     val persistedSettings = remember(
         persistedThemeName,
         persistedDynamic,
@@ -109,8 +127,11 @@ fun ThemeChooserScreen(
         }
 
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+            itemVerticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
         ) {
             ThemeUtils.themesMap.forEach { (_, themeObj) ->
                 ThemeSwatch(
@@ -140,17 +161,18 @@ fun ThemeChooserScreen(
             }
         }
 
-        Text(
-            text = stringResource(Res.string.contrast),
-            style = MaterialTheme.typography.bodyLarge,
-        )
-
         Row(
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .alpha(if (previewSettings.dynamic) 0.5f else 1f)
         ) {
+            Text(
+                text = stringResource(Res.string.contrast),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+
             ContrastMode.entries.forEach {
                 FilterChip(
                     label = { it.Label() },
@@ -175,7 +197,7 @@ fun ThemeChooserScreen(
         }
 
         LabeledCheckbox(
-            text = stringResource(Res.string.random_on_start),
+            text = stringResource(Res.string.random_text),
             checked = previewSettings.random,
             enabled = true,
             onCheckedChange = { checked ->
@@ -239,13 +261,9 @@ private fun ThemeSwatch(
 
     FilledTonalIconToggleButton(
         checked = selected,
+        shapes = IconButtonDefaults.toggleableShapes(),
         onCheckedChange = { onClick() },
         interactionSource = interactionSource,
-        shapes = IconToggleButtonShapes(
-            toggleButtonShapes.shape,
-            toggleButtonShapes.pressedShape,
-            toggleButtonShapes.checkedShape
-        ),
         enabled = enabled,
         modifier = modifier
             .size(72.dp)
@@ -291,6 +309,41 @@ private fun ThemeSwatch(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ThemeSwatchLikeButton(
+    icon: ImageVector,
+    text: String,
+    selected: Boolean,
+    enabled: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    TonalToggleButton(
+        checked = selected,
+        onCheckedChange = onCheckedChange,
+        enabled = enabled,
+        modifier = modifier
+            .alpha(if (enabled) 1f else 0.5f)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = text,
+                maxLines = 2,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.widthIn(max = 96.dp)
+            )
         }
     }
 }

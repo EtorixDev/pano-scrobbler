@@ -3,7 +3,6 @@ package dev.etorix.panoscrobbler.edits
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
@@ -11,7 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.PlainTooltip
@@ -32,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.navigation3.runtime.result.ResultEffect
 import dev.etorix.panoscrobbler.api.lastfm.LastFm
 import dev.etorix.panoscrobbler.api.lastfm.ScrobbleData
 import dev.etorix.panoscrobbler.api.lastfm.Track
@@ -45,6 +45,7 @@ import dev.etorix.panoscrobbler.icons.SwapVert
 import dev.etorix.panoscrobbler.main.MainViewModel
 import dev.etorix.panoscrobbler.media.PlayingTrackNotifyEvent
 import dev.etorix.panoscrobbler.media.notifyPlayingTrackEvent
+import dev.etorix.panoscrobbler.navigation.FabClickedResult
 import dev.etorix.panoscrobbler.panoicons.ContentSaveOffOutline
 import dev.etorix.panoscrobbler.panoicons.PanoIcons
 import dev.etorix.panoscrobbler.ui.ButtonWithIcon
@@ -247,6 +248,10 @@ fun SimpleEditsAddScreen(
         }
     }
 
+    ResultEffect<FabClickedResult> {
+        doEdit()
+    }
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
@@ -440,31 +445,28 @@ fun SimpleEditsAddScreen(
             )
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Spacer(
-                modifier = Modifier.weight(1f)
+        if (simpleEdit != null && !networkEditMode) {
+            ButtonWithIcon(
+                onClick = {
+                    viewModel.editScrobbleUtils.deleteSimpleEdit(simpleEdit)
+                },
+                icon = Icons.Delete,
+                text = stringResource(Res.string.delete),
+                contentColorOverride = MaterialTheme.colorScheme.error,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
+        }
 
-            if (simpleEdit != null && !networkEditMode) {
-                IconButton(
-                    onClick = {
-                        viewModel.editScrobbleUtils.deleteSimpleEdit(simpleEdit)
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Delete,
-                        contentDescription = stringResource(Res.string.delete),
-                        tint = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
-
-            if (networkEditMode) {
+        if (networkEditMode) {
+            Row(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .align(Alignment.End),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 if (reauthenticateButtonShown) {
                     OutlinedButton(
+                        shapes = ButtonDefaults.shapes(),
                         colors = ButtonDefaults.outlinedButtonColors().copy(
                             containerColor = MaterialTheme.colorScheme.errorContainer,
                             contentColor = MaterialTheme.colorScheme.onErrorContainer
@@ -485,6 +487,7 @@ fun SimpleEditsAddScreen(
                     ) {
                         FilledIconToggleButton(
                             checked = !save,
+                            shapes = IconButtonDefaults.toggleableShapes(),
                             onCheckedChange = {
                                 save = !it
 
@@ -514,23 +517,18 @@ fun SimpleEditsAddScreen(
                         modifier = Modifier.align(Alignment.CenterVertically),
                     )
                 }
-            }
 
-            ButtonWithIcon(
-                onClick = ::doEdit,
-                icon = Icons.Check,
-                enabled = !verifying,
-                text = stringResource(
-                    if (networkEditMode)
-                        Res.string.edit
+                ButtonWithIcon(
+                    onClick = ::doEdit,
+                    icon = Icons.Check,
+                    enabled = !verifying,
+                    text = stringResource(Res.string.edit),
+                    modifier = if (verifying)
+                        Modifier.shimmerWindowBounds()
                     else
-                        Res.string.save
-                ),
-                modifier = if (verifying)
-                    Modifier.shimmerWindowBounds()
-                else
-                    Modifier
-            )
+                        Modifier
+                )
+            }
         }
     }
 }

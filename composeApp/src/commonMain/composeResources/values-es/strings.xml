@@ -388,4 +388,8 @@
     <string name="search_in_media_player" comment="This launches and searches in the media player app directly instead of opening a browser">Buscar en el reproductor de medios directamente</string>
     <string name="forget_unchecked_apps" comment="Shown in the 'Scrobble From' apps list on desktop">Olvidar aplicaciones sin marcar</string>
     <string name="help">Ayuda</string>
+    <string name="discord_app_name" comment="usually the media player app name, shown in discord rich presence">HF PLAYER</string>
+    <string name="convert_file" formatted="true" comment="%1$s is the file extension, used in the context of converting from one file format to another">Flac </string>
+    <string name="system" comment="system default settings">System</string>
+    <string name="missing_local_network_permission">This feature needs permission to connect to the local network</string>
 </resources>

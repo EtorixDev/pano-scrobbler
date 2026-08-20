@@ -91,7 +91,7 @@
             android:configChanges="screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
             android:exported="true"
             android:launchMode="singleTop"
-            android:windowSoftInputMode="adjustPan">
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -126,15 +126,14 @@
             android:exported="false"
             android:launchMode="singleInstancePerTask"
             android:theme="@style/AppThemeDialog"
-            android:windowSoftInputMode="adjustPan" />
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name="dev.etorix.panoscrobbler.widget.ChartsWidgetConfigActivity"
             android:configChanges="screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
             android:exported="false"
-            android:permission="android.permission.BIND_APPWIDGET"
             android:theme="@style/AppTheme.Wallpaper"
-            android:windowSoftInputMode="adjustPan">
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
@@ -201,9 +200,7 @@
         <provider
             android:name="dev.etorix.panoscrobbler.widget.AppWidgetImageProvider"
             android:authorities="${applicationId}.image"
-            android:exported="true"
-            android:permission="android.permission.BIND_APPWIDGET" />
-        <!-- launchers have this permission-->
+            android:exported="true" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
