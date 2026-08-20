@@ -245,6 +245,7 @@ fun ChartsWidgetConfigScreen(
                                 )
                             },
                             selected = selectedRefreshIntervalHours == intervalHours,
+                            shapes = FilterChipDefaults.shapes(),
                             onClick = { selectedRefreshIntervalHours = intervalHours }
                         )
                     }
@@ -268,19 +269,22 @@ fun ChartsWidgetConfigScreen(
                     }
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                TextButton(onClick = {
-                    onSave(
-                        prefs.copy(
-                            accountType = accountType,
-                            period = period,
-                            images = images,
-                            bgAlpha = bgAlpha,
-                            shadow = shadow
-                        ),
-                        selectedRefreshIntervalHours,
-                        prefs.period != period || accountType != prefs.accountType
-                    )
-                }) {
+                TextButton(
+                    shapes = ButtonDefaults.shapes(),
+                    onClick = {
+                        onSave(
+                            prefs.copy(
+                                accountType = accountType,
+                                period = period,
+                                images = images,
+                                bgAlpha = bgAlpha,
+                                shadow = shadow
+                            ),
+                            selectedRefreshIntervalHours,
+                            prefs.period != period || accountType != prefs.accountType
+                        )
+                    }
+                ) {
                     Text(text = stringResource(Res.string.ok))
                 }
             }

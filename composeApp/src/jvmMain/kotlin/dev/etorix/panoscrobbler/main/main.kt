@@ -461,7 +461,7 @@ fun main(args: Array<String>) {
                     val awtAppClassNameField =
                         Class.forName("sun.awt.X11.XToolkit").getDeclaredField("awtAppClassName")
                     awtAppClassNameField.isAccessible = true
-                    awtAppClassNameField.set(null, "pano-scrobbler")
+                    awtAppClassNameField.set(null, "pano-scrobbler-etd")
                 } catch (e: Exception) {
                     Logger.e { "Failed to set AWT app class name: ${e.message}" }
                 }

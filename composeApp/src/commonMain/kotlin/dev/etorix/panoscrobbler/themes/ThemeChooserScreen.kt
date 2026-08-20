@@ -66,7 +66,7 @@ import pano_scrobbler.composeapp.generated.resources.light
 import pano_scrobbler.composeapp.generated.resources.low
 import pano_scrobbler.composeapp.generated.resources.medium
 import pano_scrobbler.composeapp.generated.resources.pref_themes
-import pano_scrobbler.composeapp.generated.resources.random_text
+import pano_scrobbler.composeapp.generated.resources.random_on_start
 import pano_scrobbler.composeapp.generated.resources.system_colors
 
 @Composable
@@ -154,6 +154,7 @@ fun ThemeChooserScreen(
                     label = { it.Label() },
                     selected = previewSettings.dayNightMode == it,
                     enabled = true,
+                    shapes = FilterChipDefaults.shapes(),
                     onClick = {
                         updatePreview { copy(dayNightMode = it) }
                     }
@@ -178,6 +179,7 @@ fun ThemeChooserScreen(
                     label = { it.Label() },
                     enabled = !previewSettings.dynamic,
                     selected = previewSettings.contrastMode == it,
+                    shapes = FilterChipDefaults.shapes(),
                     onClick = {
                         updatePreview { copy(contrastMode = it) }
                     }
@@ -197,7 +199,7 @@ fun ThemeChooserScreen(
         }
 
         LabeledCheckbox(
-            text = stringResource(Res.string.random_text),
+            text = stringResource(Res.string.random_on_start),
             checked = previewSettings.random,
             enabled = true,
             onCheckedChange = { checked ->

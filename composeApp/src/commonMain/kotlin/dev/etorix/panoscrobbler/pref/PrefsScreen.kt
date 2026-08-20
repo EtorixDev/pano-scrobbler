@@ -585,6 +585,19 @@ fun PrefsScreen(
             )
         }
 
+        filteredItem(MainPrefs::minDurationSecsP.name, Res.string.min_track_duration) { title ->
+            SliderPref(
+                text = title,
+                value = minDurationSecs.toFloat(),
+                copyToSave = { copy(minDurationSecs = it) },
+                min = MainPrefs.PREF_MIN_DURATON_SECS_MIN,
+                max = MainPrefs.PREF_MIN_DURATON_SECS_MAX,
+                default = MainPrefs.PREF_MIN_DURATON_SECS_DEFAULT,
+                increments = 5,
+                stringRepresentation = { Stuff.humanReadableDuration(it * 1000L) }
+            )
+        }
+
         PlatformSpecificPrefs.discordRpc(::filteredItem, onNavigate)
 
         PlatformSpecificPrefs.prefPersistentNotification(::filteredItem, notiPersistent)
@@ -908,14 +921,45 @@ fun PrefsScreen(
             )
         }
 
-            if (!PlatformStuff.isTv) {
-                filteredItem("automation", Res.string.automation) { title ->
-                    TextPref(
-                        text = title,
-                        onClick = {
-                            onNavigate(PanoRoute.AutomationInfo)
-                        },
-                        locked = false,
+        filteredHeader("imexport", Res.string.pref_imexport, Icons.SwapVert)
+
+        filteredItem("export", Res.string.pref_export) { title ->
+            TextPref(
+                text = title,
+                summary = stringResource(Res.string.pref_export_desc),
+                onClick = {
+                    onNavigate(PanoRoute.Export)
+                }
+            )
+        }
+
+        filteredItem("import", Res.string.pref_import) { title ->
+            TextPref(
+                text = title,
+                onClick = {
+                    onNavigate(PanoRoute.Import)
+                }
+            )
+        }
+
+        filteredHeader("services", Res.string.scrobble_services, Icons.Dns)
+
+        AccountType.entries
+            .filterNot {
+                PlatformStuff.isTv && it == AccountType.FILE
+            }
+            .forEach { accountType ->
+                val (strRes, formatRes) = accountTypeStringRes(accountType)
+                filteredItem(
+                    accountType.name,
+                    strRes,
+                    formatRes
+                ) { title ->
+                    AccountPref(
+                        accountTypeLabel(accountType),
+                        type = accountType,
+                        usernamesMap = scrobblableLabels,
+                        onNavigate = onNavigate
                     )
                 }
             }

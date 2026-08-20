@@ -206,7 +206,13 @@ fun ScrobblesScreen(
         return index
     }
 
-    LaunchedEffect(user, selectedType, timeJumpMillis, total) {
+    LaunchedEffect(user, selectedType, timeJumpMillis, total, timeJumpMenuShown) {
+        if (timeJumpMenuShown) {
+            onTitleChange(getString(Res.string.time_jump))
+            selectSubTabId(ScrobblesType.TIME_JUMP.ordinal)
+            return@LaunchedEffect
+        }
+
         when (selectedType) {
             PanoTab.Scrobbles.ScrobblesType.LOVED -> {
                 viewModel.setScrobblesInput(
@@ -250,13 +256,11 @@ fun ScrobblesScreen(
                     ScrobblesInput(showScrobbleSources = showScrobbleSources)
                 )
 
-                onTitleChange(
-                    getString(Res.string.scrobbles) +
-                            if (total != null)
-                                ": " + total!!.format()
-                            else
-                                ""
-                )
+                if (total != null)
+                    onTitleChange(getString(Res.string.scrobbles) + ": " + total!!.format())
+                else
+                    onTitleChange(getString(Res.string.recents))
+                selectSubTabId(selectedType.ordinal)
             }
 
             else -> {}
