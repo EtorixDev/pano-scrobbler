@@ -8,8 +8,6 @@ import dev.etorix.panoscrobbler.automation.Automation
 import dev.etorix.panoscrobbler.utils.AndroidStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -77,8 +75,4 @@ actual fun getNowPlayingFromMainProcess(): PlayingTrackNotifyEvent.TrackPlaying?
 
     cursor.close()
     return null
-}
-
-actual fun shouldFetchNpArtUrl(): Flow<Boolean> {
-    return emptyFlow()
 }

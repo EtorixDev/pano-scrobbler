@@ -9,7 +9,7 @@ actual typealias PlatformPlaybackInfo = PlaybackState
 actual fun transformPlaybackState(
     trackInfo: PlayingTrackInfo,
     playbackInfo: PlatformPlaybackInfo,
-    options: TransformMetadataOptions
+    scrobbleSpotifyRemote: Boolean,
 ): Pair<PlaybackInfo, Boolean> {
     val commonPlaybackState = when (playbackInfo.state) {
         PlaybackState.STATE_NONE -> CommonPlaybackState.None
@@ -31,26 +31,12 @@ actual fun transformPlaybackState(
     var ignoreScrobble = false
 
     // do not scrobble spotify remote playback
-    if (!options.scrobbleSpotifyRemote &&
+    if (!scrobbleSpotifyRemote &&
         trackInfo.appId == Stuff.PACKAGE_SPOTIFY &&
         playbackInfo.state == PlaybackState.STATE_PLAYING &&
         playbackInfo.extras?.getBoolean("com.spotify.music.extra.ACTIVE_PLAYBACK_LOCAL") == false
     ) {
         Logger.i { "ignoring spotify remote playback" }
-        ignoreScrobble = true
-    }
-
-    // do not scrobble YouTube music ads (they are not seekable)
-    // no longer works with latest YTM versions
-    if (trackInfo.appId in arrayOf(
-            Stuff.PACKAGE_YOUTUBE_MUSIC,
-            Stuff.PACKAGE_YOUTUBE_TV
-        ) &&
-        playbackInfo.state == PlaybackState.STATE_PLAYING &&
-        trackInfo.durationMillis > 0 &&
-        playbackInfo.actions and PlaybackState.ACTION_SEEK_TO == 0L
-    ) {
-        Logger.i { "ignoring youtube music ad" }
         ignoreScrobble = true
     }
 

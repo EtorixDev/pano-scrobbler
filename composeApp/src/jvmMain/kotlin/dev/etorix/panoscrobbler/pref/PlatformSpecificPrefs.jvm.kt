@@ -15,6 +15,7 @@ import pano_scrobbler.composeapp.generated.resources.disable
 import pano_scrobbler.composeapp.generated.resources.discord_rich_presence
 import pano_scrobbler.composeapp.generated.resources.done
 import pano_scrobbler.composeapp.generated.resources.enable
+import pano_scrobbler.composeapp.generated.resources.linux_install_icons
 import pano_scrobbler.composeapp.generated.resources.pref_check_updates
 import pano_scrobbler.composeapp.generated.resources.pref_fetch_missing_album
 import pano_scrobbler.composeapp.generated.resources.pref_notify_updates
@@ -41,8 +42,8 @@ actual object PlatformSpecificPrefs {
 
     actual fun prefAutostart(filteredItem: FilteredItem) {
         // only implemented for Linux
-        if (DesktopStuff.os == DesktopStuff.Os.Linux) {
-            filteredItem("startup", Res.string.run_on_start, null) { title ->
+        if (DesktopStuff.IS_LINUX) {
+            filteredItem("startup_autostart", Res.string.run_on_start, null) { title ->
                 val doneString = stringResource(Res.string.done)
 
                 DropdownPref(
@@ -69,7 +70,7 @@ actual object PlatformSpecificPrefs {
 
     actual fun prefAddToAppLauncher(filteredItem: FilteredItem) {
         // only implemented for Linux AppImage
-        if (DesktopStuff.os == DesktopStuff.Os.Linux && System.getenv("APPIMAGE") != null) {
+        if (DesktopStuff.IS_LINUX && System.getenv("APPIMAGE") != null) {
             filteredItem(
                 "app_launcher",
                 Res.string.add_to_app_launcher,
@@ -78,6 +79,7 @@ actual object PlatformSpecificPrefs {
                 val doneString = stringResource(Res.string.done)
                 TextPref(
                     text = title,
+                    summary = stringResource(Res.string.linux_install_icons),
                     onClick = {
                         DesktopStuff.addAppImageToAppLauncher()
                         val snackbarData = PanoSnackbarVisuals(doneString)
@@ -89,7 +91,7 @@ actual object PlatformSpecificPrefs {
     }
 
     actual fun discordRpc(filteredItem: FilteredItem, onNavigate: (PanoRoute) -> Unit) {
-        filteredItem(MainPrefs::discordRpc.name, Res.string.discord_rich_presence, null) { title ->
+        filteredItem("discord_rich_presence", Res.string.discord_rich_presence, null) { title ->
             TextPref(
                 text = title,
                 onClick = { onNavigate(PanoRoute.DiscordRpcSettings) }
@@ -99,9 +101,9 @@ actual object PlatformSpecificPrefs {
 
 
     actual fun tidalSteelSeries(filteredItem: FilteredItem, enabled: Boolean) {
-        if (DesktopStuff.os == DesktopStuff.Os.Windows) {
+        if (DesktopStuff.IS_WINDOWS) {
             filteredItem(
-                MainPrefs::tidalSteelSeriesApi.name,
+                "tidal_steelseries",
                 Res.string.pref_fetch_missing_album,
                 Res.string.tidal_steelseries
             ) { title ->
@@ -119,9 +121,9 @@ actual object PlatformSpecificPrefs {
     }
 
     actual fun deezerApi(filteredItem: FilteredItem, enabled: Boolean) {
-        if (DesktopStuff.os == DesktopStuff.Os.Windows) {
+        if (DesktopStuff.IS_WINDOWS) {
             filteredItem(
-                MainPrefs::deezerApi.name,
+                "deezer",
                 Res.string.pref_fetch_missing_album,
                 Res.string.deezer
             ) { title ->

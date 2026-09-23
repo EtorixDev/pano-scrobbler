@@ -25,8 +25,8 @@ if [ -f "$pkgbuildDir/PKGBUILD" ]; then
   OWNER="EtorixDev"
     REPO="pano-scrobbler"
 
-    ASSET_X64="pano-scrobbler-etd-linux-x64.tar.gz"
-    ASSET_ARM64="pano-scrobbler-etd-linux-arm64.tar.gz"
+    ASSET_X64="pano-scrobbler-etd-linux-x64.tar.zst"
+    ASSET_ARM64="pano-scrobbler-etd-linux-arm64.tar.zst"
 
     API="https://api.github.com"
     RELEASES_URL="$API/repos/$OWNER/$REPO/releases/latest"
@@ -93,6 +93,8 @@ if [ -f "$pkgbuildDir/PKGBUILD" ]; then
 g/^_pkgver=/s|.*|_pkgver=$tag|
 g/^pkgver=/s|.*|pkgver=$verName|
 g/^pkgrel=/s|.*|pkgrel=1|
+g/^source_x86_64=/s|\.tar\.gz|.tar.zst|g
+g/^source_aarch64=/s|\.tar\.gz|.tar.zst|g
 g/^sha256sums_x86_64=(/s|.*|sha256sums_x86_64=('$sha_x64')|
 g/^sha256sums_aarch64=(/s|.*|sha256sums_aarch64=('$sha_arm64')|
 w

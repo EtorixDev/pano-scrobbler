@@ -91,7 +91,21 @@ jobs:
           fi
 
           # Download artifacts from that run (filter by name if provided)
-          gh run download "$RUN_ID" -R "EtorixDev/pano-native-components" -n "libs-${{ matrix.resources-dir }}" -D composeApp/resources/${{ matrix.resources-dir }}
+          gh run download "$RUN_ID" -R "EtorixDev/pano-native-components" -n "libs-${{ matrix.resources-dir }}" -D desktopApp/resources/${{ matrix.resources-dir }}
+
+      - name: Download AppImageTool
+        if: matrix.resources-dir != 'windows-x64'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          arch=$(uname -m)
+          appImageToolFile="$HOME/appimagetool-$arch.AppImage"
+          gh release download continuous \
+            --repo AppImage/appimagetool \
+            --pattern "appimagetool-$arch.AppImage" \
+            --output "$appImageToolFile"
+          chmod +x "$appImageToolFile"
 
       - name: Install Inno Setup
         if: matrix.resources-dir == 'windows-x64'
@@ -99,10 +113,10 @@ jobs:
         run: |
           winget install --id JRSoftware.InnoSetup.7 --accept-package-agreements --accept-source-agreements --disable-interactivity
 
-      - name: Build desktop jar and native image
+      - name: Build desktop native image
         shell: bash
         run: |
-          ./gradlew composeApp:exportLibraryDefinitions composeApp:packageUberJarForCurrentOS -PaboutLibraries.exportVariant=jvm --no-daemon
+          ./gradlew desktopApp:packageNativeImage --no-daemon
 
       - name: Upload desktop binary
         uses: actions/upload-artifact@v7
@@ -162,4 +176,4 @@ jobs:
             dist/*.apk
             dist/*.AppImage
             dist/*.deb
-            dist/*.tar.gz
+            dist/*.tar.zst

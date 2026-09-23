@@ -80,6 +80,8 @@ actual object PanoNotifications {
             Stuff.MANUFACTURER_TRANSSION,
             Stuff.MANUFACTURER_INFINIX,
         )
+                || Build.VERSION.SDK_INT == 37 && Build.getMinorSdkVersion(Build.VERSION.SDK_INT_FULL) >= 2
+                || Build.VERSION.SDK_INT > 37
                 || PlatformStuff.isTv
     }
 

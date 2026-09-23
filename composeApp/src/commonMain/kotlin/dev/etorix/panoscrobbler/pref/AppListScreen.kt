@@ -1,23 +1,20 @@
 package dev.etorix.panoscrobbler.pref
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -29,8 +26,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -55,7 +50,8 @@ import dev.etorix.panoscrobbler.ui.PanoLazyColumn
 import dev.etorix.panoscrobbler.ui.SearchEffect
 import dev.etorix.panoscrobbler.ui.SimpleHeaderItem
 import dev.etorix.panoscrobbler.ui.backgroundForShimmer
-import dev.etorix.panoscrobbler.ui.horizontalOverscanPadding
+import dev.etorix.panoscrobbler.ui.myCheckableItemColors
+import dev.etorix.panoscrobbler.ui.myTransparentCheckableItemColors
 import dev.etorix.panoscrobbler.ui.panoContentPadding
 import dev.etorix.panoscrobbler.ui.shimmerWindowBounds
 import dev.etorix.panoscrobbler.utils.PlatformStuff
@@ -211,6 +207,7 @@ fun AppListScreen(
 
     PanoLazyColumn(
         contentPadding = panoContentPadding(mayHaveBottomFab = true),
+        verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
         modifier = modifier
     ) {
         fun addItems(
@@ -218,7 +215,7 @@ fun AppListScreen(
         ) {
             itemsIndexed(
                 items = items,
-                key = { idx, appItem -> appItem.appId }
+                key = { idx, appItem -> "app_" + appItem.appId }
             ) { idx, appItem ->
 
                 val showAppId =
@@ -244,7 +241,7 @@ fun AppListScreen(
                             viewModel.setMultiSelectionAppId(appItem.appId, selected)
                         }
                     },
-                    modifier = Modifier.animateItem(),
+                    modifier = Modifier.animateItem()
                 )
             }
         }
@@ -254,6 +251,7 @@ fun AppListScreen(
         ) {
             items(
                 count,
+                key = { "shimmer_$it" }
             ) {
                 AppListItem(
                     appItem = null,
@@ -261,7 +259,9 @@ fun AppListScreen(
                     isSingleSelect = isSingleSelect,
                     showAppId = false,
                     onToggle = {},
-                    modifier = Modifier.shimmerWindowBounds().animateItem(),
+                    modifier = Modifier
+                        .shimmerWindowBounds()
+                        .animateItem(),
                     forShimmer = true,
                 )
             }
@@ -274,6 +274,8 @@ fun AppListScreen(
                 SimpleHeaderItem(
                     text = stringResource(Res.string.empty_apps_list),
                     icon = Icons.Info,
+                    modifier = Modifier
+                        .fillMaxWidth()
                 )
             }
         }
@@ -317,7 +319,9 @@ fun AppListScreen(
                         item("header_action") {
                             SimpleHeaderItem(
                                 text = stringResource(Res.string.music_players),
-                                icon = Icons.PlayCircle
+                                icon = Icons.PlayCircle,
+                                modifier = Modifier
+                                    .fillMaxWidth()
                             )
                         }
                     }
@@ -334,19 +338,19 @@ fun AppListScreen(
                 saveType == AppListSaveType.Scrobbling && searchFieldState.text.isBlank()
             ) {
                 item("notice_ambient_apps") {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
+                    ListItem(
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Info,
+                                contentDescription = null,
+                            )
+                        },
+                        colors = ListItemDefaults.myTransparentCheckableItemColors(),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = horizontalOverscanPadding(), vertical = 8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Info,
-                            contentDescription = null,
-                            modifier = Modifier.padding(end = 16.dp)
-                        )
                         Text(
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.bodyMediumEmphasized,
                             text = stringResource(
                                 Res.string.supports_ambient_apps,
                                 stringResource(Res.string.ambient_apps),
@@ -360,7 +364,8 @@ fun AppListScreen(
                 item("header_other_apps") {
                     SimpleHeaderItem(
                         text = stringResource(Res.string.other_apps),
-                        icon = Icons.Apps
+                        icon = Icons.Apps, modifier = Modifier
+                            .fillMaxWidth()
                     )
                 }
 
@@ -371,7 +376,7 @@ fun AppListScreen(
                 if (viewModel.pluginsNeeded.isNotEmpty()) { // windows
                     item("header_plugins_needed") {
                         ExpandableHeaderItem(
-                            title = stringResource(Res.string.needs_plugin),
+                            text = stringResource(Res.string.needs_plugin),
                             icon = Icons.Info,
                             expanded = pluginsNeededExpanded,
                             onToggle = { pluginsNeededExpanded = it },
@@ -379,33 +384,28 @@ fun AppListScreen(
                     }
 
                     if (pluginsNeededExpanded) {
-                        items(viewModel.pluginsNeeded) { (appName, pluginUrl) ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
+                        items(
+                            viewModel.pluginsNeeded,
+                            key = { (appName, _) -> "plugin_$appName" }
+                        ) { (appName, pluginUrl) ->
+                            ListItem(
+                                onClick = {
+                                    PlatformStuff.openInBrowser(pluginUrl)
+                                },
+                                trailingContent = {
+                                    Icon(
+                                        imageVector = Icons.OpenInBrowser,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                    )
+                                },
+                                colors = ListItemDefaults.myTransparentCheckableItemColors(),
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(MaterialTheme.shapes.medium)
-                                    .clickable {
-                                        PlatformStuff.openInBrowser(pluginUrl)
-                                    }
-                                    .padding(
-                                        vertical = 8.dp,
-                                        horizontal = horizontalOverscanPadding()
-                                    ),
+                                    .fillMaxWidth(),
                             ) {
                                 Text(
                                     text = appName,
                                     maxLines = 1,
-                                )
-
-                                Spacer(
-                                    modifier = Modifier.weight(1f)
-                                )
-
-                                Icon(
-                                    imageVector = Icons.OpenInBrowser,
-                                    contentDescription = null,
-                                    modifier = Modifier
                                 )
                             }
                         }
@@ -414,30 +414,23 @@ fun AppListScreen(
 
                 if (appList.musicPlayers.isNotEmpty()) {
                     item("forget_unchecked_apps") {
-                        OutlinedButton(
-                            shapes = ButtonDefaults.shapes(),
+                        ButtonWithIcon(
                             onClick = {
                                 viewModel.forgetUncheckedApps()
                             },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Delete,
-                                contentDescription = null,
-                            )
-
-                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-
-                            Text(
-                                stringResource(Res.string.forget_unchecked_apps)
-                            )
-                        }
+                            icon = Icons.Delete,
+                            text = stringResource(Res.string.forget_unchecked_apps),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentWidth()
+                        )
                     }
                 }
 
                 if (hostnamesFiltered.isNotEmpty()) { // linux
                     item("header_websites") {
                         ExpandableHeaderItem(
-                            title = stringResource(Res.string.websites),
+                            text = stringResource(Res.string.websites),
                             icon = Icons.Public,
                             expanded = websitesExpanded,
                             onToggle = { websitesExpanded = it },
@@ -450,10 +443,7 @@ fun AppListScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(
-                                        horizontal = horizontalOverscanPadding(),
-                                        vertical = 8.dp
-                                    )
+                                    .padding(vertical = 8.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Info,
@@ -462,9 +452,7 @@ fun AppListScreen(
                                 )
                                 Text(
                                     style = MaterialTheme.typography.labelMedium,
-                                    text = stringResource(
-                                        Res.string.websites_desc,
-                                    ),
+                                    text = stringResource(Res.string.websites_desc),
                                 )
                             }
                         }
@@ -493,28 +481,22 @@ fun AppListScreen(
                                         )
                                     }
                                 },
-                                modifier = Modifier.animateItem(),
+                                modifier = Modifier.animateItem()
                             )
                         }
 
                         item("forget_checked_websites") {
-                            OutlinedButton(
-                                shapes = ButtonDefaults.shapes(),
+                            ButtonWithIcon(
                                 onClick = {
                                     viewModel.forgetCheckedHostnames()
                                 },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Delete,
-                                    contentDescription = null,
-                                )
-
-                                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-
-                                Text(
-                                    stringResource(Res.string.forget_checked_websites)
-                                )
-                            }
+                                icon = Icons.Delete,
+                                text = stringResource(Res.string.forget_checked_websites),
+                                modifier = Modifier
+                                    .animateItem()
+                                    .fillMaxWidth()
+                                    .wrapContentWidth()
+                            )
                         }
                     }
                 }
@@ -533,65 +515,45 @@ private fun AppListItem(
     modifier: Modifier = Modifier,
     forShimmer: Boolean = false,
 ) {
-    Surface(
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = if (isSelected) 8.dp else 0.dp,
-        color = if (isSelected)
-            MaterialTheme.colorScheme.surface
-        else
-            Color.Transparent,
-        modifier = modifier
-            .fillMaxWidth()
-            .toggleable(
-                value = isSelected,
-                onValueChange = onToggle
-            )
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(vertical = 8.dp, horizontal = horizontalOverscanPadding()),
-
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+    ListItem(
+        checked = isSelected,
+        enabled = !forShimmer,
+        onCheckedChange = onToggle,
+        modifier = modifier,
+        colors = ListItemDefaults.myCheckableItemColors(),
+        supportingContent = appItem?.appId?.takeIf { showAppId }?.let {
+            {
+                Text(text = it, maxLines = 1)
+            }
+        },
+        trailingContent = {
+            if (isSingleSelect)
+                RadioButton(
+                    selected = isSelected,
+                    onClick = null
+                )
+            else
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = null
+                )
+        },
+        leadingContent = {
             AppIcon(
                 appItem = appItem,
                 modifier = Modifier
                     .size(32.dp)
                     .backgroundForShimmer(forShimmer)
             )
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .backgroundForShimmer(forShimmer)
-            ) {
-                Text(
-                    text = appItem?.friendlyLabel ?: "",
-                    maxLines = 1,
-                )
-
-                if (showAppId) {
-                    Text(
-                        text = appItem?.appId ?: "",
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1,
-                    )
-                }
-            }
-
-            if (isSingleSelect) {
-                RadioButton(
-                    selected = isSelected,
-                    onClick = null
-                )
-            } else {
-                Checkbox(
-                    checked = isSelected,
-                    onCheckedChange = null
-                )
-            }
         }
+    ) {
+        Text(
+            text = appItem?.friendlyLabel ?: "",
+            maxLines = 1,
+            modifier = Modifier
+                .fillMaxWidth()
+                .backgroundForShimmer(forShimmer)
+        )
     }
 }
 

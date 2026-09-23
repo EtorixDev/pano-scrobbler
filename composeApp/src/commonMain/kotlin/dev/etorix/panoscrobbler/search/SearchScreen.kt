@@ -1,13 +1,17 @@
 package dev.etorix.panoscrobbler.search
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.etorix.panoscrobbler.api.AccountType
@@ -21,10 +25,10 @@ import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.Mic
 import dev.etorix.panoscrobbler.icons.MusicNote
 import dev.etorix.panoscrobbler.navigation.PanoRoute
-import dev.etorix.panoscrobbler.ui.EmptyText
 import dev.etorix.panoscrobbler.ui.MusicEntryListItem
 import dev.etorix.panoscrobbler.ui.PanoLazyColumn
 import dev.etorix.panoscrobbler.ui.SearchEffect
+import dev.etorix.panoscrobbler.ui.emptyText
 import dev.etorix.panoscrobbler.ui.expandableSublist
 import dev.etorix.panoscrobbler.ui.getMusicEntryPlaceholderItem
 import dev.etorix.panoscrobbler.utils.PlatformStuff
@@ -35,10 +39,12 @@ import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.albums
 import pano_scrobbler.composeapp.generated.resources.artists
 import pano_scrobbler.composeapp.generated.resources.external_metadata
+import pano_scrobbler.composeapp.generated.resources.from
 import pano_scrobbler.composeapp.generated.resources.is_turned_off
 import pano_scrobbler.composeapp.generated.resources.lastfm
 import pano_scrobbler.composeapp.generated.resources.loved
 import pano_scrobbler.composeapp.generated.resources.not_found
+import pano_scrobbler.composeapp.generated.resources.search
 import pano_scrobbler.composeapp.generated.resources.tracks
 
 @Composable
@@ -90,6 +96,15 @@ fun SearchScreen(
         modifier = modifier
     ) {
         if (hasLoaded) {
+            item("results_header") {
+                Text(
+                    text = stringResource(Res.string.from, stringResource(Res.string.lastfm)),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+
             expandableSublist(
                 headerText = artistsText,
                 headerIcon = Icons.Mic,
@@ -128,17 +143,14 @@ fun SearchScreen(
                 fetchAlbumImageIfMissing = true,
             )
 
-            if (searchResults?.isEmpty == true) {
-                item("empty_text") {
-                    EmptyText(
-                        text = stringResource(Res.string.not_found),
-                        visible = true,
-                    )
-                }
-            }
+            if (searchResults?.isEmpty == true)
+                emptyText { stringResource(Res.string.not_found) }
 
         } else if (searchResults != null) {
-            items(10) {
+            items(
+                10,
+                key = { "shimmer_$it" }
+            ) {
                 MusicEntryListItem(
                     getMusicEntryPlaceholderItem(Stuff.TYPE_TRACKS),
                     forShimmer = true,
@@ -147,16 +159,15 @@ fun SearchScreen(
                 )
             }
         } else if (!useLastfm) {
-            item("lastfm_off") {
-                EmptyText(
-                    text = stringResource(
-                        Res.string.is_turned_off,
-                        stringResource(Res.string.lastfm),
-                        stringResource(Res.string.external_metadata),
-                    ),
-                    visible = true,
+            emptyText {
+                stringResource(
+                    Res.string.is_turned_off,
+                    stringResource(Res.string.lastfm),
+                    stringResource(Res.string.external_metadata),
                 )
             }
+        } else if (searchFieldState.text.isBlank()) {
+            emptyText { stringResource(Res.string.search) }
         }
     }
 }

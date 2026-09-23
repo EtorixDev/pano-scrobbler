@@ -1,6 +1,5 @@
 package dev.etorix.panoscrobbler.onboarding
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,12 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedToggleButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,14 +30,13 @@ import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.icons.ArrowDropDown
 import dev.etorix.panoscrobbler.icons.CheckCircle
 import dev.etorix.panoscrobbler.icons.Circle
+import dev.etorix.panoscrobbler.icons.FiberManualRecord
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.main.MainViewModel
 import dev.etorix.panoscrobbler.navigation.PanoRoute
-import dev.etorix.panoscrobbler.panoicons.Nothing
-import dev.etorix.panoscrobbler.panoicons.PanoIcons
 import dev.etorix.panoscrobbler.ui.PanoDropdownMenu
 import dev.etorix.panoscrobbler.ui.accountTypeLabel
-import dev.etorix.panoscrobbler.ui.horizontalOverscanPadding
+import dev.etorix.panoscrobbler.ui.myTransparentCheckableItemColors
 import dev.etorix.panoscrobbler.ui.testTagsAsResId
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import org.jetbrains.compose.resources.StringResource
@@ -108,13 +106,13 @@ fun ButtonStepperForLogin(
 
     var dropDownShown by remember { mutableStateOf(false) }
 
-    OutlinedToggleButton(
+    FilledTonalToggleButton(
         checked = dropDownShown,
         onCheckedChange = {
             dropDownShown = it
         },
         modifier = modifier
-            .padding(start = IconButtonDefaults.mediumIconSize + 16.dp)
+            .padding(top = 4.dp)
             .testTag("login_type_dropdown")
     ) {
         Text(
@@ -128,17 +126,19 @@ fun ButtonStepperForLogin(
             onDismissRequest = { dropDownShown = false }
         ) {
             accountTypesToStrings.forEach { (accType, string) ->
-                DropdownMenuItem(
+                item(
                     onClick = {
                         navigate(LoginDestinations.route(accType))
                         dropDownShown = false
                     },
                     text = {
-                        Text(string)
+                        Text(
+                            string,
+                            modifier = Modifier
+                                .testTag("login_type_" + accType.name)
+                                .testTagsAsResId()
+                        )
                     },
-                    modifier = Modifier
-                        .testTag("login_type_" + accType.name)
-                        .testTagsAsResId()
                 )
             }
         }
@@ -169,15 +169,39 @@ fun VerticalStepperItem(
     val icon = if (isDone)
         Icons.CheckCircle
     else if (isExpanded)
-        PanoIcons.Nothing
+        Icons.FiberManualRecord
     else
         Icons.Circle
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ListItem(
+        supportingContent = if (isExpanded) {
+            {
+                Column {
+                    if (description != null) {
+                        Text(
+                            text = description,
+                        )
+                    }
+
+                    if (additionalContent != null) {
+                        additionalContent()
+                    }
+
+                    buttonsContent()
+                }
+            }
+        } else null,
+        leadingContent = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+            )
+        },
+        verticalAlignment = Alignment.Top,
+        colors = ListItemDefaults.myTransparentCheckableItemColors(),
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = horizontalOverscanPadding())
+            .padding(vertical = 8.dp)
             .then(
                 if (isExpanded)
                     Modifier.alpha(1f)
@@ -185,46 +209,11 @@ fun VerticalStepperItem(
                     Modifier.alpha(0.5f)
             )
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-            )
-
-            Text(
-                text = stringResource(titleRes),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        AnimatedVisibility(isExpanded) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (description != null) {
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = modifier
-                            .padding(start = IconButtonDefaults.mediumIconSize + 16.dp)
-                            .fillMaxWidth()
-                    )
-                }
-
-                if (additionalContent != null) {
-                    additionalContent()
-                }
-
-                buttonsContent()
-            }
-        }
+        Text(
+            text = stringResource(titleRes),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
     }
 }
 

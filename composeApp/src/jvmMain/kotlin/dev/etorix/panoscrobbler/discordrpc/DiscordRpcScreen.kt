@@ -167,11 +167,12 @@ fun DiscordRpcScreen(
         )
 
         Text(
-            stringResource(
-                Res.string.available_placeholders,
-                DiscordRpcPlaceholder.entries.joinToString { "\$" + it.name }
+            visualTransformation.highlight(
+                stringResource(
+                    Res.string.available_placeholders,
+                    DiscordRpcPlaceholder.entries.joinToString { "\$" + it.name }
+                )
             ),
-            color = tertiaryColor,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = horizontalOverscanPadding())

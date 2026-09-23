@@ -1,6 +1,7 @@
 package dev.etorix.panoscrobbler.db
 
 import androidx.room3.Entity
+import androidx.room3.Ignore
 import androidx.room3.Index
 import androidx.room3.PrimaryKey
 import dev.etorix.panoscrobbler.api.UserAccountSerializable
@@ -40,6 +41,7 @@ data class PendingListenBrainzMutation(
     val originalTrack: String? = null,
     val originalAlbum: String? = null,
 ) {
+    @Ignore
     val identityKey get() = identityKey(listenedAtMillis, recordingMsid)
 
     fun toReplacementTrack(previousTrack: Track): Track {

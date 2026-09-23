@@ -17,11 +17,11 @@ actual suspend fun doAfterUpdateCheck(releases: GithubReleases): UpdateAction? {
 
 actual fun runUpdateAction(updateAction: UpdateAction) {
     try {
-        if (DesktopStuff.os == DesktopStuff.Os.Windows) {
+        if (DesktopStuff.IS_WINDOWS) {
             // there doesn't seem to be a way to pass arguments to the installer when launching with explorer.exe
             ProcessBuilder("explorer.exe", updateAction.urlOrFilePath)
                 .start()
-        } else if (DesktopStuff.os == DesktopStuff.Os.Linux) {
+        } else if (DesktopStuff.IS_LINUX) {
             val appDir = System.getenv("APPDIR")
             val relauncher = "$appDir/usr/libexec/pano-scrobbler-etd/relaunch.sh"
             ProcessBuilder(relauncher, updateAction.urlOrFilePath)

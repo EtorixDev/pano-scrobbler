@@ -27,9 +27,8 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
-import pano_scrobbler.composeapp.generated.resources.persistent_noti_desc
 import pano_scrobbler.composeapp.generated.resources.persistent_noti_fgs
-import pano_scrobbler.composeapp.generated.resources.persistent_noti_oems
+import pano_scrobbler.composeapp.generated.resources.persistent_noti_hide
 import pano_scrobbler.composeapp.generated.resources.pref_master_qs_add
 import pano_scrobbler.composeapp.generated.resources.pref_master_qs_already_addded
 import pano_scrobbler.composeapp.generated.resources.pref_noti
@@ -41,7 +40,7 @@ import pano_scrobbler.composeapp.generated.resources.show_persistent_noti
 actual object PlatformSpecificPrefs {
     actual fun prefQuickSettings(filteredItem: FilteredItem, scrobblerEnabled: Boolean) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !PlatformStuff.isTv) {
-            filteredItem("master_qs_add", Res.string.pref_master_qs_add, null) { title ->
+            filteredItem("quick_settings", Res.string.pref_master_qs_add, null) { title ->
                 val scrobblerEnabledText =
                     stringResource(if (scrobblerEnabled) Res.string.scrobbler_on else Res.string.scrobbler_off)
                 val context = LocalContext.current
@@ -134,16 +133,14 @@ actual object PlatformSpecificPrefs {
     actual fun prefPersistentNotification(filteredItem: FilteredItem, notiPersistent: Boolean) {
         if (!PlatformStuff.isTv) {
             filteredItem(
-                MainPrefs::notiPersistent.name,
+                "persistent_notification",
                 Res.string.persistent_noti_fgs,
                 null
             ) { title ->
                 SwitchPref(
                     text = title,
-                    summary = stringResource(
-                        Res.string.persistent_noti_desc,
-                        stringResource(Res.string.persistent_noti_oems)
-                    ) + "\n" + stringResource(Res.string.show_persistent_noti),
+                    summary = stringResource(Res.string.show_persistent_noti) + "\n" +
+                            stringResource(Res.string.persistent_noti_hide),
                     value = notiPersistent,
                     copyToSave = {
                         copy(notiPersistent = it)

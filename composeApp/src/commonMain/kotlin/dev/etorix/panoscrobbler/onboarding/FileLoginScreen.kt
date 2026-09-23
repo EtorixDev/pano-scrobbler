@@ -23,8 +23,8 @@ import dev.etorix.panoscrobbler.api.file.FileScrobblable
 import dev.etorix.panoscrobbler.ui.FilePicker
 import dev.etorix.panoscrobbler.ui.FilePickerMode
 import dev.etorix.panoscrobbler.ui.FileType
-import dev.etorix.panoscrobbler.ui.OutlinedToggleButtons
 import dev.etorix.panoscrobbler.ui.PanoSnackbarVisuals
+import dev.etorix.panoscrobbler.ui.PanoToggleButtonGroup
 import dev.etorix.panoscrobbler.utils.PlatformFile
 import dev.etorix.panoscrobbler.utils.Stuff
 import kotlinx.coroutines.delay
@@ -91,7 +91,7 @@ fun FileLoginScreen(
         verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically)
     ) {
 
-        OutlinedToggleButtons(
+        PanoToggleButtonGroup(
             texts = FileScrobblable.FileFormat.entries.map { "." + it.name },
             selectedIndex = selectedFileFormat?.ordinal ?: -1,
             onSelected = {

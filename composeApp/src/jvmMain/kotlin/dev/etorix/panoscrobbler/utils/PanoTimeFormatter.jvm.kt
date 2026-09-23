@@ -127,34 +127,34 @@ actual object PanoTimeFormatter {
                 }
             }
         val formatter = formatterBuilder.toFormatter(Locale.getDefault())
-        return Stuff.formatBigHyphen(
-            startDateTime.format(formatter),
-            endDateTime.format(formatter)
-        )
+        return startDateTime.format(formatter) + " - " + endDateTime.format(formatter)
     }
 
     actual fun dateRange(startMillis: Long, endMillis: Long): String {
-        val startDateTime = LocalDateTime.ofInstant(
-            Instant.ofEpochMilli(startMillis),
-            ZoneId.systemDefault()
-        )
-        val endDateTime = LocalDateTime.ofInstant(
-            Instant.ofEpochMilli(endMillis - 1),
-            ZoneId.systemDefault()
-        )
-        val currentYear = LocalDateTime.now().year
-        val formatterBuilder = DateTimeFormatterBuilder()
-            .appendPattern("MMM dd")
-            .apply {
-                if (startDateTime.year != currentYear || endDateTime.year != currentYear) {
-                    appendPattern(" yyyy")
-                }
-            }
-        val formatter = formatterBuilder.toFormatter(Locale.getDefault())
-        return Stuff.formatBigHyphen(
-            startDateTime.format(formatter),
-            endDateTime.format(formatter)
-        )
+        val zone = ZoneId.systemDefault()
+        val start = LocalDateTime.ofInstant(Instant.ofEpochMilli(startMillis), zone)
+        val end = LocalDateTime.ofInstant(Instant.ofEpochMilli(endMillis - 1), zone)
+        val currentYear = LocalDateTime.now(zone).year
+        val locale = Locale.getDefault()
+
+        val showYear = start.year != currentYear || end.year != currentYear
+        val dayMonthYearFormatter = DateTimeFormatterBuilder()
+            .appendPattern("dd MMM")
+            .apply { if (showYear) appendPattern(" yyyy") }
+            .toFormatter(locale)
+        val dayOnlyFormatter = DateTimeFormatter.ofPattern("dd", locale)
+        val dayMonthFormatter = DateTimeFormatter.ofPattern("dd MMM", locale)
+
+        return when {
+            start.toLocalDate() == end.toLocalDate() ->
+                start.format(dayMonthYearFormatter)
+            start.year == end.year && start.month == end.month ->
+                start.format(dayOnlyFormatter) + " - " + end.format(dayMonthYearFormatter)
+            start.year == end.year ->
+                start.format(dayMonthFormatter) + " - " + end.format(dayMonthYearFormatter)
+            else ->
+                start.format(dayMonthYearFormatter) + " - " + end.format(dayMonthYearFormatter)
+        }
     }
 
     actual fun year(millis: Long): String {

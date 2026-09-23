@@ -5,7 +5,11 @@ import dev.etorix.panoscrobbler.BuildKonfig
 import dev.etorix.panoscrobbler.PanoNativeComponents
 import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.api.Scrobblables
+import dev.etorix.panoscrobbler.api.ScrobbleEverywhere
+import dev.etorix.panoscrobbler.api.lastfm.ScrobbleData
+import dev.etorix.panoscrobbler.media.PlayingTrackInfo
 import dev.etorix.panoscrobbler.media.PlayingTrackNotifyEvent
+import dev.etorix.panoscrobbler.media.notifyPlayingTrackEvent
 import dev.etorix.panoscrobbler.pref.AppItem
 import dev.etorix.panoscrobbler.pref.MainPrefs
 import dev.etorix.panoscrobbler.ui.accountTypeStringRes
@@ -15,11 +19,14 @@ import dev.etorix.panoscrobbler.utils.Stuff
 import io.ktor.http.encodeURLPathPart
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.compose.resources.getString
 import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.profile
@@ -30,8 +37,8 @@ private sealed interface DiscordActivity {
     // https://discord.com/developers/docs/social-sdk/classdiscordpp_1_1ActivityAssets.html
     data class Activity(
         val discordClientId: String,
-        val appId: String,
         val hash: Int,
+        val scrobbleData: ScrobbleData,
         val name: String,
         // If specified, must be a string between 2 and 128 characters.
         val state: String,
@@ -47,11 +54,21 @@ private sealed interface DiscordActivity {
         val detailsUrl: String,
         val statusLine: Int,
         val buttonText: String,
-        val buttonUrl: String
+        val buttonUrl: String,
+        val isPlaying: Boolean,
+        val showPausedForSecs: Int,
+        val canFetchArt: Boolean,
     ) : DiscordActivity
 
     data object Clear : DiscordActivity
     data object Stop : DiscordActivity
+}
+
+private enum class DiscordRpcStatus {
+    ACTIVITY_SET,
+    ACTIVITY_CLEARED,
+    ACTIVITY_STOPPED,
+    FAILED,
 }
 
 object DiscordRpc {
@@ -65,169 +82,165 @@ object DiscordRpc {
             .toRegex()
     }
 
-    private val discordActivity = MutableStateFlow<DiscordActivity>(DiscordActivity.Stop)
-
-    // null = don't clear, >0 = clear after secs
-    private val discordActivityKeepTill = MutableStateFlow<Long?>(null)
-
-    private val _wasSuccessful = MutableStateFlow<Boolean?>(null)
-    val wasSuccessFul = _wasSuccessful.asStateFlow()
-    private val retryDelay = 7.seconds
+    private val pausedHash = MutableStateFlow<Int?>(null)
+    private val lastStatus = MutableStateFlow(DiscordRpcStatus.ACTIVITY_STOPPED)
+    val wasSuccessful = lastStatus.map { it == DiscordRpcStatus.ACTIVITY_SET }
+    private val retryDelay = 10.seconds
 
     fun start() {
-        combine(discordActivity, discordActivityKeepTill) { activity, keepTill ->
-            activity to keepTill
-        }
-            .mapLatest { (activity, keepTill) ->
-                delay(
-                    if (_wasSuccessful.value != false)
-                        500.milliseconds
-                    else
-                        retryDelay
-                )
+        PanoNotifications.playingTrackTrayInfo
+            .mapLatest { events ->
+                delay(500.milliseconds)
+                events.values
+                    .filterIsInstance<PlayingTrackNotifyEvent.TrackPlaying>()
+                    .firstOrNull()
+                    ?.takeIf { it.preprocessed }
+            }
+            .combine(PlatformStuff.mainPrefs.data.map { it.discordRpc }.distinctUntilChanged()) { event, settings ->
+                when {
+                    !settings.enabled -> DiscordActivity.Stop
+                    event == null -> DiscordActivity.Clear
+                    else -> {
+                        var buttonText = "via " + BuildKonfig.APP_NAME
+                        var buttonUrl = Stuff.REPO_URL
 
-                when (activity) {
-                    is DiscordActivity.Activity -> {
-                        var success = false
-
-                        while (!success) {
-                            val now = System.currentTimeMillis()
-                            val isPlaying = keepTill == null
-
-                            val startTimeMillis = if (isPlaying || activity.durationMillis == null)
-                                activity.startTimeMillis
-                            else
-                                now - activity.durationMillis
-
-                            val startTimeSecs = startTimeMillis / 1000
-
-                            val endTimeSecs =
-                                if (activity.durationMillis != null && activity.durationMillis > 0) {
-                                    if (isPlaying)
-                                        startTimeSecs + (activity.durationMillis / 1000)
-                                    else
-                                        now / 1000
-                                } else {
-                                    0
-                                }
-
-                            success = PanoNativeComponents.updateDiscordActivity(
-                                clientId = activity.discordClientId,
-                                name = activity.name,
-                                state = activity.state,
-                                details = activity.details,
-                                largeText = activity.largeText,
-                                startTime = startTimeSecs,
-                                endTime = endTimeSecs,
-                                artUrl = activity.artUrl,
-                                detailsUrl = activity.detailsUrl,
-                                isPlaying = isPlaying,
-                                statusLine = activity.statusLine,
-                                buttonText = activity.buttonText,
-                                buttonUrl = activity.buttonUrl,
-                            )
-
-                            _wasSuccessful.value = success
-
-                            Logger.d { activity.toString() }
-
-                            if (!success) {
-                                Logger.d { "Failed to update Discord activity, retrying" }
-                                delay(10.seconds)
-                            } else {
-
-                                if (!isPlaying) {
-                                    delay((keepTill - now).milliseconds)
-                                    discordActivity.emit(DiscordActivity.Clear)
-                                }
+                        suspend fun setProfileUrlAndText(accountType: AccountType) {
+                            val profileUrl = Scrobblables.all
+                                .find { it.userAccount.type == accountType }
+                                ?.userAccount?.user?.url
+                            if (profileUrl != null) {
+                                buttonUrl = profileUrl
+                                buttonText = getString(accountTypeStringRes(accountType).first) + " " +
+                                        getString(Res.string.profile)
                             }
                         }
-                    }
 
-                    is DiscordActivity.Clear -> {
-                        PanoNativeComponents.clearDiscordActivity(false)
-                        _wasSuccessful.value = null
-                    }
-
-                    is DiscordActivity.Stop -> {
-                        PanoNativeComponents.clearDiscordActivity(true)
-                        _wasSuccessful.value = null
-                    }
-                }
-            }.launchIn(Stuff.appScope)
-
-        combine(
-            PanoNotifications.playingTrackTrayInfo.map { it.values.firstOrNull() },
-            PlatformStuff.mainPrefs.data.map { it.discordRpc }
-        ) { event, settings ->
-
-            if (!settings.enabled) {
-                discordActivity.value = DiscordActivity.Stop
-            } else if (event == null) {
-                discordActivityKeepTill.value =
-                    System.currentTimeMillis() + settings.showPausedForSecs * 1000L
-            } else {
-                discordActivityKeepTill.value = null
-
-                if (event is PlayingTrackNotifyEvent.TrackPlaying && event.preprocessed) {
-                    var buttonText = "via " + BuildKonfig.APP_NAME
-                    var buttonUrl = Stuff.REPO_URL
-
-                    suspend fun setProfileUrlAndText(accountType: AccountType) {
-                        val profileUrl = Scrobblables.all
-                            .find { it.userAccount.type == accountType }
-                            ?.userAccount?.user?.url
-
-                        if (profileUrl != null) {
-                            buttonUrl = profileUrl
-                            buttonText = getString(accountTypeStringRes(accountType).first) + " " +
-                                    getString(Res.string.profile)
-                        }
-                    }
-
-                    val buttonType =
-                        MainPrefs.DiscordRpcSettings.ButtonType.entries.find { it.name == settings.buttonType }
-                            ?: MainPrefs.DiscordRpcSettings.ButtonType.PANO_SCROBBLER
-
-
-                    when (buttonType) {
-                        MainPrefs.DiscordRpcSettings.ButtonType.NONE -> {
-                            buttonText = ""
-                            buttonUrl = ""
+                        val buttonType =
+                            MainPrefs.DiscordRpcSettings.ButtonType.entries.find { it.name == settings.buttonType }
+                                ?: MainPrefs.DiscordRpcSettings.ButtonType.PANO_SCROBBLER
+                        when (buttonType) {
+                            MainPrefs.DiscordRpcSettings.ButtonType.NONE -> {
+                                buttonText = ""
+                                buttonUrl = ""
+                            }
+                            MainPrefs.DiscordRpcSettings.ButtonType.LASTFM_PROFILE ->
+                                setProfileUrlAndText(AccountType.LASTFM)
+                            MainPrefs.DiscordRpcSettings.ButtonType.LISTENBRAINZ_PROFILE ->
+                                setProfileUrlAndText(AccountType.LISTENBRAINZ)
+                            MainPrefs.DiscordRpcSettings.ButtonType.LIBREFM_PROFILE ->
+                                setProfileUrlAndText(AccountType.LIBREFM)
+                            MainPrefs.DiscordRpcSettings.ButtonType.PANO_SCROBBLER -> Unit
                         }
 
-                        MainPrefs.DiscordRpcSettings.ButtonType.LASTFM_PROFILE -> {
-                            setProfileUrlAndText(AccountType.LASTFM)
-                        }
-
-                        MainPrefs.DiscordRpcSettings.ButtonType.LISTENBRAINZ_PROFILE -> {
-                            setProfileUrlAndText(AccountType.LISTENBRAINZ)
-                        }
-
-                        MainPrefs.DiscordRpcSettings.ButtonType.LIBREFM_PROFILE -> {
-                            setProfileUrlAndText(AccountType.LIBREFM)
-                        }
-
-                        MainPrefs.DiscordRpcSettings.ButtonType.PANO_SCROBBLER -> {
-                        }
-                    }
-
-                    discordActivity.value =
+                        pausedHash.value = null
                         transform(
-                            appId = event.scrobbleData.appId.orEmpty(),
                             appName = PlatformStuff.loadApplicationLabel(event.scrobbleData.appId.orEmpty()),
                             trackPlaying = event,
                             buttonUrl = buttonUrl,
                             buttonText = buttonText,
-                            settings = settings
+                            settings = settings,
                         )
+                    }
                 }
             }
-        }.launchIn(Stuff.appScope)
+            .scan(Pair<DiscordActivity?, DiscordActivity?>(null, null)) { previousPair, current ->
+                val previous = previousPair.first
+                val effective = when {
+                    current is DiscordActivity.Clear && previous == null -> null
+                    current is DiscordActivity.Clear &&
+                            previous is DiscordActivity.Activity &&
+                            previous.hash == pausedHash.value &&
+                            previous.showPausedForSecs > 0 ->
+                        previous.copy(isPlaying = false)
+                    else -> current
+                }
+                effective to previous
+            }
+            .map { it.first }
+            .distinctUntilChanged()
+            .mapLatest { activity ->
+                activity ?: return@mapLatest
+                var success = lastStatus.value != DiscordRpcStatus.FAILED
+                do {
+                    if (!success) delay(retryDelay)
+                    success = updateActivity(activity)
+                    lastStatus.value = when {
+                        success && activity is DiscordActivity.Activity -> DiscordRpcStatus.ACTIVITY_SET
+                        success && activity is DiscordActivity.Clear -> DiscordRpcStatus.ACTIVITY_CLEARED
+                        success && activity is DiscordActivity.Stop -> DiscordRpcStatus.ACTIVITY_STOPPED
+                        else -> DiscordRpcStatus.FAILED
+                    }
+
+                    if (activity !is DiscordActivity.Activity) break
+
+                    if (success && activity.artUrl.isEmpty() && activity.isPlaying && activity.canFetchArt)
+                        fetchArt(activity.scrobbleData, activity.hash)
+
+                    if (success && !activity.isPlaying && activity.showPausedForSecs > 0) {
+                        withTimeoutOrNull(activity.showPausedForSecs.seconds) {
+                            pausedHash.first { it != activity.hash }
+                        }
+                        success = updateActivity(DiscordActivity.Clear)
+                        lastStatus.value = if (success)
+                            DiscordRpcStatus.ACTIVITY_CLEARED
+                        else
+                            DiscordRpcStatus.FAILED
+                    }
+                } while (!success)
+            }
+            .launchIn(Stuff.appScope)
+    }
+
+    private fun updateActivity(activity: DiscordActivity): Boolean =
+        when (activity) {
+            is DiscordActivity.Activity -> {
+                val now = System.currentTimeMillis()
+                val startTimeMillis = if (activity.isPlaying || activity.durationMillis == null)
+                    activity.startTimeMillis
+                else
+                    now - activity.durationMillis
+                val startTimeSecs = startTimeMillis / 1000
+                val endTimeSecs =
+                    if (activity.durationMillis != null && activity.durationMillis > 0) {
+                        if (activity.isPlaying)
+                            startTimeSecs + activity.durationMillis / 1000
+                        else
+                            now / 1000
+                    } else {
+                        0
+                    }
+
+                PanoNativeComponents.updateDiscordActivity(
+                    clientId = activity.discordClientId,
+                    name = activity.name,
+                    state = activity.state,
+                    details = activity.details,
+                    largeText = activity.largeText,
+                    startTime = startTimeSecs,
+                    endTime = endTimeSecs,
+                    artUrl = activity.artUrl,
+                    detailsUrl = activity.detailsUrl,
+                    isPlaying = activity.isPlaying,
+                    statusLine = activity.statusLine,
+                    buttonText = activity.buttonText,
+                    buttonUrl = activity.buttonUrl,
+                )
+            }
+            DiscordActivity.Clear -> PanoNativeComponents.clearDiscordActivity(false)
+            DiscordActivity.Stop -> PanoNativeComponents.clearDiscordActivity(true)
+        }
+
+    private suspend fun fetchArt(scrobbleData: ScrobbleData, hash: Int) {
+        val additionalMetadata = ScrobbleEverywhere.fetchNowPlayingAlbumArt(scrobbleData)
+        if (additionalMetadata.shouldFetchAgain) return
+
+        notifyPlayingTrackEvent(
+            PlayingTrackNotifyEvent.ArtUrlFetched(hash, additionalMetadata.artUrl.orEmpty())
+        )
+        Logger.d { "DiscordRpc artUrl fetched: ${additionalMetadata.artUrl}" }
     }
 
     private fun transform(
-        appId: String,
         appName: String,
         trackPlaying: PlayingTrackNotifyEvent.TrackPlaying,
         buttonUrl: String,
@@ -242,7 +255,7 @@ object DiscordRpc {
         val startTimeMillis =
             trackPlaying.timelineStartTime.takeIf { it > 0 } ?: System.currentTimeMillis()
         val durationMillis = trackPlaying.scrobbleData.duration
-        val artUrl = trackPlaying.artUrl?.takeIf { settings.albumArt }.orEmpty()
+        val artUrl = trackPlaying.artUrlState.takeIf { settings.albumArt }?.url.orEmpty()
         val statusLine = settings.statusLine
         val detailsUrl = if (settings.detailsUrl)
             "https://www.last.fm/music/${trackPlaying.scrobbleData.artist.encodeURLPathPart()}/_/${trackPlaying.scrobbleData.track.encodeURLPathPart()}"
@@ -251,8 +264,8 @@ object DiscordRpc {
 
         return DiscordActivity.Activity(
             discordClientId = Stuff.DISCORD_CLIENT_ID,
-            appId = appId,
             hash = hash,
+            scrobbleData = trackPlaying.scrobbleData,
             name = name.clamp(2, 128),
             state = state.clamp(2, 128),
             details = details.clamp(2, 128),
@@ -264,19 +277,20 @@ object DiscordRpc {
             statusLine = statusLine,
             buttonText = buttonText,
             buttonUrl = buttonUrl,
+            isPlaying = true,
+            showPausedForSecs = settings.showPausedForSecs,
+            canFetchArt = settings.albumArt &&
+                    settings.albumArtFromNowPlaying &&
+                    trackPlaying.artUrlState == PlayingTrackInfo.ArtUrlState.CanFetch,
         )
     }
 
-    fun clearDiscordActivity(appId: String) {
-        if ((discordActivity.value as? DiscordActivity.Activity)?.appId == appId)
-            discordActivity.value = DiscordActivity.Clear
+    fun paused(hash: Int) {
+        pausedHash.value = hash
     }
 
-    fun clearDiscordActivity(hash: Int?) {
-        val activity = discordActivity.value as? DiscordActivity.Activity
-        if (activity != null && (hash == null || hash == activity.hash)) {
-            discordActivity.value = DiscordActivity.Clear
-        }
+    fun clearPaused(hash: Int) {
+        if (pausedHash.value == hash) pausedHash.value = null
     }
 
     private fun String.clamp(min: Int, max: Int): String {

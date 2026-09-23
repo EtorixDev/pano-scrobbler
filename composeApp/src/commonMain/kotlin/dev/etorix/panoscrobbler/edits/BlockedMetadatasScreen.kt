@@ -1,22 +1,20 @@
 package dev.etorix.panoscrobbler.edits
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,7 +25,7 @@ import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.Mic
 import dev.etorix.panoscrobbler.icons.MusicNote
 import dev.etorix.panoscrobbler.icons.SkipNext
-import dev.etorix.panoscrobbler.icons.automirrored.VolumeOff
+import dev.etorix.panoscrobbler.icons.VolumeOffAutoMirrored
 import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.panoicons.AlbumArtist
 import dev.etorix.panoscrobbler.panoicons.PanoIcons
@@ -36,6 +34,7 @@ import dev.etorix.panoscrobbler.ui.PanoLazyColumn
 import dev.etorix.panoscrobbler.ui.SearchEffect
 import dev.etorix.panoscrobbler.ui.TextWithIcon
 import dev.etorix.panoscrobbler.ui.backgroundForShimmer
+import dev.etorix.panoscrobbler.ui.myCheckableItemColors
 import dev.etorix.panoscrobbler.ui.panoContentPadding
 import dev.etorix.panoscrobbler.ui.shimmerWindowBounds
 import org.jetbrains.compose.resources.stringResource
@@ -81,13 +80,18 @@ fun BlockedMetadatasScreen(
                         albumArtist = "",
                     )
                 }
-                items(shimmerEdits) {
+                items(
+                    shimmerEdits,
+                    key = { "shimmer_$it" }
+                ) {
                     BlockedMetadataItem(
                         it,
                         forShimmer = true,
                         onEdit = {},
                         onDelete = {},
-                        modifier = Modifier.shimmerWindowBounds().animateItem()
+                        modifier = Modifier
+                            .shimmerWindowBounds()
+                            .animateItem()
                     )
                 }
             } else {
@@ -125,61 +129,73 @@ private fun BlockedMetadataItem(
         modifier = modifier
             .fillMaxWidth()
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ListItem(
+            enabled = !forShimmer,
+            onClick = onEdit,
+            verticalAlignment = Alignment.CenterVertically,
+            colors = ListItemDefaults.myCheckableItemColors(),
+            trailingContent = when (blockedMetadata.blockPlayerAction) {
+                BlockPlayerAction.skip -> {
+                    {
+                        Icon(
+                            imageVector = Icons.SkipNext,
+                            contentDescription = stringResource(Res.string.skip),
+                            tint = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
+                }
+
+                BlockPlayerAction.mute -> {
+                    {
+                        Icon(
+                            imageVector = Icons.VolumeOffAutoMirrored,
+                            contentDescription = stringResource(Res.string.mute),
+                            tint = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
+                }
+
+                else -> null
+            },
             modifier = Modifier
                 .weight(1f)
-                .defaultMinSize(minHeight = 56.dp)
-                .clip(MaterialTheme.shapes.medium)
-                .clickable(enabled = !forShimmer, onClick = onEdit)
-                .padding(8.dp)
         ) {
-            TextWithIcon(
-                text = blockedMetadata.track.ifEmpty { "*" },
-                icon = Icons.MusicNote,
-                style = MaterialTheme.typography.titleMediumEmphasized,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .backgroundForShimmer(forShimmer)
-            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                TextWithIcon(
+                    text = blockedMetadata.track.ifEmpty { "*" },
+                    icon = Icons.MusicNote,
+                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .backgroundForShimmer(forShimmer)
+                )
 
-            TextWithIcon(
-                text = blockedMetadata.artist.ifEmpty { "*" },
-                icon = Icons.Mic,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
+                TextWithIcon(
+                    text = blockedMetadata.artist.ifEmpty { "*" },
+                    icon = Icons.Mic,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                )
 
-            TextWithIcon(
-                text = blockedMetadata.album.ifEmpty { "*" },
-                icon = Icons.Album,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
+                TextWithIcon(
+                    text = blockedMetadata.album.ifEmpty { "*" },
+                    icon = Icons.Album,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                )
 
-            TextWithIcon(
-                text = blockedMetadata.albumArtist.ifEmpty { "*" },
-                icon = PanoIcons.AlbumArtist,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
-        }
-
-        if (blockedMetadata.blockPlayerAction == BlockPlayerAction.skip) {
-            Icon(
-                imageVector = Icons.SkipNext,
-                contentDescription = stringResource(Res.string.skip),
-                tint = MaterialTheme.colorScheme.secondary,
-            )
-        } else if (blockedMetadata.blockPlayerAction == BlockPlayerAction.mute) {
-            Icon(
-                imageVector = Icons.AutoMirrored.VolumeOff,
-                contentDescription = stringResource(Res.string.mute),
-                tint = MaterialTheme.colorScheme.secondary,
-            )
+                TextWithIcon(
+                    text = blockedMetadata.albumArtist.ifEmpty { "*" },
+                    icon = PanoIcons.AlbumArtist,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                )
+            }
         }
 
         EditsDeleteMenu(

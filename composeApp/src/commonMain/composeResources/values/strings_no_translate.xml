@@ -33,37 +33,34 @@
     <string name="automation_cp" translatable="false">ContentProvider URIs</string>
     <string name="discord_rich_presence" translatable="false">Discord Rich Presence</string>
     <string name="log_to_file" translatable="false">Persist scrobble logs</string>
-    <string name="affect_performance">Will affect performance</string>
     <string name="proxy_socks5" translatable="false">SOCKS5</string>
     <string name="proxy_http" translatable="false">HTTP</string>
     <string name="desktop" translatable="false">Windows &amp; Linux</string>
     <string name="android" translatable="false">Android</string>
     <string name="persistent_noti_oems" translatable="false">Xiaomi, Samsung, Huawei</string>
     <string name="ambient_apps" translatable="false">Shazam, Audile, Ambient Music Mod</string>
-    <string name="experimental" translatable="false">(Experimental)</string>
+
+    <string name="experimental" translatable="false">Experimental options</string>
 
     <!--  strings for unfinalized stuff  -->
 
-    <string name="blur_notice" comment="blur effect in theme">Needs Windows 11, KDE or Android 12+ on supported hardware</string>
+    <string name="alpha_notice" comment="transparency and blur effect in theme">Looks best with higher contrast and blur.</string>
+    <string name="blur_notice" comment="transparency and blur effect in theme">Blur needs Windows 11, KDE or Android 12+ on supported hardware</string>
     <string name="blur" comment="blur effect in theme">Blur</string>
     <string name="blur_main_window" comment="os level blur effect behind the main window">Cross-app</string>
     <string name="blur_sub_window" comment="blur effect within the app">In-app</string>
-    <string name="pause_for" comment="Pause scrobbling for a some time">Pause for</string>
-    <string name="button_url" comment="used for the button in discord rich presence">Button URL</string>
-    <string name="minimize">Minimize</string>
-    <string name="websites">Websites</string>
-    <string name="websites_desc">Applies to all enabled media players that report the page URL via MPRIS.</string>
-    <string name="forget_checked_websites">Forget checked websites</string>
-    <string name="last_error">Last error</string>
-    <string name="rate_limit_warn">Submitting too many scrobbles in a day may cause the scrobbling service to reject them, increasing your backlog.</string>
-    <string name="unsupported_api">This API may not be supported by the server. View on web.</string>
+    <string name="minimize" comment="minimize the window on desktop">Minimize</string>
+    <string name="palette_tonal_spot">Pastel</string>
+    <string name="palette_expressive">Bold</string>
+    <string name="palette_vibrant">Vibrant</string>
+    <string name="palette_cmf">Cmf</string>
+    <string name="linux_install_icons">Install icons</string>
     <string name="exit_reasons">Exit reasons</string>
-    <string name="pref_use_track_progress" translatable="false">Use track progress</string>
-    <string name="pref_use_track_progress_desc" translatable="false">…instead of time since tracking started, if available</string>
-    <string name="pref_sync_edits_across_services" translatable="false">Sync edits across services</string>
-
     <string name="scrobble_sources">Scrobble sources</string>
     <string name="stop">Stop</string>
+    <string name="persistent_noti_hide">You can hide it from system notification settings</string>
+    <string name="no_wiki" comment="artist/album/track wiki does not exist">No wiki</string>
+    <string name="wiki_lang_selector" comment="artist/album/track wiki">Last.fm wiki languages</string>
     <string name="notification_access_tv">This setting is usually at Apps > Special app access > Notification access</string>
 
     <string name="automation_cp_info">For Tasker, use Action > SQL Query. Set the mode to "URI Formatted", put any name in "Variable Array" and URI to one of these.</string>
@@ -81,4 +78,8 @@
     <string name="demo_mode" translatable="false">Demo mode</string>
     <string name="copy_sk" translatable="false">Copy last.fm session key</string>
     <string name="delete_receipt" translatable="false">Delete receipt</string>
+
+    <string name="pref_use_track_progress" translatable="false">Use track progress</string>
+    <string name="pref_use_track_progress_desc" translatable="false">…instead of time since tracking started, if available</string>
+    <string name="pref_sync_edits_across_services" translatable="false">Sync edits across services</string>
 </resources>

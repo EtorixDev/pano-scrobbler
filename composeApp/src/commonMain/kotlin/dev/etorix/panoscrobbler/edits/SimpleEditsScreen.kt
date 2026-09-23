@@ -1,12 +1,14 @@
 package dev.etorix.panoscrobbler.edits
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.input.TextFieldState
@@ -17,17 +19,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.etorix.panoscrobbler.db.SimpleEdit
 import dev.etorix.panoscrobbler.icons.Album
+import dev.etorix.panoscrobbler.icons.ArrowRightAutoMirrored
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.Mic
 import dev.etorix.panoscrobbler.icons.MusicNote
 import dev.etorix.panoscrobbler.icons.Stop
-import dev.etorix.panoscrobbler.icons.automirrored.ArrowRight
 import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.panoicons.AlbumArtist
 import dev.etorix.panoscrobbler.panoicons.PanoIcons
@@ -37,6 +38,7 @@ import dev.etorix.panoscrobbler.ui.SearchEffect
 import dev.etorix.panoscrobbler.ui.TextWithIcon
 import dev.etorix.panoscrobbler.ui.backgroundForShimmer
 import dev.etorix.panoscrobbler.ui.panoContentPadding
+import dev.etorix.panoscrobbler.ui.shapedClickable
 import dev.etorix.panoscrobbler.ui.shimmerWindowBounds
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
@@ -83,13 +85,16 @@ fun SimpleEditsScreen(
                 }
                 items(
                     shimmerEdits,
+                    key = { "shimmer_$it" }
                 ) { edit ->
                     SimpleEditItem(
                         edit,
                         forShimmer = true,
                         onEdit = {},
                         onDelete = {},
-                        modifier = Modifier.shimmerWindowBounds().animateItem()
+                        modifier = Modifier
+                            .shimmerWindowBounds()
+                            .animateItem()
                     )
                 }
             } else {
@@ -125,24 +130,17 @@ private fun SimpleEditItem(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
+            .height(IntrinsicSize.Max)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .clip(MaterialTheme.shapes.medium)
-                .clickable(enabled = !forShimmer) { onEdit(edit) }
+                .shapedClickable(clickableAdded = !forShimmer) { onEdit(edit) }
                 .padding(8.dp)
                 .backgroundForShimmer(forShimmer)
         ) {
-            if (!edit.continueMatching)
-                Icon(
-                    imageVector = Icons.Stop,
-                    contentDescription = stringResource(Res.string.stop),
-                )
-
             Column(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
                 modifier = Modifier.weight(1f)
@@ -170,9 +168,11 @@ private fun SimpleEditItem(
             }
 
             Icon(
-                imageVector = Icons.AutoMirrored.ArrowRight,
+                imageVector = Icons.ArrowRightAutoMirrored,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.secondary
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
             )
 
             Column(
@@ -202,10 +202,25 @@ private fun SimpleEditItem(
             }
         }
 
-        EditsDeleteMenu(
-            onDelete = { onDelete(edit) },
-            enabled = !forShimmer
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+        ) {
+            if (!edit.continueMatching)
+                Icon(
+                    imageVector = Icons.Stop,
+                    contentDescription = stringResource(Res.string.stop),
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                )
 
+            EditsDeleteMenu(
+                onDelete = { onDelete(edit) },
+                enabled = !forShimmer,
+                modifier = Modifier
+                    .align(Alignment.Center)
+            )
+        }
     }
 }

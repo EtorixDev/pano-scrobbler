@@ -25,8 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.etorix.panoscrobbler.navigation.enumSaver
-import dev.etorix.panoscrobbler.ui.ButtonWithSpinner
+import dev.etorix.panoscrobbler.ui.ButtonWithDropdown
 import dev.etorix.panoscrobbler.ui.ErrorText
 import dev.etorix.panoscrobbler.ui.FilePicker
 import dev.etorix.panoscrobbler.ui.FilePickerMode
@@ -160,7 +159,7 @@ fun ImportScreen(
                 )
 
                 if (canStartServer && serverAddress != null) {
-                    ButtonWithSpinner(
+                    ButtonWithDropdown(
                         prefixText = "IP",
                         itemToTexts = remember {
                             viewModel.localIps.associateWith { it }
@@ -183,7 +182,7 @@ fun ImportScreen(
             var userImportTypes by remember(availableImportTypes) {
                 mutableStateOf(availableImportTypes ?: emptySet())
             }
-            var selectedWriteMode by rememberSaveable(saver = enumSaver()) {
+            var selectedWriteMode by rememberSaveable {
                 mutableStateOf(
                     ImExporter.WriteMode.keep_existing
                 )
@@ -248,7 +247,7 @@ fun ImportScreen(
                     ImExporter.ImportTypes.blocked_metadata in userImportTypes ||
                     ImExporter.ImportTypes.artists_with_delimiters in userImportTypes
                 ) {
-                    ButtonWithSpinner(
+                    ButtonWithDropdown(
                         prefixText = null,
                         itemToTexts = writeModesMap,
                         selected = selectedWriteMode,

@@ -1,33 +1,35 @@
 package dev.etorix.panoscrobbler.themes
 
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalRippleThemeConfiguration
 import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.RippleThemeConfiguration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.State
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.unit.dp
 import dev.etorix.panoscrobbler.pref.MainPrefs
-import dev.etorix.panoscrobbler.themes.colors.ThemeVariants
 import dev.etorix.panoscrobbler.ui.getActivityOrNull
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
-import kotlin.math.abs
-import kotlin.random.Random
-
-private val randomNumberForProcess = abs(Random.nextInt())
 
 data class ThemePreviewSettings(
-    val themeName: String,
+    val themeHue: Float,
+    val themeStyle: PaletteStyle,
     val dynamic: Boolean,
     val random: Boolean,
     val dayNightMode: DayNightMode,
     val contrastMode: ContrastMode,
     val alpha: Float,
+    val blurMainWindow: Boolean,
+    val blurSubWindow: Boolean,
 )
 
 object ThemePreviewController {
@@ -35,9 +37,8 @@ object ThemePreviewController {
         private set
 
     fun startPreview(settings: ThemePreviewSettings) {
-        if (previewSettings == null) {
+        if (previewSettings == null)
             previewSettings = settings
-        }
     }
 
     fun updatePreview(settings: ThemePreviewSettings) {
@@ -55,9 +56,15 @@ fun AppTheme(
     content: @Composable () -> Unit,
 ) {
     val prefsVersion by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.version }
-    val themeName by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeName }
+    val themeHue by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue {
+        it.themeHueP
+    }
+    val themeStyle by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { p ->
+        PaletteStyle.entries.find { it.name == p.themeStyle } ?: ThemeUtils.defaultThemeStyle
+    }
     val dynamic by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeDynamic }
     val random by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeRandom }
+    val randomHue by remember { ThemeUtils.randomHueForProcess }
     val dayNightMode by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeDayNight }
     val contrastMode by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.themeContrast }
     val blurMainWindowPref by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue {
@@ -67,13 +74,6 @@ fun AppTheme(
     val blurSubWindowPref by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue {
         it.themeBlurSubWindow
     }
-    val blurMainWindow by remember(blurMainWindowPref, osWindowBlur) {
-        mutableStateOf(PlatformStuff.supportsBlur && blurMainWindowPref && osWindowBlur)
-    }
-
-    val blurSubWindow by remember(blurSubWindowPref, osWindowBlur) {
-        mutableStateOf(PlatformStuff.supportsBlur && blurSubWindowPref && osWindowBlur)
-    }
 
     val alpha by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue {
         if (PlatformStuff.isTv)
@@ -81,16 +81,21 @@ fun AppTheme(
         else
             it.themeAlpha.coerceIn(MainPrefs.PREF_MIN_ALPHA, 1f)
     }
+
     val isSystemInDarkTheme by isSystemInDarkThemeNative()
     val activity = getActivityOrNull()
     val previewSettings = ThemePreviewController.previewSettings
-
-    val activeThemeName = previewSettings?.themeName ?: themeName
+    val activeThemeHue = previewSettings?.themeHue ?: themeHue
+    val activeThemeStyle = previewSettings?.themeStyle ?: themeStyle
     val activeDynamic = previewSettings?.dynamic ?: dynamic
     val activeRandom = previewSettings?.random ?: random
     val activeDayNightMode = previewSettings?.dayNightMode ?: dayNightMode
     val activeContrastMode = previewSettings?.contrastMode ?: contrastMode
     val activeAlpha = previewSettings?.alpha ?: alpha
+    val activeBlurMainWindow = previewSettings?.blurMainWindow ?: blurMainWindowPref
+    val activeBlurSubWindow = previewSettings?.blurSubWindow ?: blurSubWindowPref
+    val blurMainWindow = PlatformStuff.supportsBlur && activeBlurMainWindow && osWindowBlur
+    val blurSubWindow = PlatformStuff.supportsBlur && activeBlurSubWindow && osWindowBlur
 
     if (prefsVersion == 0)
         return
@@ -107,18 +112,20 @@ fun AppTheme(
     val themeAttributes = remember(
         isDark,
         activeContrastMode,
-        activeThemeName,
+        activeThemeHue,
+        activeThemeStyle,
         activeAlpha,
         blurMainWindow,
-        blurSubWindow,
+        blurSubWindow
     ) {
-        val otherColorSchemes = ThemeUtils.themesMap.values
-            .filter { it.name != activeThemeName }
+        val avatarColors = ThemeUtils.themeHues
+            .filter { it != activeThemeHue }
             .map {
-                getColorScheme(
-                    theme = it,
+                ThemeUtils.avatarColors(
+                    seedColor = ThemeUtils.getThemeColor(it),
+                    style = activeThemeStyle,
                     isDark = isDark,
-                    contrastMode = activeContrastMode,
+                    contrastMode = activeContrastMode
                 )
             }
 
@@ -128,34 +135,63 @@ fun AppTheme(
             blurMainWindow = blurMainWindow,
             blurSubWindow = blurSubWindow,
             contrastMode = activeContrastMode,
-            allOnSecondaryContainerColors = otherColorSchemes.map { it.onSecondaryContainer },
-            allSecondaryContainerColors = otherColorSchemes.map { it.secondaryContainer },
+            style = activeThemeStyle,
+            avatarContainerColors = avatarColors.map { it.first },
+            avatarColors = avatarColors.map { it.second },
         )
     }
 
     val colorScheme: ColorScheme = when {
         activeDynamic && PlatformStuff.supportsDynamicColors -> {
-            getDynamicColorScheme(isDark).withAlpha(activeAlpha, blurSubWindow)
+            remember(isDark, activeAlpha, blurSubWindow) {
+                getDynamicColorScheme(activity, isDark)
+                    .withAlpha(activeAlpha, blurSubWindow)
+            }
         }
 
         else -> {
-            val theme = if (activeRandom)
-                ThemeUtils.themesMap.values.toList()[randomNumberForProcess % ThemeUtils.themesMap.size]
-            else
-                ThemeUtils.themeNameToObject(activeThemeName)
+            remember(
+                activeContrastMode,
+                activeThemeHue,
+                activeThemeStyle,
+                isDark,
+                activeRandom,
+                randomHue,
+                activeAlpha,
+                blurSubWindow
+            ) {
+                val hue = if (activeRandom)
+                    randomHue
+                else
+                    activeThemeHue
 
-            getColorScheme(
-                theme = theme,
-                isDark = isDark,
-                contrastMode = activeContrastMode,
-            ).withAlpha(activeAlpha, blurSubWindow)
+                ThemeUtils.materialColorScheme(
+                    seedColor = ThemeUtils.getThemeColor(hue),
+                    isDark = isDark,
+                    style = activeThemeStyle,
+                    contrastMode = activeContrastMode,
+                ).withAlpha(activeAlpha, blurSubWindow)
+            }
         }
     }
+
 
     MaterialExpressiveTheme(
         colorScheme = colorScheme,
     ) {
+        val rippleConfig = remember {
+            RippleThemeConfiguration(
+                focus = RippleThemeConfiguration.Focus.InsetRing(
+                    outerStrokeInset = 0.dp,
+                    outerStrokeWidth = 3.dp, // default is 2.dp — bumped for visibility on TV
+                    innerStrokeInset = 1.dp,
+                    innerStrokeWidth = 4.dp, // default is 3.dp
+                )
+            )
+        }
+
         CompositionLocalProvider(
+            LocalRippleThemeConfiguration provides rippleConfig,
             LocalThemeAttributes provides themeAttributes,
         ) {
             AddAdditionalProviders {
@@ -165,41 +201,28 @@ fun AppTheme(
     }
 }
 
-private fun getColorScheme(
-    theme: ThemeVariants,
-    isDark: Boolean,
-    contrastMode: ContrastMode,
-): ColorScheme {
-    return when {
-        isDark && contrastMode == ContrastMode.LOW -> theme.dark
-        isDark && contrastMode == ContrastMode.MEDIUM -> theme.darkMediumContrast
-        isDark && contrastMode == ContrastMode.HIGH -> theme.darkHighContrast
-
-        !isDark && contrastMode == ContrastMode.LOW -> theme.light
-        !isDark && contrastMode == ContrastMode.MEDIUM -> theme.lightMediumContrast
-        !isDark && contrastMode == ContrastMode.HIGH -> theme.lightHighContrast
-
-        else -> theme.dark
-    }
-}
-
-// Alpha is intentionally constrained by callers to the range 0.5f..1f.
 private fun ColorScheme.withAlpha(alpha: Float, hasBlur: Boolean): ColorScheme {
-    fun boostAlpha(value: Float, boost: Float) = value + (1f - value) * boost
+    fun boostAlpha(alpha: Float, boost: Float) = alpha + (1f - alpha) * boost
 
     if (alpha == 1f && !hasBlur) return this
 
     val midAlpha = boostAlpha(alpha.coerceIn(0.5f, 1f), 0.6f)
     val highAlpha = boostAlpha(alpha.coerceIn(0.5f, 1f), 0.8f)
+
     return copy(
         background = background.copy(alpha = alpha),
         surface = surface.copy(alpha = alpha),
         surfaceContainerLow = surfaceContainerLow.copy(alpha = if (hasBlur) midAlpha else highAlpha),
         surfaceContainerHigh = surfaceContainerHigh.copy(alpha = if (hasBlur) midAlpha else highAlpha),
-        surfaceContainer = surfaceContainer.copy(alpha = highAlpha),
-        secondaryContainer = secondaryContainer.copy(alpha = highAlpha),
-        tertiaryContainer = tertiaryContainer.copy(alpha = highAlpha),
-        inverseSurface = inverseSurface.copy(alpha = highAlpha),
+        surfaceContainerHighest = surfaceContainerHighest.copy(alpha = if (hasBlur) midAlpha else highAlpha),
+        surfaceContainer = surfaceContainer.copy(alpha = if (hasBlur) midAlpha else highAlpha),
+        outlineVariant = if (alpha < 1f)
+            lerp(outlineVariant, outline, alpha.coerceAtLeast(0.65f)) // fix for bad contrast
+        else
+            outlineVariant,
+//        secondaryContainer = secondaryContainer.copy(alpha = highAlpha),
+//        tertiaryContainer = tertiaryContainer.copy(alpha = highAlpha),
+//        inverseSurface = inverseSurface.copy(alpha = highAlpha),
     )
 }
 
@@ -213,8 +236,7 @@ fun AppPreviewTheme(content: @Composable () -> Unit) {
 @Composable
 expect fun isSystemInDarkThemeNative(): State<Boolean>
 
-@Composable
-expect fun getDynamicColorScheme(dark: Boolean): ColorScheme
+expect fun getDynamicColorScheme(context: Any?, dark: Boolean): ColorScheme
 
 @Composable
 expect fun AddAdditionalProviders(content: @Composable () -> Unit)

@@ -27,15 +27,14 @@ import dev.etorix.panoscrobbler.db.PanoDb
 import dev.etorix.panoscrobbler.icons.Block
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.SkipNext
-import dev.etorix.panoscrobbler.icons.automirrored.VolumeOff
+import dev.etorix.panoscrobbler.icons.VolumeOffAutoMirrored
 import dev.etorix.panoscrobbler.media.PlayingTrackNotifyEvent
 import dev.etorix.panoscrobbler.media.notifyPlayingTrackEvent
-import dev.etorix.panoscrobbler.navigation.enumSaver
 import dev.etorix.panoscrobbler.ui.ErrorText
 import dev.etorix.panoscrobbler.ui.InlineCheckButton
 import dev.etorix.panoscrobbler.ui.LabeledCheckbox
-import dev.etorix.panoscrobbler.ui.OutlinedToggleButtons
 import dev.etorix.panoscrobbler.ui.PanoOutlinedTextField
+import dev.etorix.panoscrobbler.ui.PanoToggleButtonGroup
 import dev.etorix.panoscrobbler.ui.PanoToggleButtonsMode
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import kotlinx.coroutines.Dispatchers
@@ -80,7 +79,7 @@ private fun BlockedMetadataAddContent(
     var hasTrack by rememberSaveable(blockedMetadata) {
         mutableStateOf(blockedMetadata?.track?.isNotEmpty() ?: true)
     }
-    var blockPlayerAction by rememberSaveable(blockedMetadata, saver = enumSaver()) {
+    var blockPlayerAction by rememberSaveable(blockedMetadata) {
         mutableStateOf(
             blockedMetadata?.blockPlayerAction ?: BlockPlayerAction.ignore
         )
@@ -250,7 +249,7 @@ fun ColumnScope.BlockPlayerActions(
         color = MaterialTheme.colorScheme.secondary,
     )
 
-    OutlinedToggleButtons(
+    PanoToggleButtonGroup(
         texts = listOf(
             stringResource(Res.string.skip),
             stringResource(Res.string.mute),
@@ -258,7 +257,7 @@ fun ColumnScope.BlockPlayerActions(
         ),
         icons = listOf(
             Icons.SkipNext,
-            Icons.AutoMirrored.VolumeOff,
+            Icons.VolumeOffAutoMirrored,
             Icons.Block,
         ),
         onSelected = { idx ->

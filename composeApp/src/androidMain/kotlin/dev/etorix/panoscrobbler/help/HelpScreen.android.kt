@@ -1,9 +1,7 @@
 package dev.etorix.panoscrobbler.help
 
 import android.os.Build
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.SplitButtonDefaults
 import androidx.compose.material3.SplitButtonLayout
 import androidx.compose.material3.Text
@@ -14,9 +12,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import dev.etorix.panoscrobbler.icons.Check
+import dev.etorix.panoscrobbler.icons.ArrowDropDown
 import dev.etorix.panoscrobbler.icons.Icons
-import dev.etorix.panoscrobbler.icons.KeyboardArrowDown
 import dev.etorix.panoscrobbler.ui.AlertDialogOk
 import dev.etorix.panoscrobbler.ui.PanoDropdownMenu
 import dev.etorix.panoscrobbler.utils.AndroidStuff
@@ -24,7 +21,6 @@ import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
-import pano_scrobbler.composeapp.generated.resources.affect_performance
 import pano_scrobbler.composeapp.generated.resources.copy
 import pano_scrobbler.composeapp.generated.resources.exit_reasons
 import pano_scrobbler.composeapp.generated.resources.log_to_file
@@ -66,21 +62,10 @@ actual fun HelpSaveLogsButton(
                     expanded = menuShown,
                     onDismissRequest = { menuShown = false },
                 ) {
-                    DropdownMenuItem(
-                        checkedLeadingIcon = {
-                            Icon(
-                                imageVector = Icons.Check,
-                                contentDescription = null,
-                            )
-                        },
+                    checkableItem(
                         text = {
-                            Text(
-                                stringResource(Res.string.log_to_file) + "\n" +
-                                        "(" + stringResource(Res.string.affect_performance) + ")"
-
-                            )
+                            Text(stringResource(Res.string.log_to_file))
                         },
-                        shapes = MenuDefaults.itemShapes(),
                         checked = logToFile,
                         onCheckedChange = {
                             newCheckedState = it
@@ -88,7 +73,7 @@ actual fun HelpSaveLogsButton(
                     )
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        DropdownMenuItem(
+                        item(
                             text = {
                                 Text(stringResource(Res.string.exit_reasons))
                             },
@@ -109,7 +94,7 @@ actual fun HelpSaveLogsButton(
                 checked = menuShown,
             ) {
                 Icon(
-                    imageVector = Icons.KeyboardArrowDown,
+                    imageVector = Icons.ArrowDropDown,
                     contentDescription = stringResource(Res.string.more),
                 )
             }

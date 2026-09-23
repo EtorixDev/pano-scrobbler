@@ -2,13 +2,12 @@ package dev.etorix.panoscrobbler.edits
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedIconToggleButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,7 +24,6 @@ import dev.etorix.panoscrobbler.icons.MoreVert
 import dev.etorix.panoscrobbler.pref.AppItem
 import dev.etorix.panoscrobbler.ui.AppIcon
 import dev.etorix.panoscrobbler.ui.PanoDropdownMenu
-import dev.etorix.panoscrobbler.ui.myIconButtonColors
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.close
@@ -73,23 +71,22 @@ fun EditsDeleteMenu(
 ) {
     var deleteMenuShown by remember { mutableStateOf(false) }
 
-    IconToggleButton(
+    OutlinedIconToggleButton(
         enabled = enabled,
         modifier = modifier,
         checked = deleteMenuShown,
         onCheckedChange = {
             deleteMenuShown = it
         },
+        border = null,
         shapes = IconButtonDefaults.toggleableShapes(),
-        colors = IconButtonDefaults.myIconButtonColors()
-
     ) {
         Icon(Icons.MoreVert, contentDescription = stringResource(Res.string.more))
         PanoDropdownMenu(
             expanded = deleteMenuShown,
             onDismissRequest = { deleteMenuShown = false }
         ) {
-            DropdownMenuItem(
+            item(
                 text = {
                     Text(
                         stringResource(Res.string.delete),

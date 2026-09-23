@@ -19,7 +19,6 @@ import dev.etorix.panoscrobbler.edits.RegexPreset
 import dev.etorix.panoscrobbler.edits.RegexPresets
 import dev.etorix.panoscrobbler.edits.TitleParseException
 import dev.etorix.panoscrobbler.imageloader.StarMapper
-import dev.etorix.panoscrobbler.media.ScrobbleQueue
 import dev.etorix.panoscrobbler.utils.FirstArtistExtractor
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
@@ -28,6 +27,8 @@ import dev.etorix.panoscrobbler.work.PendingScrobblesWork
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.time.Duration.Companion.seconds
 
 
@@ -54,19 +55,33 @@ data class AdditionalMetadataResult(
             scrobbleData = null,
             artUrl = null,
         )
+        val FetchAgain = AdditionalMetadataResult(
+            scrobbleData = null,
+            artUrl = null,
+            shouldFetchAgain = true,
+        )
     }
-}
-
-enum class AdditionalMetadataType {
-    ART_URL,
-    MISSING_METADATA,
-    ALBUM_GUESS
 }
 
 object ScrobbleEverywhere {
     private val deezerTracksCache = LruCache<String, DeezerTrack>(50)
     private val lastfmAlbumsCache = LruCache<String, Album>(50)
     private var artistWithDelimitersMaxId: Int? = null
+    private val fetchAdditionalMetadataTimestamps = ArrayDeque<Long>()
+    private val fetchAdditionalMetadataMutex = Mutex()
+
+    private suspend fun throttledRequest(): Boolean = fetchAdditionalMetadataMutex.withLock {
+        val now = System.currentTimeMillis()
+        while (now - (fetchAdditionalMetadataTimestamps.firstOrNull() ?: now) > 60_000L) {
+            fetchAdditionalMetadataTimestamps.removeFirst()
+        }
+        if (fetchAdditionalMetadataTimestamps.size >= 2) {
+            false
+        } else {
+            fetchAdditionalMetadataTimestamps.addLast(now)
+            true
+        }
+    }
 
     private suspend fun performEditsAndBlocks(
         scrobbleData: ScrobbleData,
@@ -224,103 +239,24 @@ object ScrobbleEverywhere {
             preprocessResult2
     }
 
-    suspend fun fetchAdditionalMetadata(
+    suspend fun fetchMissingMetadata(
         scrobbleData: ScrobbleData,
-        type: AdditionalMetadataType,
-        onNetworkRequestMade: suspend () -> Unit,
+        canRequest: suspend () -> Boolean = ::throttledRequest,
     ): AdditionalMetadataResult {
-        try {
-            when {
-                /*
-                fetchMissingMetadata && (
-                        scrobbleData.appId == Stuff.PACKAGE_APPLE_MUSIC ||
-                                scrobbleData.appId?.lowercase() == Stuff.PACKAGE_APPLE_MUSIC_WIN_STORE.lowercase() ||
-                                scrobbleData.appId == Stuff.PACKAGE_APPLE_MUSIC_WIN_EXE ||
-                                scrobbleData.appId == Stuff.PACKAGE_CIDER_LINUX ||
-                                scrobbleData.appId == Stuff.PACKAGE_CIDER_VARIANT_LINUX)
-                    -> {
-                    fetchFromItunes(
-                        scrobbleData,
-                        trackId
-                            ?.removePrefix("/org/node/mediaplayer/cider/track/")
-                            ?.toLongOrNull(),
-                        cacheOnly,
-                    )?.let {
-                        newScrobbleData = it
-                    }
-                }
+        if (PlatformStuff.mainPrefs.data.map { it.deezerApi }.first() && (
+                scrobbleData.appId == Stuff.PACKAGE_DEEZER_WIN ||
+                        scrobbleData.appId == Stuff.PACKAGE_DEEZER_WIN_EXE ||
+                        scrobbleData.appId.equals(Stuff.PACKAGE_DEEZER_WIN_STORE, ignoreCase = true)
+                )) {
+            return fetchFromDeezer(scrobbleData, canRequest)
+        }
 
-                fetchMissingMetadata && scrobbleData.appId == Stuff.PACKAGE_SPOTIFY -> {
-                    fetchFromSpotify(
-                        scrobbleData,
-                        trackId
-                            ?.takeIf { it.startsWith("spotify:track:") }
-                            ?.removePrefix("spotify:track:"),
-                        cacheOnly
-                    )?.let {
-                        newScrobbleData = it
-                    }
-                }
-                 */
-
-                type == AdditionalMetadataType.ART_URL && !scrobbleData.album.isNullOrEmpty()
-                    -> {
-                    return fetchNowPlayingAlbumArt(scrobbleData, onNetworkRequestMade)
-                }
-
-                type == AdditionalMetadataType.MISSING_METADATA &&
-                        PlatformStuff.mainPrefs.data.map { it.deezerApi }.first() && (
-                        scrobbleData.appId == Stuff.PACKAGE_DEEZER_WIN ||
-                                scrobbleData.appId == Stuff.PACKAGE_DEEZER_WIN_EXE ||
-                                scrobbleData.appId.equals(
-                                    Stuff.PACKAGE_DEEZER_WIN_STORE,
-                                    ignoreCase = true
-                                )
-                        ) -> {
-                    return fetchFromDeezer(
-                        scrobbleData,
-                        onNetworkRequestMade
-                    )
-                }
-
-                type == AdditionalMetadataType.MISSING_METADATA &&
-                        PlatformStuff.mainPrefs.data.map { it.tidalSteelSeriesApi }.first() && (
-                        scrobbleData.appId == Stuff.PACKAGE_TIDAL_WIN ||
-                                scrobbleData.appId == Stuff.PACKAGE_TIDAL_WIN_EXE ||
-                                scrobbleData.appId.equals(
-                                    Stuff.PACKAGE_TIDAL_WIN_STORE,
-                                    ignoreCase = true
-                                )
-                        ) -> {
-
-                    return SteelSeriesReceiverServer.getAdditionalData(scrobbleData)
-                }
-
-                type == AdditionalMetadataType.ALBUM_GUESS &&
-                        PlatformStuff.mainPrefs.data.map { it.fetchAlbum }.first() &&
-                        scrobbleData.album.isNullOrEmpty() -> {
-                    val album = PanoDb.db.getSeenEntitiesDao().getBestAlbumsForTrack(
-                        scrobbleData.artist,
-                        scrobbleData.track
-                    ).firstOrNull()
-
-                    if (album != null) {
-                        val sd = scrobbleData.copy(
-                            album = album.album,
-                        )
-
-                        return AdditionalMetadataResult(
-                            scrobbleData = sd,
-                            artUrl = album.artUrl,
-                        )
-                    }
-
-                    return fetchLastfmTrack(scrobbleData, onNetworkRequestMade)
-                }
-            }
-        } catch (e: ScrobbleQueue.NetworkRequestNeededException) {
-            Logger.d { "Network request needed to fetch additional metadata" }
-            return AdditionalMetadataResult.Empty.copy(shouldFetchAgain = true)
+        if (PlatformStuff.mainPrefs.data.map { it.tidalSteelSeriesApi }.first() && (
+                scrobbleData.appId == Stuff.PACKAGE_TIDAL_WIN ||
+                        scrobbleData.appId == Stuff.PACKAGE_TIDAL_WIN_EXE ||
+                        scrobbleData.appId.equals(Stuff.PACKAGE_TIDAL_WIN_STORE, ignoreCase = true)
+                )) {
+            return SteelSeriesReceiverServer.getAdditionalData(scrobbleData)
         }
 
         return AdditionalMetadataResult.Empty
@@ -449,17 +385,33 @@ object ScrobbleEverywhere {
         return "${one.lowercase()}||${two.lowercase()}"
     }
 
-    private suspend fun fetchLastfmTrack(
+    suspend fun guessAlbumFromCacheLastfm(
         scrobbleData: ScrobbleData,
-        onNetworkRequestMade: suspend () -> Unit,
+        canRequest: suspend () -> Boolean = ::throttledRequest,
     ): AdditionalMetadataResult {
+        if (!scrobbleData.album.isNullOrEmpty() ||
+            !PlatformStuff.mainPrefs.data.map { it.fetchAlbum }.first()) {
+            return AdditionalMetadataResult.Empty
+        }
+
+        val album = PanoDb.db.getSeenEntitiesDao().getBestAlbumsForTrack(
+            scrobbleData.artist,
+            scrobbleData.track,
+        ).firstOrNull()
+        if (album != null) {
+            return AdditionalMetadataResult(
+                scrobbleData = scrobbleData.copy(album = album.album),
+                artUrl = album.artUrl,
+            )
+        }
+
         val artist = scrobbleData.artist
         val title = scrobbleData.track
 
         var fetchedTrack: Track? = null
 
         val trackObj = Track(title, null, Artist(artist))
-        onNetworkRequestMade()
+        if (!canRequest()) return AdditionalMetadataResult.FetchAgain
         Requesters.lastfmUnauthedRequester.getTrackInfo2(trackObj)
             .onSuccess {
                 fetchedTrack = it
@@ -511,18 +463,20 @@ object ScrobbleEverywhere {
         )
     }
 
-    private suspend fun fetchNowPlayingAlbumArt(
+    suspend fun fetchNowPlayingAlbumArt(
         scrobbleData: ScrobbleData,
-        onNetworkRequestMade: suspend () -> Unit,
+        canRequest: suspend () -> Boolean = ::throttledRequest,
     ): AdditionalMetadataResult {
+        if (scrobbleData.album.isNullOrEmpty()) return AdditionalMetadataResult.Empty
+
         val cacheKeyAlbum = createCacheKey(
             scrobbleData.artist,
-            scrobbleData.album ?: return AdditionalMetadataResult.Empty
+            scrobbleData.album,
         )
 
         val album =
             lastfmAlbumsCache[cacheKeyAlbum] ?: scrobbleData.albumArtist?.let { albumArtist ->
-                lastfmAlbumsCache[createCacheKey(scrobbleData.album, albumArtist)]
+                lastfmAlbumsCache[createCacheKey(albumArtist, scrobbleData.album)]
             }
 
         if (album != null) {
@@ -553,7 +507,7 @@ object ScrobbleEverywhere {
         if (PlatformStuff.mainPrefs.data.map { it.submitNowPlaying }.first()) {
             Scrobblables.all.firstOrNull { it.userAccount.type == AccountType.LASTFM }
                 ?.also {
-                    onNetworkRequestMade()
+                    if (!canRequest()) return AdditionalMetadataResult.FetchAgain
                     delay(1.seconds) // wait a bit to let lastfm update now playing
                 }
                 ?.getRecents(1, includeNowPlaying = true, limit = 1)
@@ -577,13 +531,13 @@ object ScrobbleEverywhere {
 
     private suspend fun fetchFromDeezer(
         scrobbleData: ScrobbleData,
-        onNetworkRequestMade: suspend () -> Unit,
+        canRequest: suspend () -> Boolean,
     ): AdditionalMetadataResult {
         val cacheKey = createCacheKey(scrobbleData.artist, scrobbleData.track)
         var track = deezerTracksCache[cacheKey]
 
         if (track == null) {
-            onNetworkRequestMade()
+            if (!canRequest()) return AdditionalMetadataResult.FetchAgain
             Requesters.deezerRequester.searchTrack(
                 scrobbleData.artist,
                 scrobbleData.track,

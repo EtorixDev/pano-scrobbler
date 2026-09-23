@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.time.Instant
@@ -90,7 +91,7 @@ class NLService : NotificationListenerService() {
 
     private fun init() {
         coroutineScope.launch {
-            PlatformStuff.mainPrefs.data.map { it.logToFileOnAndroid }.collect {
+            PlatformStuff.mainPrefs.data.map { it.logToFileOnAndroid }.distinctUntilChanged().collect {
                 Logger.config.logWriterList
                     .filterIsInstance<JavaUtilFileLogger>()
                     .firstOrNull()
@@ -99,7 +100,7 @@ class NLService : NotificationListenerService() {
         }
 
         coroutineScope.launch {
-            PlatformStuff.mainPrefs.data.map { it.scrobblerEnabled }.collect {
+            PlatformStuff.mainPrefs.data.map { it.scrobblerEnabled }.distinctUntilChanged().collect {
                 if (!it)
                     requestUnbind()
             }
@@ -107,6 +108,7 @@ class NLService : NotificationListenerService() {
 
         coroutineScope.launch {
             PlatformStuff.mainPrefs.data.map { it.notiPersistent }
+                .distinctUntilChanged()
                 .collect { notiPersistent ->
                     if (notiPersistent) {
                         PanoNotifications.startFgs(this@NLService)

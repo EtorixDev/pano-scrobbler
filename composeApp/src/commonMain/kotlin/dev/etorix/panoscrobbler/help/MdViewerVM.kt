@@ -9,7 +9,6 @@ import dev.etorix.panoscrobbler.utils.PlatformStuff
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
@@ -60,16 +59,7 @@ class MdViewerVM(
         .mapLatest {
             MdParser.parseMarkdown(it)
         }
-        .combine(
-            _searchTerm.debounce {
-                if (!inited) {
-                    inited = true
-                    0L
-                } else {
-                    500L
-                }
-            }
-        ) { items, term ->
+        .combine(_searchTerm) { items, term ->
             val filtered = mutableListOf<MdNode.Block>()
 
             var keeping = true

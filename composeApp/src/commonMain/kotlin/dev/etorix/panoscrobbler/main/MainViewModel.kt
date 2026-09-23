@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import dev.etorix.panoscrobbler.BuildKonfig
 import dev.etorix.panoscrobbler.api.DrawerData
+import dev.etorix.panoscrobbler.api.Scrobblables
 import dev.etorix.panoscrobbler.api.UserCached
 import dev.etorix.panoscrobbler.api.lastfm.ApiException
 import dev.etorix.panoscrobbler.db.PanoDb
@@ -140,6 +141,38 @@ class MainViewModel : ViewModel() {
         _pullToRefreshTriggered
             .filter { it == id }
             .map { }
+
+    suspend fun loadDrawerData(user: UserCached) {
+        if (user in drawerDataMap)
+            delay(2.seconds)
+
+        if (user.isSelf) {
+            PlatformStuff.mainPrefs.data.map {
+                it.drawerData[it.currentAccountType]
+            }.first()?.let { drawerDataMap[user] = it }
+        }
+
+        Scrobblables.current?.loadDrawerData(user.name)?.onSuccess { drawerData ->
+            if (user.isSelf) {
+                PlatformStuff.mainPrefs.updateData { prefs ->
+                    prefs.copy(
+                        drawerData = prefs.drawerData + (prefs.currentAccountType to drawerData),
+                        scrobbleAccounts = prefs.scrobbleAccounts.map { account ->
+                            if (account.type == prefs.currentAccountType &&
+                                drawerData.profilePicUrl != null &&
+                                drawerData.profilePicUrl != account.user.largeImage
+                            ) {
+                                account.copy(user = account.user.copy(largeImage = drawerData.profilePicUrl))
+                            } else {
+                                account
+                            }
+                        }
+                    )
+                }
+            }
+            drawerDataMap[user] = drawerData
+        }
+    }
 
 
     companion object {

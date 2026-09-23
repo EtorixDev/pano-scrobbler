@@ -22,12 +22,10 @@ actual object SteelSeriesReceiverServer {
 
     @Synchronized
     private fun startServer() {
-        if (serverStartAttempted) {
+        if (serverStartAttempted || !DesktopStuff.IS_WINDOWS) {
             return
         }
         serverStartAttempted = true
-
-        if (DesktopStuff.os != DesktopStuff.Os.Windows) return
 
         val programDataPath = System.getenv("programdata") ?: return
         try {
@@ -125,11 +123,7 @@ actual object SteelSeriesReceiverServer {
             Logger.w { "SteelSeries game event did not match: $lastGameEvent" }
         }
 
-        return AdditionalMetadataResult(
-            scrobbleData = null,
-            artUrl = null,
-            shouldFetchAgain = true
-        )
+        return AdditionalMetadataResult.FetchAgain
     }
 
     private class ReceiverServer(

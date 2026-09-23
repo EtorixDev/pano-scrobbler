@@ -26,13 +26,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.etorix.panoscrobbler.icons.ArrowRightAutoMirrored
 import dev.etorix.panoscrobbler.icons.Icons
-import dev.etorix.panoscrobbler.icons.automirrored.ArrowRight
 import dev.etorix.panoscrobbler.ui.ErrorText
 import dev.etorix.panoscrobbler.ui.FilePicker
 import dev.etorix.panoscrobbler.ui.FilePickerMode
 import dev.etorix.panoscrobbler.ui.FileType
-import dev.etorix.panoscrobbler.ui.OutlinedToggleButtons
+import dev.etorix.panoscrobbler.ui.PanoToggleButtonGroup
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.redactedMessage
@@ -168,7 +168,7 @@ fun ExportScreen(
                                 modifier = Modifier.align(Alignment.CenterHorizontally)
                             ) {
                                 Icon(
-                                    Icons.AutoMirrored.ArrowRight,
+                                    Icons.ArrowRightAutoMirrored,
                                     contentDescription = null,
                                     modifier = Modifier.size(ButtonDefaults.IconSize)
                                 )
@@ -242,7 +242,7 @@ fun ImExportModeSelector(
             style = MaterialTheme.typography.titleLarge,
         )
     } else {
-        OutlinedToggleButtons(
+        PanoToggleButtonGroup(
             texts = listOf(
                 stringResource(Res.string.scrobble_to_file),
                 stringResource(Res.string.pref_imexport_network),

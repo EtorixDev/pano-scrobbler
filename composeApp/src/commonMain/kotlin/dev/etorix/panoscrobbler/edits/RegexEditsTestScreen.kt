@@ -17,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,12 +36,11 @@ import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.Mic
 import dev.etorix.panoscrobbler.icons.MusicNote
 import dev.etorix.panoscrobbler.navigation.SelectedPackagesResult
-import dev.etorix.panoscrobbler.navigation.jsonSerializableSaver
 import dev.etorix.panoscrobbler.panoicons.AlbumArtist
 import dev.etorix.panoscrobbler.panoicons.PanoIcons
 import dev.etorix.panoscrobbler.pref.AppItem
-import dev.etorix.panoscrobbler.ui.InfoText
 import dev.etorix.panoscrobbler.ui.PanoOutlinedTextField
+import dev.etorix.panoscrobbler.ui.TextWithIcon
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
@@ -63,7 +63,7 @@ fun RegexEditsTestScreen(
     viewModel: RegexEditsTestVM = viewModel { RegexEditsTestVM() },
 ) {
     val regexMatches by viewModel.regexResults.collectAsStateWithLifecycle()
-    var appItem by rememberSaveable(saver = jsonSerializableSaver<AppItem?>()) { mutableStateOf(null) }
+    var appItem by rememberSerializable { mutableStateOf<AppItem?>(null) }
     var track by rememberSaveable { mutableStateOf("") }
     var album by rememberSaveable { mutableStateOf("") }
     var artist by rememberSaveable { mutableStateOf("") }
@@ -89,7 +89,7 @@ fun RegexEditsTestScreen(
 
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier
+        modifier = modifier.padding(8.dp)
     ) {
         PanoOutlinedTextField(
             value = track,
@@ -187,7 +187,7 @@ fun RegexEditsTestScreen(
             Column {
                 if (regexMatches?.blockPlayerAction != null) {
                     val blockPlayerAction = regexMatches!!.blockPlayerAction!!
-                    InfoText(
+                    TextWithIcon(
                         icon = Icons.Block,
                         text = stringResource(Res.string.block) +
                                 " (${blockPlayerAction.name})",
@@ -196,22 +196,22 @@ fun RegexEditsTestScreen(
                 } else if (regexMatches?.scrobbleData != null) {
                     val scrobbleData = regexMatches!!.scrobbleData!!
 
-                    InfoText(
+                    TextWithIcon(
                         text = scrobbleData.artist,
                         icon = Icons.Mic
                     )
 
-                    InfoText(
+                    TextWithIcon(
                         text = scrobbleData.track,
                         icon = Icons.MusicNote
                     )
 
-                    InfoText(
+                    TextWithIcon(
                         text = scrobbleData.album ?: "",
                         icon = Icons.Album
                     )
 
-                    InfoText(
+                    TextWithIcon(
                         text = scrobbleData.albumArtist ?: "",
                         icon = PanoIcons.AlbumArtist
                     )

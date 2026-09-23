@@ -1,20 +1,16 @@
 package dev.etorix.panoscrobbler.pref
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SplitButtonDefaults
 import androidx.compose.material3.SplitButtonLayout
@@ -26,28 +22,29 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.api.Scrobblables
+import dev.etorix.panoscrobbler.icons.ArrowDropDown
 import dev.etorix.panoscrobbler.icons.Icons
-import dev.etorix.panoscrobbler.icons.KeyboardArrowDown
+import dev.etorix.panoscrobbler.icons.KeyboardArrowLeftAutoMirrored
+import dev.etorix.panoscrobbler.icons.KeyboardArrowRightAutoMirrored
 import dev.etorix.panoscrobbler.icons.Lock
 import dev.etorix.panoscrobbler.icons.ResetSettings
-import dev.etorix.panoscrobbler.icons.automirrored.KeyboardArrowLeft
-import dev.etorix.panoscrobbler.icons.automirrored.KeyboardArrowRight
 import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.onboarding.LoginDestinations
 import dev.etorix.panoscrobbler.ui.AppIcon
+import dev.etorix.panoscrobbler.ui.IconButtonWithTooltip
 import dev.etorix.panoscrobbler.ui.PanoDropdownMenu
-import dev.etorix.panoscrobbler.ui.horizontalOverscanPadding
+import dev.etorix.panoscrobbler.ui.myCheckableItemColors
+import dev.etorix.panoscrobbler.ui.myTransparentCheckableItemColors
 import dev.etorix.panoscrobbler.utils.PlatformStuff
+import dev.etorix.panoscrobbler.utils.Stuff
+import dev.etorix.panoscrobbler.utils.Stuff.format
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -72,52 +69,29 @@ fun SwitchPref(
     summary: String? = null,
     enabled: Boolean = true,
 ) {
-    val scope = rememberCoroutineScope()
-
-    Row(
-        modifier = modifier
-            .defaultMinSize(minHeight = 56.dp)
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .then(
-                if (enabled)
-                    Modifier.toggleable(
-                        value = value,
-                        onValueChange = { newValue ->
-                            scope.launch { mainPrefs.updateData { it.copyToSave(newValue) } }
-                        },
-                        role = Role.Switch
-                    )
-                else
-                    Modifier
-            )
-            .padding(vertical = 16.dp, horizontal = horizontalOverscanPadding())
-            .alpha(if (enabled) 1f else 0.5f),
+    ListItem(
+        modifier = modifier,
+        enabled = enabled,
+        checked = value,
+        colors = ListItemDefaults.myTransparentCheckableItemColors(),
         verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.titleMedium,
-            )
-
-            if (summary != null) {
-                Text(
-                    text = summary,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+        onCheckedChange = { newValue ->
+            Stuff.appScope.launch { mainPrefs.updateData { it.copyToSave(newValue) } }
+        },
+        supportingContent = if (summary != null) {
+            {
+                Text(summary)
             }
+        } else null,
+        trailingContent = {
+            Switch(
+                checked = value,
+                onCheckedChange = null,
+                enabled = enabled,
+            )
         }
-
-        Switch(
-            checked = value,
-            onCheckedChange = null, // null recommended for accessibility with screenreaders
-            enabled = enabled,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
+    ) {
+        Text(text)
     }
 }
 
@@ -131,38 +105,27 @@ fun TextPref(
     enabled: Boolean = true,
     locked: Boolean = false,
 ) {
-    Column(
-        modifier = modifier
-            .defaultMinSize(minHeight = 56.dp)
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(onClick = onClick, enabled = enabled)
-            .padding(vertical = 16.dp, horizontal = horizontalOverscanPadding())
-            .alpha(if (locked || !enabled) 0.5f else 1f),
-        verticalArrangement = Arrangement.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (locked)
+    ListItem(
+        modifier = modifier.alpha(if (!locked) 1f else 0.5f),
+        enabled = enabled,
+        onClick = onClick,
+        colors = ListItemDefaults.myCheckableItemColors(),
+        verticalAlignment = Alignment.CenterVertically,
+        leadingContent = if (locked) {
+            {
                 Icon(
                     imageVector = Icons.Lock,
                     contentDescription = null,
-                    modifier = Modifier.padding(end = 8.dp)
                 )
-            Text(
-                text = text,
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
-
-        if (summary != null) {
-            Text(
-                text = summary,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
+            }
+        } else null,
+        supportingContent = if (summary != null) {
+            {
+                Text(summary)
+            }
+        } else null,
+    ) {
+        Text(text)
     }
 }
 
@@ -177,60 +140,138 @@ fun <T> DropdownPref(
     enabled: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
 
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ListItem(
+        modifier = modifier,
+        enabled = enabled,
+        checked = expanded,
+        colors = ListItemDefaults.myCheckableItemColors(),
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .defaultMinSize(minHeight = 56.dp)
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .then(
-                if (enabled)
-                    Modifier.clickable { expanded = true }
-                else Modifier
-            )
-            .padding(vertical = 16.dp, horizontal = horizontalOverscanPadding())
-            .alpha(if (enabled) 1f else 0.5f),
-    ) {
-        Column(
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.titleMedium,
-            )
-
-            if (selectedValue != null) {
+        onCheckedChange = { expanded = it },
+        supportingContent = if (selectedValue != null) {
+            {
                 Text(
                     text = toLabel(selectedValue),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
-
-            PanoDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                values.forEach { value ->
-                    DropdownMenuItem(
-                        text = { Text(text = toLabel(value)) },
-                        onClick = {
-                            scope.launch { mainPrefs.updateData { it.copyToSave(value) } }
-                            expanded = false
-                        },
-                        enabled = selectedValue != value
-                    )
+        } else null,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text)
+            Icon(
+                imageVector = Icons.ArrowDropDown,
+                contentDescription = null,
+            )
+            Box {
+                if (expanded) {
+                    PanoDropdownMenu(
+                        expanded = true,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        values.forEach { value ->
+                            item(
+                                text = { Text(text = toLabel(value)) },
+                                onClick = {
+                                    Stuff.appScope.launch {
+                                        mainPrefs.updateData {
+                                            it.copyToSave(
+                                                value
+                                            )
+                                        }
+                                    }
+                                    expanded = false
+                                },
+                                enabled = selectedValue != value
+                            )
+                        }
+                    }
                 }
             }
         }
+    }
+}
 
-        Icon(
-            imageVector = Icons.KeyboardArrowDown,
-            contentDescription = null,
-        )
+@Composable
+fun MultiSelectDropdownPref(
+    text: String,
+    checkedValues: Set<String>,
+    values: Set<String>,
+    toLabel: (String) -> String,
+    copyToSave: MainPrefs.(Set<String>) -> MainPrefs,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var checkedSet by remember(checkedValues) { mutableStateOf(checkedValues) }
+    val orderedValues = remember(checkedValues, values) { checkedValues + (values - checkedValues) }
+
+    ListItem(
+        modifier = modifier,
+        enabled = enabled,
+        checked = expanded,
+        colors = ListItemDefaults.myCheckableItemColors(),
+        verticalAlignment = Alignment.CenterVertically,
+        onCheckedChange = { expanded = it },
+        supportingContent = {
+            Text(
+                text = checkedSet.joinToString(),
+            )
+        },
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text)
+            Icon(
+                imageVector = Icons.ArrowDropDown,
+                contentDescription = null,
+            )
+            Box {
+                if (expanded) {
+                    PanoDropdownMenu(
+                        expanded = true,
+                        onDismissRequest = {
+                            Stuff.appScope.launch { mainPrefs.updateData { it.copyToSave(checkedSet) } }
+                            expanded = false
+                        }
+                    ) {
+                        orderedValues.forEachIndexed { index, value ->
+                            val checked = value in checkedSet
+
+                            checkableItem(
+                                text = { Text(text = toLabel(value)) },
+                                checked = checked,
+                                onCheckedChange = {
+                                    if (it) {
+                                        checkedSet += value
+                                    } else {
+                                        checkedSet -= value
+                                    }
+                                },
+                                trailingContent = if (checked) {
+                                    {
+                                        val pos = remember(checkedSet) {
+                                            (checkedSet.indexOf(value) + 1).format()
+                                        }
+                                        Text(text = pos)
+                                    }
+                                } else null
+                            )
+
+                            if (index < values.size - 1) {
+                                custom {
+                                    Spacer(modifier = Modifier.height(MenuDefaults.GroupSpacing))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -259,41 +300,33 @@ fun AppIconsPref(
         appItems = items
     }
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier
-            .defaultMinSize(minHeight = 56.dp)
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(onClick = onClick, enabled = enabled)
-            .alpha(if (!enabled) 0.5f else 1f)
-            .padding(vertical = 16.dp, horizontal = horizontalOverscanPadding())
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-        )
-
-        if (packageNames.isEmpty()) {
-            Text(
-                stringResource(Res.string.no_apps_enabled),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        } else {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.height(24.dp)
-            ) {
-                appItems
-                    .forEach {
+    ListItem(
+        modifier = modifier,
+        enabled = enabled,
+        onClick = onClick,
+        colors = ListItemDefaults.myCheckableItemColors(),
+        supportingContent = {
+            if (packageNames.isEmpty()) {
+                Text(stringResource(Res.string.no_apps_enabled))
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .height(24.dp)
+                ) {
+                    appItems.forEach {
                         AppIcon(
                             appItem = it,
                             modifier = Modifier
                                 .size(24.dp)
                         )
                     }
+                }
             }
         }
+    ) {
+        Text(title)
     }
 }
 
@@ -310,88 +343,97 @@ fun SliderPref(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    val scope = rememberCoroutineScope()
     var internalValue by remember(value) { mutableFloatStateOf(value) }
 
-    Column(
-        modifier = modifier
-            .defaultMinSize(minHeight = 56.dp)
-            .fillMaxWidth()
-            .padding(vertical = 16.dp, horizontal = horizontalOverscanPadding())
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.titleMedium,
-        )
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            Slider(
-                value = internalValue.coerceIn(min.toFloat(), max.toFloat()),
-                onValueChange = { internalValue = it },
-                onValueChangeFinished = {
-                    scope.launch { mainPrefs.updateData { it.copyToSave(internalValue.roundToInt()) } }
-                },
-                valueRange = min.toFloat()..max.toFloat(),
-                steps = ((max - min) / increments) - 1,
-                enabled = enabled && !PlatformStuff.isTv,
-                modifier = Modifier
-                    .weight(1f)
-            )
-
-            if (PlatformStuff.isTv) {
-                SplitButtonLayout(
-                    leadingButton = {
-                        SplitButtonDefaults.OutlinedLeadingButton(
-                            onClick = {
-                                internalValue -= increments
-                                scope.launch { mainPrefs.updateData { it.copyToSave(internalValue.toInt()) } }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.KeyboardArrowLeft,
-                                contentDescription = stringResource(Res.string.move_left),
-                            )
-                        }
+    ListItem(
+        modifier = modifier,
+        colors = ListItemDefaults.myCheckableItemColors(),
+        supportingContent = if (!PlatformStuff.isTv) {
+            {
+                Slider(
+                    value = internalValue.coerceIn(min.toFloat(), max.toFloat()),
+                    onValueChange = { internalValue = it },
+                    onValueChangeFinished = {
+                        Stuff.appScope.launch { mainPrefs.updateData { it.copyToSave(internalValue.roundToInt()) } }
                     },
-                    trailingButton = {
-                        SplitButtonDefaults.OutlinedTrailingButton(
-                            onCheckedChange = {
-                                internalValue += increments
-                                scope.launch { mainPrefs.updateData { it.copyToSave(internalValue.toInt()) } }
-                            },
-                            checked = false,
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.KeyboardArrowRight,
-                                contentDescription = stringResource(Res.string.move_right),
-                            )
-                        }
-                    },
+                    valueRange = min.toFloat()..max.toFloat(),
+                    steps = ((max - min) / increments) - 1,
+                    enabled = enabled,
                 )
             }
-
-            Text(
-                text = stringRepresentation(internalValue.roundToInt()),
-                modifier = Modifier.padding(start = 16.dp)
-            )
-
-            if (default != null) {
-                IconButton(
-                    enabled = enabled && internalValue.roundToInt() != default,
-                    shapes = IconButtonDefaults.shapes(),
-                    onClick = {
-                        scope.launch { mainPrefs.updateData { it.copyToSave(default) } }
-                    }
+        } else null,
+        trailingContent = if (default != null || PlatformStuff.isTv) {
+            {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon(
-                        imageVector = Icons.ResetSettings,
-                        contentDescription = stringResource(Res.string.reset)
-                    )
+                    if (PlatformStuff.isTv) {
+                        SplitButtonLayout(
+                            leadingButton = {
+                                SplitButtonDefaults.OutlinedLeadingButton(
+                                    onClick = {
+                                        internalValue -= increments
+                                        Stuff.appScope.launch {
+                                            mainPrefs.updateData {
+                                                it.copyToSave(
+                                                    internalValue.toInt()
+                                                )
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.KeyboardArrowLeftAutoMirrored,
+                                        contentDescription = stringResource(Res.string.move_left),
+                                    )
+                                }
+                            },
+                            trailingButton = {
+                                SplitButtonDefaults.OutlinedTrailingButton(
+                                    onCheckedChange = {
+                                        internalValue += increments
+                                        Stuff.appScope.launch {
+                                            mainPrefs.updateData {
+                                                it.copyToSave(
+                                                    internalValue.toInt()
+                                                )
+                                            }
+                                        }
+                                    },
+                                    checked = false,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.KeyboardArrowRightAutoMirrored,
+                                        contentDescription = stringResource(Res.string.move_right),
+                                    )
+                                }
+                            },
+                        )
+                    }
+
+                    if (default != null) {
+                        IconButtonWithTooltip(
+                            enabled = enabled && internalValue.roundToInt() != default,
+                            icon = Icons.ResetSettings,
+                            contentDescription = stringResource(Res.string.reset),
+                            onClick = {
+                                Stuff.appScope.launch { mainPrefs.updateData { it.copyToSave(default) } }
+                            },
+                        )
+                    }
                 }
             }
+        } else null,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text)
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = stringRepresentation(internalValue.roundToInt()),
+            )
         }
     }
 }
@@ -405,7 +447,6 @@ fun AccountPref(
     modifier: Modifier = Modifier,
 ) {
     val logoutString = stringResource(Res.string.pref_logout)
-    val scope = rememberCoroutineScope()
     var canLogoutNow by remember { mutableStateOf(false) }
 
     TextPref(
@@ -419,12 +460,12 @@ fun AccountPref(
             if (usernamesMap[type] == null) {
                 onNavigate(LoginDestinations.route(type))
             } else if (canLogoutNow) {
-                scope.launch {
+                Stuff.appScope.launch {
                     Scrobblables.deleteAllByType(type)
                     canLogoutNow = false
                 }
             } else {
-                scope.launch {
+                Stuff.appScope.launch {
                     canLogoutNow = true
                     delay(3.seconds)
                     canLogoutNow = false

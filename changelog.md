@@ -1,6 +1,14 @@
+- Toggle to not scrobble Spotify playing on other devices, is available on Windows
+- Supports fractional scaling on Linux
+- Uses the native tray menu on Windows. Does not spin up the entire Compose engine GPU rendering
+  just for the tray menu. Also makes the app start significantly faster when minimized.
+- Improved reliability of fetching album art for Discord Rich Presence
 - The Windows installer is now 64-bit
-- Uses the native tray menu on Windows. Does not spin up the entire Compose engine GPU rendering just for the tray menu
+- Uses an outlined focus indicator for tab navigation or DPAD navigation on TV
 - Pause scrobbling until a specific time
-- UI takes less vertical space
+- The UI wastes less vertical space
+- Very long dialogs can now expand to a non-dialog screen
+- Opens locale-specific links for last.fm
+- Added palette styles and hue slider in themes
 - Bug fixes
 - Translation updates by the translators on Crowdin

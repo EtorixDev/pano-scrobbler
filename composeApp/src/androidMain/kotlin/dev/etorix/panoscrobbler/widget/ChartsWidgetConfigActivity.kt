@@ -18,7 +18,6 @@ import dev.etorix.panoscrobbler.themes.AppTheme
 import dev.etorix.panoscrobbler.themes.LocalThemeAttributes
 import dev.etorix.panoscrobbler.utils.AndroidStuff
 import dev.etorix.panoscrobbler.utils.AndroidStuff.prolongSplashScreen
-import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.applyAndroidLocaleLegacy
 import kotlinx.coroutines.launch
 
@@ -29,18 +28,17 @@ class ChartsWidgetConfigActivity : ComponentActivity() {
             AppWidgetManager.INVALID_APPWIDGET_ID
         ) ?: AppWidgetManager.INVALID_APPWIDGET_ID
     }
-    private val isPinned by lazy {
-        intent?.extras?.getBoolean(
-            Stuff.EXTRA_PINNED,
-            false
-        ) ?: false
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
+        }
+
+        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            finish()
+            return
         }
 
         var initDone = false
@@ -69,7 +67,6 @@ class ChartsWidgetConfigActivity : ComponentActivity() {
                     }
 
                     ChartsWidgetConfigScreen(
-                        isPinned = isPinned,
                         prefs = prefs.widgets[appWidgetId] ?: WidgetPrefs.SpecificWidgetPrefs(),
                         refreshIntervalHours = prefs.refreshIntervalHours,
                         onSave = ::savePrefsAndFinish,

@@ -51,6 +51,8 @@ actual object PlatformStuff {
 
     actual const val hasSystemLocaleStore = false
 
+    actual val supportsSpotifyRemote = DesktopStuff.IS_WINDOWS
+
     actual val appIdPlaceholder
         get() =
             if (DesktopStuff.os == DesktopStuff.Os.Linux)
@@ -81,24 +83,18 @@ actual object PlatformStuff {
     }
 
     actual fun openInBrowser(url: String) {
-        val isMailTo = url.startsWith("mailto:", ignoreCase = true)
-
-        var desktop: Desktop? = null
-        if (DesktopStuff.os == DesktopStuff.Os.Linux && Desktop.isDesktopSupported())
-            desktop = Desktop.getDesktop().takeIf {
-                if (isMailTo)
-                    it.isSupported(Desktop.Action.MAIL)
-                else
-                    it.isSupported(Desktop.Action.BROWSE)
-            }
-
-        if (desktop != null) {
-            if (isMailTo)
-                desktop.mail(URI(url))
-            else
-                desktop.browse(URI(url))
-        } else
-            PanoNativeComponents.openUrl(url)
+        val desktop = if (Desktop.isDesktopSupported()) Desktop.getDesktop() else null
+        when {
+            desktop != null && url.startsWith("mailto:", ignoreCase = true) &&
+                    desktop.isSupported(Desktop.Action.MAIL) -> desktop.mail(URI(url))
+            desktop != null && url.startsWith("http", ignoreCase = true) &&
+                    desktop.isSupported(Desktop.Action.BROWSE) ->
+                desktop.browse(URI(Stuff.localizeLastfmUrl(url)))
+            desktop != null && url.startsWith("file", ignoreCase = true) &&
+                    desktop.isSupported(Desktop.Action.OPEN) -> desktop.open(File(URI(url)))
+            DesktopStuff.IS_LINUX -> PanoNativeComponents.openUrlLinux(Stuff.localizeLastfmUrl(url))
+            else -> Logger.w { "No desktop handler for URL: $url" }
+        }
     }
 
     actual suspend fun checkScrobblerState(requestRebind: Boolean): ScrobblerState {

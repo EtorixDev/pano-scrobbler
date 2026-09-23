@@ -3,6 +3,7 @@ package dev.etorix.panoscrobbler.media
 import dev.etorix.panoscrobbler.api.lastfm.ScrobbleData
 import dev.etorix.panoscrobbler.utils.MetadataUtils
 import dev.etorix.panoscrobbler.utils.PlatformStuff
+import kotlinx.serialization.Serializable
 import java.util.Objects
 import kotlin.math.abs
 
@@ -19,6 +20,18 @@ class PlayingTrackInfo(
         NOW_PLAYING_SUBMITTED,
         SCROBBLE_SUBMITTED,
         CANCELLED,
+    }
+
+    @JvmInline
+    @Serializable
+    value class ArtUrlState(private val value: String?) {
+        val url: String? get() = value.takeUnless { canFetch }
+        val canFetch: Boolean get() = value == "can_fetch"
+
+        companion object {
+            val None = ArtUrlState(null)
+            val CanFetch = ArtUrlState("can_fetch")
+        }
     }
 
     var title: String = ""
@@ -45,9 +58,9 @@ class PlayingTrackInfo(
     var trackNumber: Int = 0
         private set
 
-    // null = not fetched, empty = fetched but no art
-    var artUrl: String? = null
+    var artUrlState: ArtUrlState = ArtUrlState.None
         private set
+    val artUrl: String? get() = artUrlState.url
 
     var normalizedUrlHost: String? = null
         private set
@@ -112,7 +125,7 @@ class PlayingTrackInfo(
         hash = Objects.hash(albumArtist, artist, album, title, appId, notiKey)
         this.normalizedUrlHost = normalizedUrlHost
 
-        this.artUrl = artUrl
+        this.artUrlState = ArtUrlState(artUrl)
 
         scrobbledState = ScrobbledState.NONE
         msid = null
@@ -121,7 +134,11 @@ class PlayingTrackInfo(
     }
 
     fun setArtUrl(artUrl: String?) {
-        this.artUrl = artUrl
+        artUrlState = ArtUrlState(artUrl)
+    }
+
+    fun setArtUrlState(state: ArtUrlState) {
+        artUrlState = state
     }
 
     fun resetPlaybackProgress() {
@@ -237,7 +254,7 @@ class PlayingTrackInfo(
         nowPlaying = scrobbledState < ScrobbledState.SCROBBLE_SUBMITTED,
         userLoved = userLoved,
         userPlayCount = userPlayCount,
-        artUrl = artUrl,
+        artUrlState = artUrlState,
         timelineStartTime = timelineStartTime,
         preprocessed = scrobbledState >= ScrobbledState.PREPROCESSED,
     )

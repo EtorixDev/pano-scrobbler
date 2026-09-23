@@ -66,7 +66,9 @@ data class MainPrefs(
     val firstDayOfWeek: Int = -1,
     private val demoMode: Boolean = false,
     val showScrobbleSources: Boolean = true,
-    val themeName: String = ThemeUtils.defaultThemeName,
+    val themeName: String = ThemeUtils.LEGACY_DEFAULT_THEME_NAME,
+    val themeHue: Float? = null,
+    val themeStyle: String = ThemeUtils.defaultThemeStyle.name,
     val themeContrast: ContrastMode = ContrastMode.LOW,
     val themeDynamic: Boolean = false,
     val themeRandom: Boolean = false,
@@ -129,6 +131,8 @@ data class MainPrefs(
     val lastfmApiAlways: Boolean = false,
     private val logToFileOnAndroidSince: Long = -1,
     val lovesFetchedForCache: Boolean = false,
+    val wikiLangs: Set<String> = setOf("en"),
+    val autoExpandNowPlaying: Boolean = true,
     val extractFirstArtistPackages: Set<String> = emptySet(),
     val discordRpc: DiscordRpcSettings = DiscordRpcSettings(),
     val proxy: ProxySettings = ProxySettings(),
@@ -197,6 +201,8 @@ data class MainPrefs(
         @JsonNames("link_heart_button_to_rating")
         val linkHeartButtonToRating: Boolean = defaultMainPrefs.linkHeartButtonToRating,
         val themeName: String = defaultMainPrefs.themeName,
+        val themeHue: Float? = defaultMainPrefs.themeHue,
+        val themeStyle: String = defaultMainPrefs.themeStyle,
         val themeContrast: ContrastMode = defaultMainPrefs.themeContrast,
         val themeRandom: Boolean = defaultMainPrefs.themeRandom,
         val themeDayNight: DayNightMode = defaultMainPrefs.themeDayNight,
@@ -242,6 +248,9 @@ data class MainPrefs(
     val demoModeP
         get() = demoMode && BuildKonfig.DEBUG
 
+    val themeHueP: Float
+        get() = (themeHue ?: ThemeUtils.legacyThemeHue(themeName)).coerceIn(0f, 360f)
+
     val spotifyCountryP
         get() = spotifyCountry ?: LocaleUtils.getSystemCountryCode()
 
@@ -249,7 +258,7 @@ data class MainPrefs(
         get() = itunesCountry ?: LocaleUtils.getSystemCountryCode()
 
     val scrobbleSpotifyRemoteP
-        get() = !PlatformStuff.isTv && scrobbleSpotifyRemote
+        get() = PlatformStuff.supportsSpotifyRemote && scrobbleSpotifyRemote
 
     val usePlayFromSearchP
         get() = PlatformStuff.isTv || !PlatformStuff.isDesktop && usePlayFromSearch
@@ -298,6 +307,8 @@ data class MainPrefs(
         showScrobbleSources = prefs.showScrobbleSources,
         linkHeartButtonToRating = prefs.linkHeartButtonToRating,
         themeName = prefs.themeName,
+        themeHue = prefs.themeHue,
+        themeStyle = prefs.themeStyle,
         themeContrast = prefs.themeContrast,
         themeRandom = prefs.themeRandom,
         themeDayNight = prefs.themeDayNight,
@@ -335,6 +346,8 @@ data class MainPrefs(
         showScrobbleSources = showScrobbleSources,
         linkHeartButtonToRating = linkHeartButtonToRating,
         themeName = themeName,
+        themeHue = themeHue,
+        themeStyle = themeStyle,
         themeContrast = themeContrast,
         themeRandom = themeRandom,
         themeDayNight = themeDayNight,
@@ -390,7 +403,7 @@ data class MainPrefs(
         const val PREF_MIN_DURATON_SECS_DEFAULT = 30
         const val PREF_MIN_DURATON_SECS_MIN = 10
         const val PREF_MIN_DURATON_SECS_MAX = 60
-        const val PREF_MIN_ALPHA = 0.3f
+        const val PREF_MIN_ALPHA = 0.5f
         const val PREF_MID_ALPHA = 0.6f
         const val PREF_MAX_ALPHA = 1f
 

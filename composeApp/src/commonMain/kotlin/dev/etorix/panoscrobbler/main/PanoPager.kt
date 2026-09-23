@@ -1,6 +1,7 @@
 package dev.etorix.panoscrobbler.main
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
@@ -8,7 +9,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import dev.etorix.panoscrobbler.utils.PlatformStuff
@@ -22,8 +25,14 @@ fun PanoPager(
     content: @Composable (page: Int) -> Unit,
 ) {
     val initialPage by rememberSaveable { mutableIntStateOf(selectedPage) }
-    val validSelectedPage by rememberSaveable(selectedPage, totalPages) {
+    var validSelectedPage by rememberSaveable {
         mutableIntStateOf(selectedPage.coerceIn(0, totalPages - 1))
+    }
+    // rememberSaveable does not work with items scrolled away in HorizontalPager, so
+    val pageStateHolder = rememberSaveableStateHolder()
+
+    LaunchedEffect(selectedPage) {
+        validSelectedPage = selectedPage.coerceIn(0, totalPages - 1)
     }
 
     if (!PlatformStuff.isTv) {
@@ -45,13 +54,28 @@ fun PanoPager(
             onSelectPage(pagerState.settledPage)
         }
 
+        // todo remove the hack when https://issuetracker.google.com/issues/549552303 is fixed
+        val activatedPages = rememberSaveable { mutableStateSetOf(selectedPage) }
+
+        LaunchedEffect(pagerState.targetPage) {
+            activatedPages.add(pagerState.targetPage)
+        }
+
         HorizontalPager(
             state = pagerState,
             key = { it },
+            beyondViewportPageCount = totalPages - 1,
             modifier = modifier,
             userScrollEnabled = !PlatformStuff.isDesktop,
         ) { page ->
-            content(page)
+            if (page !in activatedPages) {
+                Box(modifier = Modifier.fillMaxSize())
+                return@HorizontalPager
+            }
+
+            pageStateHolder.SaveableStateProvider(page) {
+                content(page)
+            }
         }
     } else {
         LaunchedEffect(validSelectedPage) {
@@ -59,7 +83,9 @@ fun PanoPager(
         }
 
         Box(modifier = modifier) {
-            content(validSelectedPage)
+            pageStateHolder.SaveableStateProvider(validSelectedPage) {
+                content(validSelectedPage)
+            }
         }
     }
 }

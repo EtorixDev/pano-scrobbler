@@ -12,10 +12,10 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,9 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,9 +44,9 @@ import dev.etorix.panoscrobbler.main.ScrobblerState
 import dev.etorix.panoscrobbler.media.PlayingTrackNotifyEvent
 import dev.etorix.panoscrobbler.media.notifyPlayingTrackEvent
 import dev.etorix.panoscrobbler.navigation.PanoRoute
-import dev.etorix.panoscrobbler.navigation.enumSaver
 import dev.etorix.panoscrobbler.pref.AppListSaveType
 import dev.etorix.panoscrobbler.ui.AlertDialogOk
+import dev.etorix.panoscrobbler.ui.myTransparentCheckableItemColors
 import dev.etorix.panoscrobbler.ui.testTagsAsResId
 import dev.etorix.panoscrobbler.utils.AndroidStuff
 import dev.etorix.panoscrobbler.utils.AndroidStuff.toast
@@ -69,13 +67,13 @@ import pano_scrobbler.composeapp.generated.resources.fix_it_startup_title
 import pano_scrobbler.composeapp.generated.resources.grant_notification_access
 import pano_scrobbler.composeapp.generated.resources.grant_notification_access_desc
 import pano_scrobbler.composeapp.generated.resources.notification_access_tv
-import pano_scrobbler.composeapp.generated.resources.persistent_noti_desc
 import pano_scrobbler.composeapp.generated.resources.persistent_noti_fgs
-import pano_scrobbler.composeapp.generated.resources.persistent_noti_oems
+import pano_scrobbler.composeapp.generated.resources.persistent_noti_hide
 import pano_scrobbler.composeapp.generated.resources.pref_login
 import pano_scrobbler.composeapp.generated.resources.pref_scrobble_from
 import pano_scrobbler.composeapp.generated.resources.send_notifications
 import pano_scrobbler.composeapp.generated.resources.send_notifications_desc
+import pano_scrobbler.composeapp.generated.resources.show_persistent_noti
 import pano_scrobbler.composeapp.generated.resources.will_not_scrobble
 
 
@@ -170,41 +168,37 @@ private fun NotificationListenerStep(
         isExpanded = isExpanded,
         onSkip = { warningShown = true },
         additionalContent = {
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .clip(MaterialTheme.shapes.medium)
-                    .toggleable(
-                        value = notiPersistent,
-                        onValueChange = {
-                            scope.launch {
-                                PlatformStuff.mainPrefs.updateData {
-                                    it.copy(notiPersistent = !it.notiPersistent)
-                                }
-                            }
-                        },
-                        role = Role.Checkbox
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
+            ListItem(
+                checked = notiPersistent,
+                onCheckedChange = {
+                    scope.launch {
+                        PlatformStuff.mainPrefs.updateData {
+                            it.copy(notiPersistent = !it.notiPersistent)
+                        }
+                    }
+                },
+                supportingContent = {
+                    Text(
+                        text = stringResource(Res.string.show_persistent_noti) + "\n" +
+                                stringResource(Res.string.persistent_noti_hide),
+                    )
+                },
+                colors = ListItemDefaults.myTransparentCheckableItemColors()
             ) {
-                Checkbox(
-                    checked = notiPersistent,
-                    onCheckedChange = null // null recommended for accessibility with screenreaders
-                )
-
-                Column(
-                    modifier = Modifier.padding(start = 16.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    Checkbox(
+                        checked = notiPersistent,
+                        onCheckedChange = null,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+
                     Text(
                         text = stringResource(Res.string.persistent_noti_fgs),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        text = stringResource(
-                            Res.string.persistent_noti_desc,
-                            stringResource(Res.string.persistent_noti_oems)
-                        ),
-                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
@@ -280,7 +274,7 @@ actual fun OnboardingScreen(
         doneStatus[steps.indexOf(step)] = true
     }
 
-    var currentStep by rememberSaveable(saver = enumSaver()) { mutableStateOf(steps.first()) }
+    var currentStep by rememberSaveable { mutableStateOf(steps.first()) }
 
     val isLoggedIn by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.scrobbleAccounts.isNotEmpty() }
     val appListWasRun by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.appListWasRun }
@@ -336,7 +330,6 @@ actual fun OnboardingScreen(
 
     Column(
         modifier = modifier.testTagsAsResId(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
         OnboardingTopRow(

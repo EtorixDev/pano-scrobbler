@@ -12,6 +12,9 @@ import java.net.URISyntaxException
 
 
 object DesktopStuff {
+    const val IS_WINDOWS = BuildKonfig.IS_WINDOWS
+    const val IS_LINUX = BuildKonfig.IS_LINUX
+
     enum class Os {
         Windows, Macos, Linux
     }
@@ -41,7 +44,7 @@ object DesktopStuff {
     }
 
     val noUpdateCheck: Boolean
-        get() = os == Os.Linux && System.getenv("APPDIR").isNullOrEmpty() ||
+        get() = IS_LINUX && System.getenv("APPDIR").isNullOrEmpty() ||
                 cmdlineArgs.noUpdateCheck
 
     fun parseCmdlineArgs(args: Array<String>): CmdlineArgs {
@@ -192,11 +195,10 @@ object DesktopStuff {
             ?: (System.getProperty("user.home") + "/.local/share")
 
         // Icon
-        val iconSrc =
-            File(appDir, "usr/share/icons/hicolor/scalable/apps/$appNameWithoutSpaces.svg")
-        val iconDest = File(dataHome, "icons/hicolor/scalable/apps/$appNameWithoutSpaces.svg")
+        val iconSrc = File(appDir, "usr/share/icons/hicolor")
+        val iconDest = File(dataHome, "icons/hicolor")
         iconDest.parentFile.mkdirs()
-        iconSrc.copyTo(iconDest, overwrite = true)
+        iconSrc.copyRecursively(iconDest, overwrite = true)
 
         val desktopSrc = File(appDir, "usr/share/applications/$appNameWithoutSpaces.desktop")
         val desktopDest = File(dataHome, "applications/$appNameWithoutSpaces.desktop")
@@ -205,6 +207,18 @@ object DesktopStuff {
             .replace(Regex("^Exec=.*$", RegexOption.MULTILINE), "Exec=\"$appImagePath\" %U")
             .replace(Regex("^Icon=.*$", RegexOption.MULTILINE), "Icon=$appNameWithoutSpaces")
         desktopDest.writeText(desktopContent)
+    }
+
+    fun migrateAppImageDesktopFile() {
+        val appImagePath = System.getenv("APPIMAGE") ?: return
+        val dataHome = System.getenv("XDG_DATA_HOME")?.ifEmpty { null }
+            ?: (System.getProperty("user.home") + "/.local/share")
+        val desktopDest = File(dataHome, "applications/$appNameWithoutSpaces.desktop")
+        if (!desktopDest.exists()) return
+
+        val desktopContent = desktopDest.readText()
+        if (appImagePath in desktopContent && "Icon=$appNameWithoutSpaces\n" in desktopContent)
+            addAppImageToAppLauncher()
     }
 
     fun normalizeAppId(appId: String): String {

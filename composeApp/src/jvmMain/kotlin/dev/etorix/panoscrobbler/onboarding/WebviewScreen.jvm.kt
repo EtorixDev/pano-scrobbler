@@ -15,8 +15,8 @@ import dev.etorix.panoscrobbler.DesktopWebView
 import dev.etorix.panoscrobbler.api.Requesters
 import dev.etorix.panoscrobbler.api.UserAccountTemp
 import dev.etorix.panoscrobbler.api.pleroma.PleromaOauthClientCreds
+import dev.etorix.panoscrobbler.icons.HelpAutoMirrored
 import dev.etorix.panoscrobbler.icons.Icons
-import dev.etorix.panoscrobbler.icons.automirrored.Help
 import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.pref.MainPrefs
 import dev.etorix.panoscrobbler.ui.ButtonWithIcon
@@ -52,11 +52,11 @@ actual fun WebViewScreen(
                 proxy.type != MainPrefs.ProxySettings.Type.SYSTEM && !proxy.hasAuth ->
                     proxy.host to proxy.port
 
-                proxy.type == MainPrefs.ProxySettings.Type.HTTP && DesktopStuff.os == DesktopStuff.Os.Windows ->
+                proxy.type == MainPrefs.ProxySettings.Type.HTTP && DesktopStuff.IS_WINDOWS ->
                     proxy.host to proxy.port
 
                 // GTK4 webview supports auth
-                proxy.type != MainPrefs.ProxySettings.Type.SYSTEM && proxy.hasAuth && DesktopStuff.os == DesktopStuff.Os.Linux -> {
+                proxy.type != MainPrefs.ProxySettings.Type.SYSTEM && proxy.hasAuth && DesktopStuff.IS_LINUX -> {
                     val url = HttpUrl.Builder()
                         .scheme("http")
                         .host(proxy.host)
@@ -102,7 +102,7 @@ actual fun WebViewScreen(
             onClick = {
                 viewModel.webViewHelp()
             },
-            icon = Icons.AutoMirrored.Help,
+            icon = Icons.HelpAutoMirrored,
             text = stringResource(Res.string.help),
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)

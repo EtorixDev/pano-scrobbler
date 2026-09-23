@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,7 +23,6 @@ import dev.etorix.panoscrobbler.icons.BugReport
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.main.ScrobblerState
 import dev.etorix.panoscrobbler.ui.ButtonWithIcon
-import dev.etorix.panoscrobbler.ui.EmptyText
 import dev.etorix.panoscrobbler.ui.FilePicker
 import dev.etorix.panoscrobbler.ui.FilePickerMode
 import dev.etorix.panoscrobbler.ui.FileType
@@ -45,6 +46,7 @@ expect fun HelpSaveLogsButton(
 @Composable
 fun HelpScreen(
     searchFieldState: TextFieldState,
+    searchTerm: String,
     modifier: Modifier = Modifier,
     scrobblerStateFlow: StateFlow<ScrobblerState>,
     viewModel: MdViewerVM = viewModel {
@@ -58,15 +60,19 @@ fun HelpScreen(
     var filePickerShown by remember { mutableStateOf(false) }
     val mdItems by viewModel.mdBlocks.collectAsStateWithLifecycle()
 
-    SearchEffect(searchFieldState) {
+    SearchEffect(
+        searchFieldState,
+        initialText = searchTerm
+    ) {
         viewModel.setFilter(it)
     }
 
     Column(modifier = modifier) {
-        EmptyText(
-            visible = mdItems?.isEmpty() == true,
-            text = stringResource(Res.string.not_found),
-        )
+        if (mdItems?.isEmpty() == true)
+            Text(
+                text = stringResource(Res.string.not_found),
+                style = MaterialTheme.typography.titleLarge
+            )
 
         mdItems?.let { mdItems ->
             MdText(

@@ -11,6 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 import kotlin.math.min
 import kotlin.time.Duration.Companion.seconds
 
@@ -31,6 +32,8 @@ abstract class MediaListener(
 
     protected val scrobblerEnabled =
         mainPrefs.data.stateInWithCache(scope) { it.scrobblerEnabled && it.scrobbleAccounts.isNotEmpty() }
+    protected val scrobbleSpotifyRemote =
+        mainPrefs.data.stateInWithCache(scope) { it.scrobbleSpotifyRemoteP }
 
     private var scrobblerPausedTill = -1L
 
@@ -255,7 +258,8 @@ abstract class MediaListener(
                         metadata.title == trackInfo.origTitle &&
                         metadata.album == trackInfo.origAlbum &&
                         metadata.albumArtist == trackInfo.origAlbumArtist
-            val onlyDurationUpdated = sameAsOld && metadata.duration != trackInfo.durationMillis
+            // Some players continuously adjust the reported duration by a few milliseconds.
+            val onlyDurationUpdated = sameAsOld && abs(metadata.duration - lastDuration) > 1000L
 
             if (BuildKonfig.DEBUG || (!sameAsOld || onlyDurationUpdated))
                 Logger.i { "$metadata $lastPlaybackState ${hashCode().toHexString()}" }
@@ -269,7 +273,7 @@ abstract class MediaListener(
                     trackNumber = metadata.trackNumber,
                     durationMillis = metadata.duration,
                     normalizedUrlHost = metadata.normalizedUrlHost,
-                    artUrl = metadata.artUrl,
+                    artUrl = if (onlyDurationUpdated) trackInfo.artUrl else metadata.artUrl,
                 )
 
                 if (!sameAsOld) {
@@ -321,14 +325,14 @@ abstract class MediaListener(
             }
 
 //            val positionDelta = playbackInfo.position - lastPosition
-            val isPossiblyAtStart =
-                playbackInfo.position != -1L && playbackInfo.position < START_POS_LIMIT
+            val isPossiblyAtStart = trackInfo.durationMillis > 0 &&
+                    playbackInfo.position in 0..START_POS_LIMIT
 //                        (playbackInfo.position < START_POS_LIMIT ||
 //                        trackInfo.durationMillis > 0 && positionDelta < trackInfo.durationMillis * 0.5
 //                        )
 
-            val timelineChanged = trackInfo.setTimelineStartTime(playbackInfo.position) &&
-                    playbackInfo.state == CommonPlaybackState.Playing
+            val timelineChanged = playbackInfo.state == CommonPlaybackState.Playing &&
+                    trackInfo.setTimelineStartTime(playbackInfo.position)
 
             val playbackStateChanged = lastPlaybackState != playbackInfo.state
 
@@ -359,8 +363,7 @@ abstract class MediaListener(
                         trackInfo.resumed()
 
                         if (trackInfo.hash != trackInfo.lastScrobbleHash ||
-                            (playbackInfo.position >= 0L && isPossiblyAtStart &&
-                                    (!notifyTimelineUpdates || timelineChanged))
+                            (isPossiblyAtStart && (!notifyTimelineUpdates || timelineChanged))
                         )
                             trackInfo.resetTimePlayed()
 
@@ -371,7 +374,7 @@ abstract class MediaListener(
                             scrobbleQueue.remove(trackInfo.lastScrobbleHash)
                             scrobble()
                         } else if (!scrobbleQueue.has(trackInfo.hash) &&
-                            ((playbackInfo.position >= 0L && isPossiblyAtStart) ||
+                            (isPossiblyAtStart ||
                                     trackInfo.scrobbledState < PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED &&
                                     // ignore state=playing, pos=lowValue spam
                                     !(!playbackStateChanged &&
@@ -380,6 +383,21 @@ abstract class MediaListener(
                                             )
                                     )
                         ) {
+                            if (isPossiblyAtStart &&
+                                trackInfo.lastScrobbleHash == trackInfo.hash &&
+                                trackInfo.scrobbledState == PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED
+                            ) {
+                                trackInfo.putOriginals(
+                                    artist = trackInfo.origArtist,
+                                    title = trackInfo.origTitle,
+                                    album = trackInfo.origAlbum,
+                                    albumArtist = trackInfo.origAlbumArtist,
+                                    trackNumber = trackInfo.trackNumber,
+                                    durationMillis = trackInfo.durationMillis,
+                                    normalizedUrlHost = trackInfo.normalizedUrlHost,
+                                    artUrl = trackInfo.artUrl,
+                                )
+                            }
                             scrobble()
                         } else if ((timelineChanged && notifyTimelineUpdates || playbackStateChanged) &&
                             trackInfo.scrobbledState < PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED
@@ -390,7 +408,8 @@ abstract class MediaListener(
                     }
                 }
 
-                else -> {
+                CommonPlaybackState.Waiting,
+                CommonPlaybackState.Other -> {
                 }
             }
 
@@ -399,7 +418,7 @@ abstract class MediaListener(
 
         }
 
-        fun pause() {
+        open fun pause() {
             if (lastPlaybackState == CommonPlaybackState.Playing) {
                 if (scrobbleQueue.has(trackInfo.lastScrobbleHash))
                     trackInfo.addTimePlayed()

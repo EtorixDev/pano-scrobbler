@@ -1,19 +1,21 @@
 package dev.etorix.panoscrobbler.recents
 
-import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,12 +23,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import androidx.paging.LoadState
@@ -45,22 +44,19 @@ import dev.etorix.panoscrobbler.db.BlockedMetadata
 import dev.etorix.panoscrobbler.db.PanoDb
 import dev.etorix.panoscrobbler.db.PendingScrobble
 import dev.etorix.panoscrobbler.icons.Album
+import dev.etorix.panoscrobbler.icons.ArrowBackAutoMirrored
+import dev.etorix.panoscrobbler.icons.ArrowRightAutoMirrored
 import dev.etorix.panoscrobbler.icons.ContentCopy
 import dev.etorix.panoscrobbler.icons.Delete
-import dev.etorix.panoscrobbler.icons.Dns
 import dev.etorix.panoscrobbler.icons.Edit
-import dev.etorix.panoscrobbler.icons.Error
 import dev.etorix.panoscrobbler.icons.Favorite
+import dev.etorix.panoscrobbler.icons.FavoriteFilled
 import dev.etorix.panoscrobbler.icons.HeartBroken
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.Mic
 import dev.etorix.panoscrobbler.icons.MusicNote
-import dev.etorix.panoscrobbler.icons.Schedule
 import dev.etorix.panoscrobbler.icons.Search
 import dev.etorix.panoscrobbler.icons.Share
-import dev.etorix.panoscrobbler.icons.automirrored.ArrowBack
-import dev.etorix.panoscrobbler.icons.automirrored.KeyboardArrowRight
-import dev.etorix.panoscrobbler.icons.filled.Favorite
 import dev.etorix.panoscrobbler.media.getNowPlayingFromMainProcess
 import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.pref.AppItem
@@ -91,7 +87,6 @@ import pano_scrobbler.composeapp.generated.resources.last_error
 import pano_scrobbler.composeapp.generated.resources.love
 import pano_scrobbler.composeapp.generated.resources.more
 import pano_scrobbler.composeapp.generated.resources.network_error
-import pano_scrobbler.composeapp.generated.resources.scrobble_services
 import pano_scrobbler.composeapp.generated.resources.search
 import pano_scrobbler.composeapp.generated.resources.share
 import pano_scrobbler.composeapp.generated.resources.time_just_now
@@ -129,35 +124,69 @@ private fun TrackDropdownMenu(
         )
     }
 
-    val moreFocusRequester = remember { FocusRequester() }
-    val blockFocusRequester = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
-
-    LaunchedEffect(menuLevel) {
-        when (menuLevel) {
-            TrackMenuLevel.More -> {
-                moreFocusRequester.requestFocus()
-            }
-
-            TrackMenuLevel.Block -> {
-                blockFocusRequester.requestFocus()
-            }
-
-            TrackMenuLevel.Root -> {
-                // nothing
-            }
-        }
-    }
+    val searchInSource by
+    PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.searchInSource }
 
     PanoDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
+        headerContent = when (menuLevel) {
+            TrackMenuLevel.More if !PlatformStuff.isTv -> {
+                {
+                    DropdownMenuItem(
+                        onClick = {
+                            menuLevel = TrackMenuLevel.Root
+                        },
+                        shape = MenuDefaults.leadingItemShape,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.ArrowBackAutoMirrored,
+                                contentDescription = null
+                            )
+                        },
+                        text = {
+                            Text(
+                                stringResource(Res.string.more),
+                                style = MaterialTheme.typography.titleMediumEmphasized
+                            )
+                        },
+                    )
+                }
+            }
+
+            TrackMenuLevel.Block if !PlatformStuff.isTv -> {
+                {
+                    DropdownMenuItem(
+                        onClick = {
+                            menuLevel = TrackMenuLevel.More
+                        },
+                        shape = MenuDefaults.leadingItemShape,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.ArrowBackAutoMirrored,
+                                contentDescription = null
+                            )
+                        },
+                        text = {
+                            Text(
+                                stringResource(
+                                    Res.string.block
+                                ),
+                                style = MaterialTheme.typography.titleMediumEmphasized
+                            )
+                        },
+                    )
+                }
+            }
+
+            else -> null
+        },
         modifier = modifier
     ) {
-        @Composable
         fun copyItem() {
             if (!PlatformStuff.isTv) {
-                DropdownMenuItem(
+                item(
                     onClick = {
                         PlatformStuff.copyToClipboard(track.artist.name + " - " + track.name)
                         onDismissRequest()
@@ -175,12 +204,9 @@ private fun TrackDropdownMenu(
             }
         }
 
-        @Composable
         fun searchItem() {
-            val searchInSource by
-                PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.searchInSource }
 
-            DropdownMenuItem(
+            item(
                 onClick = {
                     scope.launch {
                         PlatformStuff.launchSearchIntent(track, appId.takeIf { searchInSource })
@@ -204,7 +230,7 @@ private fun TrackDropdownMenu(
                 TrackMenuLevel.Root -> {
 
                     if (onLove != null) {
-                        DropdownMenuItem(
+                        item(
                             onClick = {
                                 val loved = track.userloved
                                 onLove(loved != true)
@@ -225,7 +251,7 @@ private fun TrackDropdownMenu(
                                     imageVector = if (track.userloved != true)
                                         Icons.Favorite
                                     else
-                                        Icons.Filled.Favorite,
+                                        Icons.FavoriteFilled,
                                     contentDescription = null
                                 )
                             }
@@ -233,7 +259,7 @@ private fun TrackDropdownMenu(
                     }
 
                     editDialogArgs?.invoke()?.let { dialogArgs ->
-                        DropdownMenuItem(
+                        item(
                             onClick = {
                                 onDismissRequest()
                                 onNavigate(dialogArgs)
@@ -251,7 +277,7 @@ private fun TrackDropdownMenu(
                     }
 
                     if (onDelete != null && track.date != null && track.date > 0 && !track.isNowPlaying) {
-                        DropdownMenuItem(
+                        item(
                             onClick = {
                                 onDelete()
                                 onDismissRequest()
@@ -272,16 +298,16 @@ private fun TrackDropdownMenu(
                         )
                     }
 
-                    DropdownMenuItem(
+                    item(
                         onClick = {
                             menuLevel = TrackMenuLevel.More
                         },
                         text = {
                             Text(stringResource(Res.string.more))
                         },
-                        trailingIcon = {
+                        trailingContent = {
                             Icon(
-                                imageVector = Icons.AutoMirrored.KeyboardArrowRight,
+                                imageVector = Icons.ArrowRightAutoMirrored,
                                 contentDescription = null
                             )
                         }
@@ -289,51 +315,24 @@ private fun TrackDropdownMenu(
                 }
 
                 TrackMenuLevel.More -> {
-                    if (!PlatformStuff.isTv) {
-                        DropdownMenuItem(
-                            onClick = {
-                                menuLevel = TrackMenuLevel.Root
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.ArrowBack,
-                                    contentDescription = null
-                                )
-                            },
-                            text = {
-                                Text(
-                                    stringResource(Res.string.more),
-                                    style = MaterialTheme.typography.titleMediumEmphasized
-                                )
-                            },
-                        )
-
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .padding(vertical = 4.dp)
-                                .fillMaxWidth()
-                        )
-                    }
-
-                    DropdownMenuItem(
+                    item(
                         onClick = {
                             menuLevel = TrackMenuLevel.Block
                         },
                         text = {
                             Text(stringResource(Res.string.block))
                         },
-                        trailingIcon = {
+                        trailingContent = {
                             Icon(
-                                imageVector = Icons.AutoMirrored.KeyboardArrowRight,
+                                imageVector = Icons.ArrowRightAutoMirrored,
                                 contentDescription = null
                             )
                         },
-                        modifier = Modifier.focusRequester(moreFocusRequester)
                     )
 
                     if (onHate != null) {
 
-                        DropdownMenuItem(
+                        item(
                             onClick = {
                                 val newHated = track.userHated != true
                                 onHate(newHated)
@@ -355,7 +354,7 @@ private fun TrackDropdownMenu(
                     copyItem()
 
                     if (onShare != null) {
-                        DropdownMenuItem(
+                        item(
                             onClick = {
                                 onShare(track, null)
 
@@ -375,35 +374,7 @@ private fun TrackDropdownMenu(
                 }
 
                 TrackMenuLevel.Block -> {
-                    if (!PlatformStuff.isTv) {
-                        DropdownMenuItem(
-                            onClick = {
-                                menuLevel = TrackMenuLevel.More
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.ArrowBack,
-                                    contentDescription = null
-                                )
-                            },
-                            text = {
-                                Text(
-                                    stringResource(
-                                        Res.string.block
-                                    ),
-                                    style = MaterialTheme.typography.titleMediumEmphasized
-                                )
-                            },
-                        )
-
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .padding(vertical = 4.dp)
-                                .fillMaxWidth()
-                        )
-                    }
-
-                    DropdownMenuItem(
+                    item(
                         onClick = {
                             val b = BlockedMetadata(
                                 artist = track.artist.name,
@@ -422,10 +393,9 @@ private fun TrackDropdownMenu(
                                 contentDescription = null
                             )
                         },
-                        modifier = Modifier.focusRequester(blockFocusRequester)
                     )
 
-                    DropdownMenuItem(
+                    item(
                         onClick = {
                             val b = BlockedMetadata(
                                 artist = track.artist.name,
@@ -445,7 +415,7 @@ private fun TrackDropdownMenu(
                         }
                     )
 
-                    DropdownMenuItem(
+                    item(
                         onClick = {
                             val b = BlockedMetadata(
                                 artist = track.artist.name,
@@ -476,7 +446,10 @@ fun LazyListScope.scrobblesPlaceholdersAndErrors(
 ) {
     when {
         tracks.loadState.refresh is LoadState.Loading -> {
-            items(10) {
+            items(
+                10,
+                key = { "shimmer_$it" }
+            ) {
                 MusicEntryListItem(
                     getMusicEntryPlaceholderItem(Stuff.TYPE_TRACKS),
                     forShimmer = true,
@@ -520,12 +493,39 @@ fun PendingDropdownMenu(
     PanoDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
-        modifier = modifier
-    ) {
-        PendingScrobbleDesc(pendingScrobble)
+        modifier = modifier,
+        headerContent = {
+            MenuDefaults.DropdownMenuGroupLabel {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                ) {
+                    Text(
+                        "ⓘ " + (pendingScrobble.lastFailedReason
+                            ?: stringResource(Res.string.network_error))
+                    )
 
+                    Text(
+                        PanoTimeFormatter.relative(
+                            pendingScrobble.lastFailedTimestamp,
+                            justNowString = stringResource(Res.string.time_just_now),
+                            withPreposition = true,
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+
+                    Text(
+                        pendingScrobble.services.map {
+                            accountTypeLabel(it)
+                        }.joinToString(", "),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+        },
+    ) {
         if (pendingScrobble.event == ScrobbleEvent.scrobble) {
-            DropdownMenuItem(
+            item(
                 onClick = {
                     onLove(true)
                     onDismissRequest()
@@ -544,7 +544,7 @@ fun PendingDropdownMenu(
             )
         }
 
-        DropdownMenuItem(
+        item(
             onClick = {
                 onDelete()
                 onDismissRequest()
@@ -566,66 +566,6 @@ fun PendingDropdownMenu(
     }
 }
 
-@Composable
-private fun PendingScrobbleDesc(
-    pendingScrobble: PendingScrobble,
-) {
-    DropdownMenuItem(
-        onClick = {},
-        enabled = false,
-        text = {
-            Text(
-                stringResource(Res.string.scrobble_services) + ":\n" +
-                        pendingScrobble.services.map {
-                            accountTypeLabel(it)
-                        }.joinToString(", ")
-            )
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Dns,
-                contentDescription = null
-            )
-        }
-    )
-
-    DropdownMenuItem(
-        onClick = {},
-        enabled = false,
-        text = {
-            Text(
-                (pendingScrobble.lastFailedReason ?: stringResource(Res.string.network_error))
-            )
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Error,
-                contentDescription = null
-            )
-        }
-    )
-
-    DropdownMenuItem(
-        onClick = {},
-        enabled = false,
-        text = {
-            Text(
-                PanoTimeFormatter.relative(
-                    pendingScrobble.lastFailedTimestamp,
-                    justNowString = stringResource(Res.string.time_just_now),
-                    withPreposition = true,
-                )
-            )
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Schedule,
-                contentDescription = null
-            )
-        }
-    )
-}
-
 fun LazyListScope.scrobblesListItems(
     tracks: LazyPagingItems<TrackWrapper>,
     user: UserCached,
@@ -637,10 +577,10 @@ fun LazyListScope.scrobblesListItems(
     canEdit: Boolean,
     canDelete: Boolean,
     expandedKey: () -> String?,
-    onExpand: (String?) -> Unit,
+    onExpand: (String?, Boolean) -> Unit,
     onNavigate: (PanoRoute) -> Unit,
-    animateListItemContentSize: State<Boolean>,
-    maxHeight: State<Dp>,
+    isLandscape: () -> Boolean,
+    maxHeight: () -> Dp,
     viewModel: ScrobblesVM,
 ) {
     fun onTrackClick(track: Track, appId: String?) {
@@ -682,14 +622,14 @@ fun LazyListScope.scrobblesListItems(
                 entry = track,
                 appItem = appItem,
                 onEntryClick = { onTrackClick(track, appItem?.appId) },
-                isColumn = isExpanded,
+                isColumn = isExpanded && !isLandscape(),
                 fixedImageHeight = !isExpanded,
                 onImageClick = if (!isPlaceholder) {
                     {
-                        if (isExpanded)
-                            onExpand(null)
-                        else {
-                            onExpand(item.key)
+                        if (isExpanded) {
+                            onExpand(null, item.track.isNowPlaying)
+                        } else {
+                            onExpand(item.key, item.track.isNowPlaying)
                         }
                     }
                 } else null,
@@ -774,17 +714,13 @@ fun LazyListScope.scrobblesListItems(
                 modifier = Modifier
                     .animateItem()
                     .then(
-                        if (animateListItemContentSize.value)
-                            Modifier.animateContentSize()
-                        else
-                            Modifier
-                    )
-                    .then(
                         if (isExpanded)
                             Modifier.heightIn(
-                                max = maxHeight.value
-                                    .coerceAtLeast(100.dp)
+                                min = 100.dp,
+                                max = (maxHeight() * 0.75f).coerceAtLeast(100.dp)
                             )
+                                .fillMaxWidth()
+                                .wrapContentWidth()
                         else
                             Modifier
                     )
@@ -836,17 +772,17 @@ fun LazyListScope.pendingScrobblesListItems(
 
     item(key = headerText) {
         ExpandableHeaderItem(
-            title = headerText,
+            text = headerText,
             icon = headerIcon,
             expanded = expanded == true || expanded == null,
-            enabled = expanded != null,
+            canExpand = expanded != null,
             onToggle = onToggle,
-            modifier = Modifier.animateItem(),
+            modifier = Modifier.animateItem()
         )
     }
 
     if (lastErrored != null && !lastErrored.lastFailedReason.isNullOrEmpty()) {
-        item(key = "pending_scrobble_last_errored") {
+        item(key = "pending_scrobble_last_error") {
             Text(
                 "ⓘ " + stringResource(Res.string.last_error) + ": " +
                         lastErrored.lastFailedReason,
@@ -854,9 +790,9 @@ fun LazyListScope.pendingScrobblesListItems(
                 overflow = TextOverflow.MiddleEllipsis,
                 style = MaterialTheme.typography.bodyMediumEmphasized,
                 modifier = Modifier
+                    .animateItem()
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .animateItem()
             )
         }
     }

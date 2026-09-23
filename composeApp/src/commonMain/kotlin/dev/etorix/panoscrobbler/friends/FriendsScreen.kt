@@ -1,10 +1,10 @@
 package dev.etorix.panoscrobbler.friends
 
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,15 +18,21 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledTonalToggleButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialShapes.Companion.Cookie7Sided
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedToggleButton
+import androidx.compose.material3.OutlinedToggleButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButtonSize
 import androidx.compose.material3.pulltorefresh.PullToRefreshState
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -49,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation3.runtime.result.ResultEffect
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
@@ -67,24 +74,26 @@ import dev.etorix.panoscrobbler.icons.OpenInBrowser
 import dev.etorix.panoscrobbler.icons.Search
 import dev.etorix.panoscrobbler.main.PanoPullToRefresh
 import dev.etorix.panoscrobbler.navigation.PanoRoute
+import dev.etorix.panoscrobbler.navigation.PanoTab
+import dev.etorix.panoscrobbler.navigation.PullToRefreshResult
 import dev.etorix.panoscrobbler.ui.AutoRefreshEffect
 import dev.etorix.panoscrobbler.ui.AvatarOrInitials
 import dev.etorix.panoscrobbler.ui.DraggableItem
-import dev.etorix.panoscrobbler.ui.EmptyText
 import dev.etorix.panoscrobbler.ui.ListLoadError
 import dev.etorix.panoscrobbler.ui.MusicEntryListItem
 import dev.etorix.panoscrobbler.ui.PanoDropdownMenu
 import dev.etorix.panoscrobbler.ui.PanoLazyColumn
 import dev.etorix.panoscrobbler.ui.PanoPullToRefreshStateForTab
 import dev.etorix.panoscrobbler.ui.dragContainer
+import dev.etorix.panoscrobbler.ui.emptyText
 import dev.etorix.panoscrobbler.ui.getMusicEntryPlaceholderItem
+import dev.etorix.panoscrobbler.ui.myColors
 import dev.etorix.panoscrobbler.ui.rememberDragDropState
 import dev.etorix.panoscrobbler.ui.shimmerWindowBounds
 import dev.etorix.panoscrobbler.utils.PanoTimeFormatter
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.format
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
@@ -115,7 +124,6 @@ fun FriendsScreen(
     user: UserCached,
     pullToRefreshState: PullToRefreshState,
     onSetRefreshing: (PanoPullToRefreshStateForTab) -> Unit,
-    pullToRefreshTriggered: () -> Flow<Unit>,
     onNavigate: (PanoRoute) -> Unit,
     onTitleChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -130,10 +138,10 @@ fun FriendsScreen(
     val friendsExtraDataMap by viewModel.friendsExtraDataMap.collectAsStateWithLifecycle()
     val friendsExtraDataMapState = remember { mutableStateMapOf<String, FriendExtraData>() }
     val pinnedFriends by viewModel.pinnedFriends.collectAsStateWithLifecycle()
-    var pinnedFriendsReordered by remember { mutableStateOf(pinnedFriends) }
+    var pinnedFriendsReordered by remember { mutableStateOf(pinnedFriends.orEmpty()) }
 
     val pinnedUsernamesSet by remember(pinnedFriendsReordered) {
-        mutableStateOf(pinnedFriends.map { it.name }.toSet())
+        mutableStateOf(pinnedFriends.orEmpty().map { it.name }.toSet())
     }
     val sortedFriends by viewModel.sortedFriends.collectAsStateWithLifecycle()
     val lastFriendsRefreshTime by viewModel.lastFriendsRefreshTime.collectAsStateWithLifecycle()
@@ -170,8 +178,9 @@ fun FriendsScreen(
     val followingText = stringResource(Res.string.following)
 
     LaunchedEffect(pinnedFriends) {
-        if (showPinned) {
-            pinnedFriendsReordered = pinnedFriends
+        val pf = pinnedFriends
+        if (showPinned && pf != null) {
+            pinnedFriendsReordered = pf
         }
     }
 
@@ -225,8 +234,8 @@ fun FriendsScreen(
     }
 
 
-    LaunchedEffect(Unit) {
-        pullToRefreshTriggered().collect {
+    ResultEffect<PullToRefreshResult> {
+        if (it.tab == PanoTab.Following) {
             if (currentFriends.loadState.refresh is LoadState.NotLoading) {
                 currentViewModel.markExtraDataAsStale()
                 currentViewModel.clearSortedFriends()
@@ -256,19 +265,18 @@ fun FriendsScreen(
         isRefreshing = friends.loadState.refresh is LoadState.Loading,
         modifier = modifier,
     ) {
-
-        EmptyText(
-            visible = friends.loadState.refresh is LoadState.NotLoading &&
-                    friends.itemCount == 0 && pinnedFriendsReordered.isEmpty(),
-            text = stringResource(Res.string.no_friends)
-        )
-
         PanoLazyColumn(
             state = listState,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .dragContainer(dragDropState)
         ) {
+            if (friends.loadState.refresh is LoadState.NotLoading &&
+                friends.itemCount == 0 && pinnedFriendsReordered.isEmpty()
+            )
+                emptyText { stringResource(Res.string.no_friends) }
+
             if (sortedFriends != null) {
                 items(
                     sortedFriends!!,
@@ -371,7 +379,9 @@ fun FriendsScreen(
 
             friends.apply {
                 when {
-                    loadState.refresh is LoadState.Loading -> {
+                    loadState.refresh is LoadState.Loading &&
+                            pinnedFriendsReordered.size == pinnedFriends?.size // has loaded from disk
+                        -> {
                         items(8) { // don't put key here, top items are not scrolled to initially, otherwise
                             FriendItemShimmer(
                                 modifier = Modifier.animateItem()
@@ -448,6 +458,7 @@ private fun FriendItemShimmer(
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun FriendItem(
     friend: UserCached,
@@ -463,72 +474,84 @@ private fun FriendItem(
     onMove: (Int, Int) -> Unit = { _, _ -> },
     isLastPin: Boolean = false,
 ) {
-    val playCount = remember(extraData) { extraData?.playCount }
-    val track = remember(extraData) { extraData?.track }
+    val playCount = extraData?.playCount
+    val track = extraData?.track
     val scope = rememberCoroutineScope()
     var detailsShown by remember { mutableStateOf(false) }
+    val avatarShape = if (pinIndex == null) CircleShape else Cookie7Sided.toShape()
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier.padding(horizontal = 4.dp)
+        modifier = modifier
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+        OutlinedToggleButton(
+            checked = detailsShown,
+            onCheckedChange = {
+                detailsShown = it
+            },
+            colors = OutlinedToggleButtonDefaults.myColors(),
+            shapes = ToggleButtonDefaults.shapesFor(ToggleButtonSize.Small).let {
+                it.copy(shape = it.pressedShape)
+            },
+            border = null,
+            contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
+            enabled = !forShimmer,
             modifier = Modifier
-                .width(72.dp)
-                .padding(vertical = 4.dp)
-                .clip(MaterialTheme.shapes.medium)
-                .clickable(
-                    enabled = !forShimmer,
-                    onClick = { detailsShown = true })
+                .width(84.dp)
                 .then(if (canPinUnpin) dragHandleModifier else Modifier)
-
         ) {
-            AvatarOrInitials(
-                avatarUrl = friend.largeImage,
-                avatarName = friend.name,
-                textStyle = MaterialTheme.typography.titleLarge,
-                modifier = Modifier
-                    .aspectRatio(1f)
-                    .clip(CircleShape)
-                    .then(if (forShimmer) Modifier.shimmerWindowBounds() else Modifier)
-                    .then(
-                        if (pinIndex != null)
-                            Modifier.border(
-                                width = 4.dp,
-                                color = MaterialTheme.colorScheme.secondary,
-                                shape = CircleShape
-                            )
-                        else
-                            Modifier
-                    )
-            )
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            Box(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (pinIndex != null) {
                     Icon(
                         imageVector = Icons.DragHandle,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier
+                            .size(16.dp)
                     )
                 }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    AvatarOrInitials(
+                        avatarUrl = friend.largeImage,
+                        avatarName = friend.name,
+                        textStyle = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier
+                            .width(72.dp)
+                            .aspectRatio(1f)
+                            .clip(avatarShape)
+                            .shimmerWindowBounds(forShimmer)
+                            .then(
+                                if (pinIndex != null)
+                                    Modifier.border(
+                                        width = 2.dp,
+                                        color = LocalContentColor.current,
+                                        shape = avatarShape
+                                    )
+                                else
+                                    Modifier
+                            )
+                    )
 
-                Text(
-                    text = if (Stuff.isInDemoMode) "user" else friend.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (pinIndex != null)
-                        FontWeight.Bold
-                    else
-                        null,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f)
-                )
+                    Text(
+                        text = if (Stuff.isInDemoMode) "user" else friend.name,
+                        style = MaterialTheme.typography.labelMediumEmphasized,
+                        fontWeight = if (pinIndex != null)
+                            FontWeight.Bold
+                        else
+                            null,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
+                }
             }
         }
 
@@ -552,17 +575,14 @@ private fun FriendItem(
             }
         } else {
             MusicEntryListItem(
-                entry = track ?: getMusicEntryPlaceholderItem(Stuff.TYPE_TRACKS),
+                entry = track ?: getMusicEntryPlaceholderItem(Stuff.TYPE_TRACKS, showDate = true),
                 onEntryClick = {
                     if (track != null)
                         onNavigateToTrackInfo(track, friend)
                 },
                 forShimmer = track == null,
-                modifier = if (track == null)
-                    Modifier
-                        .shimmerWindowBounds()
-                else
-                    Modifier
+                modifier = Modifier
+                    .shimmerWindowBounds(track == null)
             )
         }
 
@@ -570,78 +590,77 @@ private fun FriendItem(
             PanoDropdownMenu(
                 expanded = true,
                 onDismissRequest = { detailsShown = false },
+                headerContent = {
+                    MenuDefaults.DropdownMenuGroupLabel {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = friend.realname.ifEmpty { friend.name },
+                                style = MaterialTheme.typography.titleLargeEmphasized,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+
+                            if (friend.country.isNotEmpty() && friend.country != "None")
+                                Text(
+                                    text = stringResource(
+                                        Res.string.from,
+                                        friend.country + " " + Stuff.getCountryFlag(friend.country)
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+
+                            if (playCount != null) {
+                                Text(
+                                    text = pluralStringResource(
+                                        Res.plurals.num_scrobbles_noti,
+                                        playCount,
+                                        playCount.format()
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+
+                            if (friend.registeredTime > Stuff.TIME_2002)
+                                Text(
+                                    stringResource(
+                                        Res.string.since_time,
+                                        PanoTimeFormatter.day(friend.registeredTime)
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                        }
+                    }
+                }
             ) {
-                val textModifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-
-                Text(
-                    text = friend.realname.ifEmpty { friend.name },
-                    style = MaterialTheme.typography.titleLargeEmphasized,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = textModifier,
-                )
-
-                if (friend.country.isNotEmpty() && friend.country != "None")
-                    Text(
-                        text = stringResource(
-                            Res.string.from,
-                            friend.country + " " + Stuff.getCountryFlag(friend.country)
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = textModifier,
-                    )
-
-                if (playCount != null) {
-                    Text(
-                        text = pluralStringResource(
-                            Res.plurals.num_scrobbles_noti,
-                            playCount,
-                            playCount.format()
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = textModifier,
-                    )
-                }
-
-                if (friend.registeredTime > Stuff.TIME_2002)
-                    Text(
-                        stringResource(
-                            Res.string.since_time,
-                            PanoTimeFormatter.relative(friend.registeredTime, null)
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = textModifier,
-                    )
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-
                 if (pinIndex != null) {
-                    PinControls(
-                        isPinned = true,
-                        onPinUnpin = onPinUnpin,
-                        onMoveUp = if (pinIndex > 0) {
-                            {
-                                onMove(pinIndex, pinIndex - 1)
-                            }
-                        } else
-                            null,
-                        onMoveDown = if (!isLastPin) {
-                            {
-                                onMove(pinIndex, pinIndex + 1)
-                            }
-                        } else
-                            null,
-                    )
+                    custom {
+                        PinControls(
+                            isPinned = true,
+                            onPinUnpin = onPinUnpin,
+                            onMoveUp = if (pinIndex > 0) {
+                                {
+                                    onMove(pinIndex, pinIndex - 1)
+                                }
+                            } else
+                                null,
+                            onMoveDown = if (!isLastPin) {
+                                {
+                                    onMove(pinIndex, pinIndex + 1)
+                                }
+                            } else
+                                null,
+                        )
+                    }
                 }
 
-                DropdownMenuItem(
+                item(
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.History,
-                            contentDescription = stringResource(Res.string.profile),
+                            contentDescription = null,
                         )
                     },
                     text = {
@@ -654,11 +673,11 @@ private fun FriendItem(
                 )
 
                 if (pinIndex == null && canPinUnpin) {
-                    DropdownMenuItem(
+                    item(
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Keep,
-                                contentDescription = stringResource(Res.string.pin),
+                                contentDescription = null,
                             )
                         },
                         text = {
@@ -671,11 +690,11 @@ private fun FriendItem(
                 }
 
                 if (track is Track) {
-                    DropdownMenuItem(
+                    item(
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Search,
-                                contentDescription = stringResource(Res.string.search),
+                                contentDescription = null,
                             )
                         },
                         text = {
@@ -695,11 +714,11 @@ private fun FriendItem(
                 }
 
                 if (friend.url.isNotEmpty() && !PlatformStuff.isTv) {
-                    DropdownMenuItem(
+                    item(
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.OpenInBrowser,
-                                contentDescription = stringResource(Res.string.profile),
+                                contentDescription = null,
                             )
                         },
                         text = {
@@ -735,7 +754,7 @@ private fun PinControls(
         ),
     ) {
         if (isPinned) {
-            OutlinedToggleButton(
+            FilledTonalToggleButton(
                 enabled = onMoveUp != null,
                 checked = false,
                 onCheckedChange = {
@@ -751,7 +770,7 @@ private fun PinControls(
             }
         }
 
-        ToggleButton(
+        FilledTonalToggleButton(
             checked = isPinned,
             onCheckedChange = {
                 onPinUnpin(!isPinned)
@@ -767,7 +786,7 @@ private fun PinControls(
         }
 
         if (isPinned) {
-            OutlinedToggleButton(
+            FilledTonalToggleButton(
                 enabled = onMoveDown != null,
                 checked = false,
                 onCheckedChange = {

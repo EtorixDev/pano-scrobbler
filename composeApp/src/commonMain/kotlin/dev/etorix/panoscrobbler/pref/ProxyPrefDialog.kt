@@ -21,9 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import dev.etorix.panoscrobbler.navigation.enumSaver
-import dev.etorix.panoscrobbler.ui.OutlinedToggleButtons
 import dev.etorix.panoscrobbler.ui.PanoOutlinedTextField
+import dev.etorix.panoscrobbler.ui.PanoToggleButtonGroup
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
@@ -49,7 +48,7 @@ fun ProxyPrefDialog(modifier: Modifier = Modifier) {
     ) {
         val proxy by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.proxy }
 
-        var typeEditable by rememberSaveable(saver = enumSaver()) { mutableStateOf(proxy.type) }
+        var typeEditable by rememberSaveable { mutableStateOf(proxy.type) }
         var hostEditable by rememberSaveable { mutableStateOf(proxy.host) }
         var portEditable by rememberSaveable { mutableStateOf(proxy.port.toString()) }
         var userEditable by rememberSaveable { mutableStateOf(proxy.user) }
@@ -100,7 +99,7 @@ fun ProxyPrefDialog(modifier: Modifier = Modifier) {
             }
         }
 
-        OutlinedToggleButtons(
+        PanoToggleButtonGroup(
             listOf(
                 stringResource(Res.string.system),
                 stringResource(Res.string.proxy_http),

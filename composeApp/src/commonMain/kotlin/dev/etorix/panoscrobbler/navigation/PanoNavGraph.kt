@@ -2,7 +2,6 @@ package dev.etorix.panoscrobbler.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -51,6 +50,7 @@ import dev.etorix.panoscrobbler.search.SearchScreen
 import dev.etorix.panoscrobbler.themes.ThemeChooserScreen
 import dev.etorix.panoscrobbler.ui.PanoPullToRefreshStateForTab
 import dev.etorix.panoscrobbler.ui.accountTypeLabel
+import dev.etorix.panoscrobbler.ui.navBg
 import dev.etorix.panoscrobbler.ui.navColumn
 import dev.etorix.panoscrobbler.ui.navScrollableColumn
 import dev.etorix.panoscrobbler.ui.panoContentPadding
@@ -102,7 +102,8 @@ object PanoNavGraph {
         goBack: () -> Unit,
         searchFieldState: TextFieldState,
         pullToRefreshState: () -> PullToRefreshState,
-        onSetRefreshing: (Int, PanoPullToRefreshStateForTab) -> Unit,
+        onSetRefreshing: (PanoTab, PanoPullToRefreshStateForTab) -> Unit,
+        onExpandModal: (PanoRoute.Modal.CanExpand) -> Unit,
         selectSubTabId: (Int) -> Unit,
         mainViewModel: MainViewModel,
     ) = entryProvider {
@@ -156,9 +157,8 @@ object PanoNavGraph {
                     pullToRefreshState = pullToRefreshState(),
                     onSetRefreshing = onSetRefreshing,
                     mainViewModel = mainViewModel,
-                    getPullToRefreshTrigger = { mainViewModel.getPullToRefreshTrigger(it) },
                     selectSubTabId = selectSubTabId,
-                    modifier = Modifier.navColumn()
+                    modifier = Modifier.navBg()
                 )
             }
         }
@@ -177,9 +177,8 @@ object PanoNavGraph {
                 pullToRefreshState = pullToRefreshState(),
                 onSetRefreshing = onSetRefreshing,
                 mainViewModel = mainViewModel,
-                getPullToRefreshTrigger = { mainViewModel.getPullToRefreshTrigger(it) },
                 selectSubTabId = selectSubTabId,
-                modifier = Modifier.navColumn()
+                modifier = Modifier.navBg()
             )
         }
 
@@ -282,6 +281,8 @@ object PanoNavGraph {
                 msid = null,
                 hash = null,
                 key = null,
+                isExpanded = true,
+                onExpand = {},
                 viewModel = mainViewModel,
                 modifier = Modifier.navScrollableColumn(true)
             )
@@ -292,7 +293,7 @@ object PanoNavGraph {
             onSetTitleRes(route, Res.string.regex_rules)
             RegexEditsScreen(
                 onNavigate = navigate,
-                modifier = Modifier.navColumn()
+                modifier = Modifier.navColumn().padding(panoContentPadding())
             )
         }
 
@@ -535,7 +536,6 @@ object PanoNavGraph {
                     onSetTabIdx(route, tab)
                 },
                 tabsList = getTabData(route),
-                onSetTitle = { title -> onSetTitle(route, title) },
                 onNavigate = navigate,
                 modifier = Modifier.navColumn()
             )
@@ -562,14 +562,9 @@ object PanoNavGraph {
         entry<PanoRoute.Help> { route ->
             onSetTitleRes(route, Res.string.faq)
 
-            if (route.searchTerm.isNotEmpty()) {
-                LaunchedEffect(Unit) {
-                    searchFieldState.setTextAndPlaceCursorAtEnd(route.searchTerm)
-                }
-            }
-
             HelpScreen(
                 searchFieldState = searchFieldState,
+                searchTerm = route.searchTerm,
                 scrobblerStateFlow = mainViewModel.scrobblerStateFlow,
                 modifier = Modifier.navColumn().padding(panoContentPadding())
             )
@@ -579,7 +574,7 @@ object PanoNavGraph {
             onSetTitleRes(route, Res.string.pref_privacy_policy)
 
             PrivacyPolicyScreen(
-                modifier = Modifier.navColumn()
+                modifier = Modifier.navColumn().padding(panoContentPadding())
             )
         }
 
@@ -617,13 +612,15 @@ object PanoNavGraph {
 
             ArtistsWithDelimitersScreen(
                 searchFieldState = searchFieldState,
-                modifier = Modifier.navColumn()
+                modifier = Modifier.navColumn().padding(panoContentPadding())
             )
         }
 
         panoModalNavGraph(
+            onSetTitle = onSetTitle,
             navigate = navigate,
             goBack = goBack,
+            onExpandModal = onExpandModal,
             mainViewModel = mainViewModel,
         )
 

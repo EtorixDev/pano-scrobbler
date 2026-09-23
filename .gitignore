@@ -20,6 +20,9 @@ captures
 *.log
 *.backup
 /build
+/desktopApp/resources/**/*.so
+/desktopApp/resources/**/*.dll
+/desktopApp/resources/**/*.dylib
 /composeApp/resources/**/*.so
 /composeApp/resources/**/*.dll
 /composeApp/resources/**/*.dylib

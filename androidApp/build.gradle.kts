@@ -8,14 +8,6 @@ plugins {
     alias(libs.plugins.baselineprofile)
 }
 
-val requestedTasks = gradle.startParameter.taskNames.map { it.lowercase() }
-
-val aboutLibrariesVariant = when {
-    requestedTasks.any { it.contains("releasegithub") } -> "releaseGithub"
-    requestedTasks.any { it.contains("release") } -> "release"
-    else -> null
-}
-
 val APP_ID = rootProject.extra["APP_ID"] as String
 val VER_CODE = rootProject.extra["VER_CODE"] as Int
 val VER_NAME = rootProject.extra["VER_NAME"] as String
@@ -89,6 +81,16 @@ android {
             language {
                 enableSplit = false
             }
+        }
+
+        dex {
+            useLegacyPackaging = false
+        }
+    }
+
+    lint {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(25)
         }
     }
 
@@ -192,18 +194,8 @@ aboutLibraries {
             "developerConnection"
         )
 
-        variant = aboutLibrariesVariant
-    }
-
-    exports {
-        create("release") {
-            outputFile =
-                file("../composeApp/src/androidMain/composeResources/files/aboutlibraries.json")
-        }
-        create("releaseGithub") {
-            outputFile =
-                file("../composeApp/src/androidMain/composeResources/files/aboutlibraries.json")
-        }
+        outputFile =
+            file("../composeApp/src/androidMain/composeResources/files/aboutlibraries.json")
     }
 
 }
@@ -219,7 +211,9 @@ tasks.register<Copy>("copyGithubReleaseApk") {
 }
 
 tasks.configureEach {
-    if (name == "packageReleaseGithub") {
-        finalizedBy("copyGithubReleaseApk")
+    when (name) {
+        "packageReleaseGithub" -> finalizedBy("copyGithubReleaseApk")
+        "exportLibraryDefinitions" -> finalizedBy(":composeApp:copyNonXmlValueResourcesForAndroidMain")
+        "packageReleaseGithubResources", "packageReleaseResources" -> finalizedBy("exportLibraryDefinitions")
     }
 }

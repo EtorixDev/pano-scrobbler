@@ -3,10 +3,11 @@ package dev.etorix.panoscrobbler.search
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,7 +32,6 @@ import dev.etorix.panoscrobbler.api.spotify.TrackItem
 import dev.etorix.panoscrobbler.imageloader.MusicEntryImageReq
 import dev.etorix.panoscrobbler.imageloader.PanoImageLoader
 import dev.etorix.panoscrobbler.ui.AlertDialogOk
-import dev.etorix.panoscrobbler.ui.EmptyText
 import dev.etorix.panoscrobbler.ui.ErrorText
 import dev.etorix.panoscrobbler.ui.FilePicker
 import dev.etorix.panoscrobbler.ui.FilePickerMode
@@ -39,14 +39,15 @@ import dev.etorix.panoscrobbler.ui.FileType
 import dev.etorix.panoscrobbler.ui.MusicEntryListItem
 import dev.etorix.panoscrobbler.ui.PanoLazyColumn
 import dev.etorix.panoscrobbler.ui.SearchEffect
+import dev.etorix.panoscrobbler.ui.emptyText
 import dev.etorix.panoscrobbler.ui.shimmerWindowBounds
 import dev.etorix.panoscrobbler.utils.PlatformStuff
-import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
 import dev.etorix.panoscrobbler.utils.redactedMessage
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res
+import pano_scrobbler.composeapp.generated.resources.from
 import pano_scrobbler.composeapp.generated.resources.from_gallery
 import pano_scrobbler.composeapp.generated.resources.is_turned_off
 import pano_scrobbler.composeapp.generated.resources.not_found
@@ -83,12 +84,6 @@ fun ImageSearchScreen(
         onBack()
     }
 
-    val printableEntryName = if (musicEntry is Album) {
-        Stuff.formatBigHyphen(musicEntry.artist!!.name, musicEntry.name)
-    } else {
-        musicEntry.name
-    }
-
     val searchResults by viewModel.searchResultsWithImages.collectAsStateWithLifecycle(null)
 
     val searchError by viewModel.searchError.collectAsStateWithLifecycle()
@@ -104,17 +99,14 @@ fun ImageSearchScreen(
         viewModel.setMusicEntries(musicEntry, originalMusicEntry)
     }
 
-    LaunchedEffect(Unit) {
-        searchFieldState.setTextAndPlaceCursorAtEnd(
-            if (musicEntry is Album)
+    if (useSpotify) {
+        SearchEffect(
+            searchFieldState,
+            initialText = if (musicEntry is Album)
                 musicEntry.artist!!.name + " " + musicEntry.name
             else
                 musicEntry.name
-        )
-    }
-
-    if (useSpotify) {
-        SearchEffect(searchFieldState) {
+        ) {
             viewModel.search(it)
         }
     }
@@ -157,6 +149,15 @@ fun ImageSearchScreen(
         }
 
         if (searchResults?.isNotEmpty() == true) {
+            item("results_header") {
+                Text(
+                    text = stringResource(Res.string.from, stringResource(Res.string.spotify)),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+
             items(
                 searchResults!!,
                 key = { it.id }
@@ -194,16 +195,11 @@ fun ImageSearchScreen(
                 )
             }
         } else if (searchResults?.isEmpty() == true) {
-            item("empty_text") {
-                EmptyText(
-                    text = stringResource(Res.string.not_found),
-                    visible = true,
-                )
-            }
+            emptyText { stringResource(Res.string.not_found) }
         } else if (searchError == null && useSpotify) {
             items(
                 10,
-                key = { it }
+                key = { "shimmer_$it" }
             ) {
                 MusicEntryListItem(
                     Track(
@@ -217,12 +213,7 @@ fun ImageSearchScreen(
                 )
             }
         } else if (!useSpotify) {
-            item("spotify_off") {
-                EmptyText(
-                    text = stringResource(Res.string.spotify) + " " + stringResource(Res.string.is_turned_off),
-                    visible = true,
-                )
-            }
+            emptyText { stringResource(Res.string.spotify) + " " + stringResource(Res.string.is_turned_off) }
         }
 
         if (searchError != null) {

@@ -4,50 +4,58 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalToggleButton
+import androidx.compose.material3.FilledTonalToggleButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemColors
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LocalAbsoluteTonalElevation
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorPosition
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedIconToggleButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedToggleButton
+import androidx.compose.material3.OutlinedToggleButtonDefaults
 import androidx.compose.material3.PlainTooltip
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
@@ -57,26 +65,30 @@ import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
+import androidx.compose.material3.ripple
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.painter.ColorPainter
-import androidx.compose.ui.graphics.vector.Group
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.RenderVectorGroup
-import androidx.compose.ui.graphics.vector.VectorPainter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -84,17 +96,21 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalLocaleList
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import co.touchlab.kermit.Logger
 import coil3.compose.AsyncImage
 import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.api.lastfm.ApiException
@@ -118,8 +134,9 @@ import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
 import dev.etorix.panoscrobbler.utils.redactedMessage
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.jetbrains.compose.resources.StringResource
@@ -207,20 +224,19 @@ enum class PanoToggleButtonsMode {
     BothVertical
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun OutlinedToggleButtons(
+fun PanoToggleButtonGroup(
     texts: Collection<String>,
     selectedIndex: Int,
     onSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
     icons: Collection<ImageVector?> = List(texts.size) { null },
+    chevronAt: Int? = null,
     horizontalArrangement: Arrangement.Horizontal = ButtonGroupDefaults.HorizontalArrangement,
     enabled: Boolean = true,
     mode: PanoToggleButtonsMode = PanoToggleButtonsMode.Text,
-    colors: ToggleButtonColors = ToggleButtonDefaults.outlinedToggleButtonColors(),
+    colors: ToggleButtonColors = OutlinedToggleButtonDefaults.myColors(),
     border: Boolean = true,
-    canReClick: Boolean = false,
     textStyle: TextStyle? = null,
 ) {
     val interactionSources =
@@ -236,7 +252,7 @@ fun OutlinedToggleButtons(
             )
         },
     ) {
-        (texts.zip(icons)).forEachIndexed { index, itemToIcon ->
+        (texts zip icons).forEachIndexed { index, itemToIcon ->
             val (text, icon) = itemToIcon
             val checked = index == selectedIndex
 
@@ -244,13 +260,14 @@ fun OutlinedToggleButtons(
             val textVisible = checked || mode != PanoToggleButtonsMode.Icon
             val contentDescription = if (!textVisible && iconVisible) text else null
 
-            val compressionLimit = ButtonDefaults.contentPaddingFor(ButtonDefaults.MinHeight)
+            val contentPadding =
+                ToggleButtonDefaults.contentPaddingFor(ToggleButtonDefaults.MinHeight)
 
             customItem(
                 buttonGroupContent = {
                     OutlinedToggleButton(
                         onCheckedChange = {
-                            if (!checked && it || canReClick) {
+                            if (!checked && it || chevronAt == index) {
                                 onSelected(index)
                             }
                         },
@@ -261,17 +278,22 @@ fun OutlinedToggleButtons(
                             texts.size - 1 -> ButtonGroupDefaults.connectedTrailingButtonShapes()
                             else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                         },
-                        contentPadding = compressionLimit,
+                        contentPadding = contentPadding,
                         interactionSource = interactionSources[index],
                         colors = colors,
-                        border = if (border && !checked) ButtonDefaults.outlinedButtonBorder(enabled) else null,
+                        border = if (border)
+                            OutlinedToggleButtonDefaults.border(enabled, checked)
+                        else
+                            null,
                         modifier = Modifier
                             .animateWidth(
                                 interactionSource = interactionSources[index],
-                                compressionLimit = compressionLimit,
+                                compressionLimit = contentPadding.calculateEndPadding(
+                                    LocalLayoutDirection.current
+                                ),
                             ) then (
                                 if (mode == PanoToggleButtonsMode.BothVertical)
-                                    Modifier.widthIn(min = 84.dp)
+                                    Modifier.widthIn(min = 90.dp)
                                 else
                                     Modifier
                                 )
@@ -280,11 +302,16 @@ fun OutlinedToggleButtons(
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                if (iconVisible)
+                                if (iconVisible) {
                                     Icon(
                                         imageVector = icon,
-                                        contentDescription = contentDescription,
+                                        contentDescription = null,
+                                        modifier = Modifier.requiredSize(IconButtonDefaults.mediumIconSize)
                                     )
+
+                                    if (textVisible)
+                                        Spacer(Modifier.height(2.dp))
+                                }
 
                                 Text(
                                     text = text,
@@ -298,11 +325,12 @@ fun OutlinedToggleButtons(
                             if (iconVisible) {
                                 Icon(
                                     imageVector = icon,
-                                    contentDescription = contentDescription
+                                    contentDescription = contentDescription,
+                                    modifier = Modifier.requiredSize(IconButtonDefaults.mediumIconSize)
                                 )
 
                                 if (textVisible)
-                                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                                    Spacer(Modifier.width(ButtonDefaults.ExtraSmallIconSpacing))
                             }
 
                             if (textVisible) {
@@ -314,6 +342,15 @@ fun OutlinedToggleButtons(
                                     overflow = TextOverflow.Visible,
                                 )
                             }
+
+                            if (chevronAt == index) {
+                                // no spacer, the chevron image has plenty
+                                Icon(
+                                    imageVector = Icons.ArrowDropDown,
+                                    contentDescription = null,
+                                    modifier = Modifier.requiredSize(IconButtonDefaults.mediumIconSize)
+                                )
+                            }
                         }
                     }
                 },
@@ -322,9 +359,10 @@ fun OutlinedToggleButtons(
                         leadingIcon = icon?.let {
                             { Icon(imageVector = it, contentDescription = null) }
                         },
+                        shape = MenuDefaults.standaloneItemShape,
                         text = { Text(text) },
                         onClick = {
-                            if (!checked || canReClick) {
+                            if (!checked || chevronAt == index) {
                                 onSelected(index)
                             }
                         },
@@ -362,31 +400,6 @@ fun ErrorText(
     }
 }
 
-
-@Composable
-fun InfoText(
-    text: String,
-    modifier: Modifier = Modifier,
-    icon: ImageVector = Icons.Info,
-    style: TextStyle = LocalTextStyle.current,
-) {
-    Row(
-        modifier = modifier.padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.padding(end = 8.dp)
-        )
-        Text(
-            text = text,
-            style = style
-        )
-    }
-}
-
-
 @Composable
 fun TextWithIcon(
     text: String,
@@ -414,10 +427,36 @@ fun TextWithIcon(
 @Composable
 fun SearchEffect(
     searchFieldState: TextFieldState,
+    initialText: String = "",
+    savedState: MutableState<String> = rememberSaveable { mutableStateOf(initialText) },
     onSearch: (String) -> Unit,
 ) {
-    LaunchedEffect(searchFieldState.text) {
-        onSearch(searchFieldState.text.toString())
+    var restored by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    LifecycleResumeEffect(searchFieldState.text) {
+        val job: Job?
+        if (!restored) {
+            searchFieldState.setTextAndPlaceCursorAtEnd(savedState.value)
+            restored = true
+            onSearch(savedState.value)
+            job = null
+        } else {
+            job = scope.launch {
+                delay(500.milliseconds)
+
+                val text = searchFieldState.text.toString()
+                if (savedState.value != text) {
+                    Logger.d { "onSearch $text" }
+                    savedState.value = text
+                    onSearch(text)
+                }
+            }
+        }
+
+        onPauseOrDispose {
+            job?.cancel()
+        }
     }
 }
 
@@ -477,7 +516,7 @@ fun PanoOutlinedTextField(
 }
 
 @Composable
-fun <T> ButtonWithSpinner(
+fun <T> ButtonWithDropdown(
     prefixText: String?,
     itemToTexts: Map<T, String>,
     selected: T,
@@ -486,7 +525,7 @@ fun <T> ButtonWithSpinner(
 ) {
     var dropDownShown by remember { mutableStateOf(false) }
 
-    OutlinedToggleButton(
+    FilledTonalToggleButton(
         checked = dropDownShown,
         onCheckedChange = { dropDownShown = it },
         modifier = modifier
@@ -498,7 +537,6 @@ fun <T> ButtonWithSpinner(
                 "$prefixText: ${itemToTexts[selected] ?: ""}"
             }
         )
-        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
         Icon(Icons.ArrowDropDown, contentDescription = null)
 
         PanoDropdownMenu(
@@ -506,7 +544,7 @@ fun <T> ButtonWithSpinner(
             onDismissRequest = { dropDownShown = false }
         ) {
             itemToTexts.forEach { (item, text) ->
-                DropdownMenuItem(
+                item(
                     onClick = {
                         onItemSelected(item)
                         dropDownShown = false
@@ -528,9 +566,8 @@ fun IconButtonWithTooltip(
     onClick: () -> Unit,
     contentDescription: String,
     modifier: Modifier = Modifier,
-    filledStyle: Boolean = false,
+    checked: Boolean? = null,
     enabled: Boolean = true,
-    tint: Color = MaterialTheme.colorScheme.secondary,
 ) {
     TooltipBox(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
@@ -538,28 +575,29 @@ fun IconButtonWithTooltip(
         state = rememberTooltipState(),
         modifier = modifier,
     ) {
-        if (filledStyle) {
-            FilledTonalIconButton(
-                onClick = onClick,
+        if (checked != null) {
+            OutlinedIconToggleButton(
+                checked = checked,
+                border = null,
+                shapes = IconButtonDefaults.toggleableShapes(),
+                onCheckedChange = { onClick() },
                 enabled = enabled,
-                shapes = IconButtonDefaults.shapes(),
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = contentDescription,
-                    tint = tint
                 )
             }
         } else {
             IconButton(
                 shapes = IconButtonDefaults.shapes(),
+                colors = IconButtonDefaults.iconButtonVibrantColors(),
                 onClick = onClick,
                 enabled = enabled,
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = contentDescription,
-                    tint = tint
                 )
             }
         }
@@ -573,6 +611,7 @@ fun ButtonWithIcon(
     text: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    maxLines: Int = 1,
     contentColorOverride: Color? = null,
 ) {
     OutlinedButton(
@@ -590,27 +629,30 @@ fun ButtonWithIcon(
             modifier = Modifier.size(ButtonDefaults.IconSize)
         )
         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-        Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis, color = contentColor)
+        Text(
+            text,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
+            color = contentColor,
+        )
     }
 }
 
-@Composable
-fun EmptyText(
-    visible: Boolean,
-    text: String,
-    modifier: Modifier = Modifier,
+fun LazyListScope.emptyText(
+    string: @Composable () -> String,
 ) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(),
-        exit = fadeOut(),
-    ) {
-        Box(modifier = modifier.fillMaxSize()) {
+    item("list_empty_text", contentType = "list_empty_text") {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .animateItem()
+                .fillParentMaxWidth()
+                .fillParentMaxHeight(0.5f)
+        ) {
             Text(
-                text = text,
+                text = string(),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier
-                    .align(Alignment.Center)
                     .padding(16.dp)
             )
         }
@@ -643,7 +685,7 @@ fun EmptyTextWithImportButtonOnTv(
             )
 
             if (PlatformStuff.isTv) {
-                OutlinedButton(
+                FilledTonalButton(
                     shapes = ButtonDefaults.shapes(),
                     onClick = onButtonClick,
                     modifier = Modifier.padding(top = 16.dp)
@@ -660,31 +702,77 @@ fun EmptyTextWithImportButtonOnTv(
 fun SimpleHeaderItem(
     text: String,
     icon: ImageVector,
+    modifier: Modifier
 ) {
-    Surface(
-        tonalElevation = 2.dp,
-        shape = MaterialTheme.shapes.large,
-        contentColor = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            .fillMaxWidth()
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .padding(vertical = 16.dp, horizontal = horizontalOverscanPadding()),
-        ) {
+    ListItem(
+        colors = ListItemDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
+                LocalAbsoluteTonalElevation.current + 2.dp
+            ),
+        ),
+        leadingContent = {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier
-                    .padding(end = 32.dp)
             )
+        },
+        modifier = modifier,
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium,
+        )
+    }
+}
 
-            Text(
-                text = text,
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
+@Composable
+fun LabeledCheckbox(
+    text: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    transparentSurface: Boolean = true,
+    isSwitch: Boolean = false,
+    enabled: Boolean = true,
+    textStyle: TextStyle? = null,
+    maxLines: Int = 2,
+) {
+    val colors = if (transparentSurface) {
+        ListItemDefaults.myTransparentCheckableItemColors()
+    } else {
+        ListItemDefaults.myCheckableItemColors()
+    }
+
+    ListItem(
+        enabled = enabled,
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        colors = colors,
+        leadingContent =
+            if (!isSwitch) {
+                {
+                    Checkbox(
+                        checked = checked,
+                        onCheckedChange = null
+                    )
+                }
+            } else null,
+        trailingContent =
+            if (isSwitch) {
+                {
+                    Switch(
+                        checked = checked,
+                        onCheckedChange = null
+                    )
+                }
+            } else null,
+        modifier = modifier
+    ) {
+        Text(
+            text,
+            maxLines = maxLines,
+            style = textStyle ?: LocalTextStyle.current
+        )
     }
 }
 
@@ -743,7 +831,7 @@ fun VerifyButton(
                 if (verifying) {
                     CircularWavyProgressIndicator()
                 } else {
-                    OutlinedButton(
+                    FilledTonalButton(
                         shapes = ButtonDefaults.shapes(),
                         onClick = {
                             verifying = true
@@ -788,7 +876,7 @@ fun AvatarOrInitials(
     } else {
         val themeAttributes = LocalThemeAttributes.current
         val index =
-            abs(avatarName.hashCode()) % themeAttributes.allOnSecondaryContainerColors.size
+            abs(avatarName.hashCode()) % themeAttributes.avatarColors.size
 
         val initials by remember(avatarName, initials) {
             val i = initials ?: avatarName.split(" ", limit = 2)
@@ -801,7 +889,7 @@ fun AvatarOrInitials(
         Box(
             contentAlignment = Alignment.Center,
             modifier = modifier
-                .background(themeAttributes.allSecondaryContainerColors[index])
+                .background(themeAttributes.avatarContainerColors[index])
         ) {
             Text(
                 text = initials,
@@ -809,7 +897,7 @@ fun AvatarOrInitials(
                 softWrap = false,
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold,
-                color = themeAttributes.allOnSecondaryContainerColors[index],
+                color = themeAttributes.avatarColors[index],
             )
         }
     }
@@ -883,34 +971,6 @@ fun ListLoadError(
     }
 }
 
-
-@Composable
-fun customFpsInfiniteAnimation(
-    initialValue: Float,
-    targetValue: Float,
-    durationMillis: Int,
-    enabled: Boolean = true,
-    fps: Int = 15, // 12-15 is plenty for a slow ambient breathing gradient
-): State<Float> {
-    val state = remember { mutableFloatStateOf(initialValue) }
-    val frameDelayMs = remember(fps) { 1000L / fps }
-
-    LaunchedEffect(enabled, initialValue, targetValue, durationMillis) {
-        if (!enabled) return@LaunchedEffect
-        val startNanos = System.nanoTime()
-        while (isActive) {
-            val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
-            // Ping-pong from elapsed wall-clock time, not a frame counter —
-            // stays correct even if a delay() occasionally overruns under load.
-            val raw = (elapsedMs % (2 * durationMillis)).toFloat() / durationMillis
-            val t = if (raw < 1f) raw else 2f - raw
-            state.floatValue = initialValue + (targetValue - initialValue) * t
-            delay(frameDelayMs.milliseconds)
-        }
-    }
-    return state
-}
-
 @Composable
 fun YesNoDropdown(
     expanded: Boolean,
@@ -924,49 +984,19 @@ fun YesNoDropdown(
         onDismissRequest = onDismissRequest,
         modifier = modifier
     ) {
-        DropdownMenuItem(
+        item(
             text = { Text(stringResource(Res.string.yes)) },
             onClick = {
                 onYes()
                 onDismissRequest()
             },
         )
-        DropdownMenuItem(
+        item(
             text = { Text(stringResource(Res.string.no)) },
             onClick = {
                 onNo()
                 onDismissRequest()
             },
-        )
-    }
-}
-
-@Composable
-fun PanoDropdownMenu(
-    expanded: Boolean,
-    onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier,
-    offset: DpOffset = DpOffset.Zero,
-    content: @Composable (ColumnScope.() -> Unit)
-) {
-    // the outer offset param does nothing on android
-    DropdownMenuPopup(
-        expanded = expanded,
-        onDismissRequest = onDismissRequest,
-        modifier = modifier,
-        popupPositionProvider =
-            MenuDefaults.rememberDropdownMenuPopupPositionProvider(
-                MenuAnchorPosition.Below,
-                offset
-            ),
-    ) {
-        DropdownMenuGroup(
-            shapes = MenuDefaults.groupShapes(),
-            tonalElevation = 2.dp,
-            content = content,
-            modifier = Modifier
-                .width(IntrinsicSize.Max)
-                .verticalScroll(rememberScrollState())
         )
     }
 }
@@ -1020,81 +1050,90 @@ fun InlineCheckButton(
 }
 
 @Composable
+fun Modifier.shapedClickable(
+    shape: Shape = MaterialTheme.shapes.medium,
+    clickableAdded: Boolean = true,
+    onClick: () -> Unit,
+) = clip(shape)
+    .then(
+        if (clickableAdded)
+            Modifier.clickable(
+                interactionSource = null,
+                onClick = onClick,
+                role = Role.Button,
+                indication = ripple(
+                    focusRingShape = shape
+                )
+            )
+        else Modifier
+    )
+
+@Composable
 fun Modifier.backgroundForShimmer(
     isShimmer: Boolean,
     shape: Shape = MaterialTheme.shapes.medium,
-): Modifier {
-    if (!isShimmer) return this
+) = if (!isShimmer)
+    this
+else
+    background(MaterialTheme.colorScheme.surfaceContainerHighest, shape)
 
-    return clip(shape)
-        .background(Color.Gray.copy(alpha = 0.3f))
-}
+fun horizontalOverscanPadding(): Dp =
+    if (PlatformStuff.isTv)
+        48.dp
+    else
+        0.dp
 
-@Composable
-fun horizontalOverscanPadding(): Dp {
-    val navigationType = LocalNavigationType.current
-    return when (navigationType) {
-        PanoNavigationType.BOTTOM_NAVIGATION -> 16.dp
-        PanoNavigationType.NAVIGATION_RAIL -> 24.dp
-        PanoNavigationType.PERMANENT_NAVIGATION_DRAWER -> 48.dp
-    }
-}
 
-@Composable
-fun verticalOverscanPadding(): Dp {
-    val navigationType = LocalNavigationType.current
-    return when (navigationType) {
-        PanoNavigationType.BOTTOM_NAVIGATION,
-        PanoNavigationType.NAVIGATION_RAIL,
-            -> if (PlatformStuff.isDesktop || PlatformStuff.isTv) 27.dp
-        else 0.dp
-
-        PanoNavigationType.PERMANENT_NAVIGATION_DRAWER -> 27.dp
-    }
-}
+fun verticalOverscanPadding() =
+    if (PlatformStuff.isTv)
+        27.dp
+    else
+        0.dp
 
 @Composable
 fun placeholderPainter(): ColorPainter {
     val color = MaterialTheme.colorScheme.surfaceContainerHigh
-    return remember { ColorPainter(color) }
+    return remember { ColorPainter(color.copy(alpha = 0.5f)) }
+}
+
+private class ClippedCenteredPainter(
+    private val painter: Painter,
+    private val clippedSize: Size,
+) : Painter() {
+
+    override val intrinsicSize: Size
+        get() = clippedSize
+
+    override fun DrawScope.onDraw() {
+        val originalSize = painter.intrinsicSize
+        val dx = (size.width - originalSize.width) / 2f
+        val dy = (size.height - originalSize.height) / 2f
+
+        clipRect {
+            translate(left = dx, top = dy) {
+                with(painter) {
+                    draw(originalSize)
+                }
+            }
+        }
+    }
 }
 
 @Composable
-fun combineImageVectors(
-    main: ImageVector,
-    secondary: ImageVector,
-): VectorPainter {
-    val mainScaleFactor = 0.7f
-    val secondaryScaleFactor = 0.5f
+fun rememberClippedPainter(
+    imageVector: ImageVector,
+    width: Dp,
+    height: Dp = width,
+): Painter {
+    val vectorPainter = rememberVectorPainter(imageVector)
+    val density = LocalDensity.current
 
-    return rememberVectorPainter(
-        defaultWidth = main.defaultWidth,
-        defaultHeight = main.defaultHeight,
-        viewportWidth = main.viewportWidth,
-        viewportHeight = main.viewportHeight,
-        name = main.name,
-        tintColor = main.tintColor,
-        tintBlendMode = main.tintBlendMode,
-        autoMirror = main.autoMirror
-    ) { viewportWidth, viewportHeight ->
-        Group(
-            name = main.root.name + "_main",
-            scaleX = mainScaleFactor,
-            scaleY = mainScaleFactor,
-            translationY = (viewportWidth - main.viewportWidth * mainScaleFactor) / 2,
-        ) {
-            RenderVectorGroup(group = main.root)
-        }
+    val clippedSizePx = remember(width, height, density) {
+        with(density) { Size(width.toPx(), height.toPx()) }
+    }
 
-        Group(
-            name = secondary.root.name + "_secondary",
-            scaleX = secondaryScaleFactor,
-            scaleY = secondaryScaleFactor,
-            translationX = (viewportWidth - secondary.viewportWidth * secondaryScaleFactor),
-            translationY = (viewportHeight - secondary.viewportHeight * secondaryScaleFactor),
-        ) {
-            RenderVectorGroup(group = secondary.root)
-        }
+    return remember(vectorPainter, clippedSizePx) {
+        ClippedCenteredPainter(vectorPainter, clippedSizePx)
     }
 }
 
@@ -1157,14 +1196,66 @@ fun accountTypeLabel(accountType: AccountType): String {
 }
 
 @Composable
-fun IconButtonDefaults.myIconButtonColors() =
-    IconButtonDefaults.filledTonalIconToggleButtonColors()
-        .let {
-            IconButtonDefaults.iconToggleButtonVibrantColors(
-                checkedContainerColor = it.checkedContainerColor,
-                checkedContentColor = it.checkedContentColor,
-            )
-        }
+fun ListItemDefaults.myTransparentCheckableItemColors() = ListItemDefaults.colors().let {
+    ListItemDefaults.colors(
+        containerColor = Color.Transparent,
+        disabledContainerColor = Color.Transparent,
+        selectedContentColor = it.contentColor,
+        selectedContainerColor = Color.Transparent,
+        selectedSupportingContentColor = it.leadingContentColor,
+        selectedLeadingContentColor = it.leadingContentColor,
+        selectedTrailingContentColor = it.trailingContentColor,
+        selectedOverlineContentColor = it.overlineContentColor,
+    )
+}
+
+@Composable
+fun ListItemDefaults.myCheckableItemColors() = ListItemDefaults.colors().let {
+    ListItemDefaults.colors(
+        containerColor = Color.Transparent,
+        disabledContainerColor = Color.Transparent,
+        selectedContainerColor = it.selectedContainerColor.copy(alpha = 0.4f),
+    )
+}
+
+@Composable
+fun ListItemDefaults.myTogglableHeaderItemColors(): ListItemColors {
+    val surface =
+        MaterialTheme.colorScheme.surfaceColorAtElevation(LocalAbsoluteTonalElevation.current + 2.dp)
+
+    return ListItemDefaults.colors(
+        contentColor = MaterialTheme.colorScheme.primary,
+        leadingContentColor = MaterialTheme.colorScheme.primary,
+        trailingContentColor = MaterialTheme.colorScheme.primary,
+        containerColor = surface,
+        disabledContainerColor = surface,
+//        selectedContainerColor = ListItemDefaults.colors().selectedContainerColor.copy(alpha = 0.3f),
+        // forced colors look shit in high contrast mode
+    )
+}
+
+@Composable
+fun ListItemDefaults.myBigImageShapes() = ListItemDefaults.shapes(
+    shape = MaterialTheme.shapes.medium,
+    hoveredShape = MaterialTheme.shapes.large,
+    focusedShape = MaterialTheme.shapes.extraLarge,
+    pressedShape = MaterialTheme.shapes.extraLarge
+)
+
+val MenuDefaults.myGroupStandardContainerColor: Color
+    @Composable
+    get() =
+        MenuDefaults.groupStandardContainerColor.makeOpaque()
+
+@Composable
+fun OutlinedToggleButtonDefaults.myColors() =
+    OutlinedToggleButtonDefaults.colors(
+        disabledContainerColor = Color.Transparent,
+        checkedContainerColor = FilledTonalToggleButtonDefaults.colors().checkedContainerColor,
+        checkedContentColor = FilledTonalToggleButtonDefaults.colors().checkedContentColor,
+    )
+
+fun Color.makeOpaque() = if (alpha < 1f) copy(alpha = 1f) else this
 
 @Composable
 expect fun ApplyWindowBlur(behind: Int, bg: Int)

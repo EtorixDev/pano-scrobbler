@@ -267,7 +267,7 @@ class ScrobblesVM(
                         .map { it.item }
                         .let {
                             if (track == null && !input.loadLoved) {
-                                it.insertSeparators<TrackWrapper.TrackItem, TrackWrapper> { before, after ->
+                                it.insertSeparators { before, after ->
                                     if (before?.track?.date == null ||
                                         after?.track?.date == null
                                     )

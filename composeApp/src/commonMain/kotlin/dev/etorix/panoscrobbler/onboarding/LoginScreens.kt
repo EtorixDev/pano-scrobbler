@@ -1,13 +1,10 @@
 package dev.etorix.panoscrobbler.onboarding
 
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,8 +12,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -30,7 +27,7 @@ import dev.etorix.panoscrobbler.api.UserAccountTemp
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.OpenInBrowser
 import dev.etorix.panoscrobbler.navigation.PanoRoute
-import dev.etorix.panoscrobbler.ui.InfoText
+import dev.etorix.panoscrobbler.ui.ButtonWithIcon
 import dev.etorix.panoscrobbler.ui.PanoOutlinedTextField
 import dev.etorix.panoscrobbler.ui.VerifyButton
 import dev.etorix.panoscrobbler.ui.testTagsAsResId
@@ -82,23 +79,18 @@ fun ListenBrainzLoginScreen(
                 )
             )
         } else {
-            InfoText(
+            ButtonWithIcon(
+                onClick = {
+                    PlatformStuff.openInBrowser("https://listenbrainz.org/profile")
+                },
                 text = stringResource(
                     Res.string.listenbrainz_info,
-                    "https://listenbrainz.org/profile"
+                    "listenbrainz.org/profile"
                 ),
                 icon = Icons.OpenInBrowser,
+                maxLines = 3,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.medium)
-                    .clickable {
-                        PlatformStuff.openInBrowser("https://listenbrainz.org/profile")
-                    }
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.outlineVariant,
-                        shape = MaterialTheme.shapes.medium
-                    )
+                    .align(Alignment.CenterHorizontally)
             )
         }
 

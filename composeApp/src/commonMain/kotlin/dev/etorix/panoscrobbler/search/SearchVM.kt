@@ -6,28 +6,22 @@ import dev.etorix.panoscrobbler.api.Requesters
 import dev.etorix.panoscrobbler.api.lastfm.SearchResults
 import dev.etorix.panoscrobbler.ui.generateKey
 import dev.etorix.panoscrobbler.utils.Stuff
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 
 class SearchVM : ViewModel() {
-    private val _searchTerm = MutableSharedFlow<String>()
+    private val _searchTerm = MutableStateFlow("")
     private val _searchResults = MutableStateFlow<SearchResults?>(null)
-    val searchResults = _searchResults.asSharedFlow()
+    val searchResults = _searchResults.asStateFlow()
     private val _hasLoaded = MutableStateFlow(false)
     val hasLoaded = _hasLoaded.asStateFlow()
 
     init {
         viewModelScope.launch {
             _searchTerm
-                .distinctUntilChanged()
-                .debounce(500)
                 .collectLatest { term ->
                     if (term.length < 3)
                         return@collectLatest
@@ -53,8 +47,6 @@ class SearchVM : ViewModel() {
     }
 
     fun search(term: String) {
-        viewModelScope.launch {
-            _searchTerm.emit(term)
-        }
+        _searchTerm.value = term
     }
 }

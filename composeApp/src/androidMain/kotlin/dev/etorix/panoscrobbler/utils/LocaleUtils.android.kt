@@ -109,10 +109,8 @@ actual fun LocaleUtils.getCurrentLocale(): String? {
 }
 
 actual fun LocaleUtils.getSystemCountryCode(): String {
-    return deviceLocaleLocaleList.get(0)?.let { locale ->
-        locale.country.ifEmpty {
-            // Fallback to the system default locale
-            Locale.getDefault().country.ifEmpty { null }
-        }
-    } ?: "US"
+    return getSystemLocale().country.ifEmpty { "US" }
 }
+
+actual fun LocaleUtils.getSystemLocale(): Locale =
+    deviceLocaleLocaleList.get(0) ?: Locale.getDefault()

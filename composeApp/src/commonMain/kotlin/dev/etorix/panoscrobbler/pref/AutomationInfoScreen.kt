@@ -1,29 +1,27 @@
 package dev.etorix.panoscrobbler.pref
 
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import dev.etorix.panoscrobbler.automation.Automation
 import dev.etorix.panoscrobbler.icons.ContentCopy
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.navigation.PanoRoute
+import dev.etorix.panoscrobbler.ui.myTransparentCheckableItemColors
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
 import org.jetbrains.compose.resources.stringResource
@@ -114,39 +112,29 @@ fun AutomationInfoScreen(
                     null
                 }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .minimumInteractiveComponentSize()
-                    .clip(MaterialTheme.shapes.medium)
-                    .clickable {
-                        PlatformStuff.copyToClipboard(commandText)
-                    }
-                    .alpha(1f),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(8.dp)
-                ) {
-                    Text(
-                        text = commandText,
-                        style = MaterialTheme.typography.bodyLargeEmphasized,
-                    )
-
-                    if (commandSubtext != null) {
+            ListItem(
+                onClick = {
+                    PlatformStuff.copyToClipboard(commandText)
+                },
+                supportingContent = if (commandSubtext != null) {
+                    {
                         Text(
                             text = commandSubtext,
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
-                }
-
-                Icon(
-                    imageVector = Icons.ContentCopy,
-                    contentDescription = null,
-                )
+                } else null,
+                trailingContent = {
+                    Icon(
+                        imageVector = Icons.ContentCopy,
+                        contentDescription = null,
+                    )
+                },
+                colors = ListItemDefaults.myTransparentCheckableItemColors(),
+                modifier = Modifier
+                    .fillMaxWidth(),
+            ) {
+                Text(commandText)
             }
         }
     }

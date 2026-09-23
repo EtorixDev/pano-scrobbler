@@ -117,16 +117,16 @@ Currently, the builds skip this step.
     - Linux: `./copy-builds-to-pano-dir.sh`
     - Windows: `copy-builds-to-pano-dir.bat`
   - On Linux, the native build needs `libwebkit2gtk-4.1-dev`.
-  - Those scripts copy the built libraries into `composeApp/resources/<platform>`, which is where
+  - Those scripts copy the built libraries into `desktopApp/resources/<platform>`, which is where
     desktop packaging expects them.
 
 - If you intend to package a build for desktop,
   use [GraalVM CE 25](https://github.com/graalvm/graalvm-ce-builds)
   as your JAVA_HOME and GRAALVM_HOME (both should be set). Also
-  have [Inno Setup](https://jrsoftware.org/isdl.php) installed in Program Files on Windows.
+  have [Inno Setup 7](https://jrsoftware.org/isdl.php) installed on Windows.
 
 - Run
-  `./gradlew composeApp:exportLibraryDefinitions composeApp:packageUberJarForCurrentOS -PaboutLibraries.exportVariant=jvm`
+  `./gradlew desktopApp:packageNativeImage`
 
 - Packaged desktop builds also enable the in-app updater against this fork's GitHub releases by
   default. Set `updates.enabled=false` in `local.properties` if you want to suppress that for a

@@ -1,20 +1,14 @@
 package dev.etorix.panoscrobbler.navigation
 
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.result.LocalResultEventBus
 import dev.etorix.panoscrobbler.api.AccountType
-import dev.etorix.panoscrobbler.api.DrawerData
 import dev.etorix.panoscrobbler.charts.ChartsLegendDialog
 import dev.etorix.panoscrobbler.charts.CollageGeneratorDialog
 import dev.etorix.panoscrobbler.charts.DateDialog
@@ -31,38 +25,21 @@ import dev.etorix.panoscrobbler.onboarding.LoginDestinations
 import dev.etorix.panoscrobbler.onboarding.ShowLinkDialog
 import dev.etorix.panoscrobbler.pref.MediaSearchPrefDialog
 import dev.etorix.panoscrobbler.pref.ProxyPrefDialog
+import dev.etorix.panoscrobbler.ui.navModal
 import dev.etorix.panoscrobbler.ui.verticalOverscanPadding
 import dev.etorix.panoscrobbler.updates.ChangelogDialog
 import dev.etorix.panoscrobbler.updates.UpdateAvailableDialog
-import dev.etorix.panoscrobbler.utils.PlatformStuff
-import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
+import org.jetbrains.compose.resources.stringResource
+import pano_scrobbler.composeapp.generated.resources.Res
+import pano_scrobbler.composeapp.generated.resources.edit
 
 fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
+    onSetTitle: (PanoRoute, String) -> Unit,
     navigate: (PanoRoute) -> Unit,
     goBack: () -> Unit,
+    onExpandModal: (PanoRoute.Modal.CanExpand) -> Unit,
     mainViewModel: MainViewModel,
 ) {
-    modalEntry<PanoRoute.Modal.NavPopup> { route ->
-        val user by if (route.otherUser != null)
-            remember { mutableStateOf(route.otherUser) }
-        else
-            PlatformStuff.mainPrefs.data
-                .collectAsStateWithInitialValue { it.currentAccount?.user }
-
-        val currentUser = user
-
-        NavPopupDialog(
-            user = currentUser ?: return@modalEntry,
-            initialDrawerData = mainViewModel.drawerDataMap.getOrElse(currentUser) { DrawerData(0) },
-            drawSnowfall = mainViewModel.isItChristmas,
-            onSetDrawerData = {
-                mainViewModel.drawerDataMap[currentUser] = it
-            },
-            onNavigate = navigate,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-
     modalEntry<PanoRoute.Modal.Changelog> { route ->
         ChangelogDialog(
             text = route.text,
@@ -106,16 +83,22 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
             user = route.user,
             onNavigate = navigate,
             scrollState = scrollState,
-            modifier = Modifier.navModal(padding = false)
+            onExpand = { onExpandModal(route) },
+            modifier = Modifier.navModal(scrollState, expanded = route.isExpanded, sides = false)
         )
     }
 
     modalEntry<PanoRoute.Modal.TagInfo> { route ->
+        if (route.isExpanded)
+            onSetTitle(route, route.tag.name)
+
         val scrollState = rememberScrollState()
         TagInfoDialog(
             tag = route.tag,
+            isExpanded = route.isExpanded,
+            onExpand = { onExpandModal(route) },
             scrollState = scrollState,
-            modifier = Modifier.navModal()
+            modifier = Modifier.navModal(scrollState, expanded = route.isExpanded)
         )
     }
 
@@ -128,7 +111,10 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
 
     modalEntry<PanoRoute.Modal.MediaSearchPref> {
         MediaSearchPrefDialog(
-            modifier = Modifier.navModal(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = verticalOverscanPadding())
         )
     }
 
@@ -149,6 +135,9 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
     }
 
     modalEntry<PanoRoute.Modal.EditScrobble> { route ->
+        if (route.isExpanded)
+            onSetTitle(route, stringResource(Res.string.edit))
+
         SimpleEditsAddScreen(
             simpleEdit = SimpleEdit(
                 track = route.scrobbleData.track,
@@ -175,13 +164,17 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
                 goBack()
                 navigate(LoginDestinations.route(AccountType.LASTFM))
             },
+            isExpanded = route.isExpanded,
+            onExpand = { onExpandModal(route) },
             // this viewmodel should be scoped to the main viewmodel store owner
             viewModel = mainViewModel,
-            modifier = Modifier.navModal()
+            modifier = Modifier.navModal(expanded = route.isExpanded)
         )
     }
 
-    modalEntry<PanoRoute.Modal.TimePicker> { route ->
+    entry<PanoRoute.Modal.TimePicker>(
+        metadata = BottomSheetSceneStrategy.bottomSheetNoGestures()
+    ) { route ->
         val resultBus = LocalResultEventBus.current
 
         TimeDialog(
@@ -196,7 +189,9 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
         )
     }
 
-    modalEntry<PanoRoute.Modal.DateRangePicker> { route ->
+    entry<PanoRoute.Modal.DateRangePicker>(
+        metadata = BottomSheetSceneStrategy.bottomSheetNoGestures()
+    ) { route ->
         val resultBus = LocalResultEventBus.current
 
         DateRangeDialog(
@@ -211,7 +206,9 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
         )
     }
 
-    modalEntry<PanoRoute.Modal.DatePicker> { route ->
+    entry<PanoRoute.Modal.DatePicker>(
+        metadata = BottomSheetSceneStrategy.bottomSheetNoGestures()
+    ) { route ->
         val resultBus = LocalResultEventBus.current
 
         DateDialog(
@@ -228,26 +225,24 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
     }
 }
 
-
-@Composable
-fun Modifier.navModal(
-    padding: Boolean = true,
-    scrollState: ScrollState = rememberScrollState()
-) = fillMaxWidth()
-    .then(
-        if (padding)
-            Modifier.padding(horizontal = 24.dp)
-        else
-            Modifier
-    )
-    .padding(bottom = verticalOverscanPadding())
-    .verticalScroll(scrollState)
-
 inline fun <reified K : PanoRoute.Modal> EntryProviderScope<PanoRoute>.modalEntry(
     noinline content: @Composable (K) -> Unit,
 ) {
     entry<K>(
-        metadata = BottomSheetSceneStrategy.bottomSheet(),
+        metadata = { route ->
+            if (route.isModal()) {
+                BottomSheetSceneStrategy.bottomSheet()
+            } else {
+                emptyMap()
+            }
+        },
+        clazzContentKey = { route ->
+            if (route is PanoRoute.Modal.CanExpand) {
+                route.copyExpanded().toString()
+            } else {
+                route.toString()
+            }
+        },
         content = content
     )
 }

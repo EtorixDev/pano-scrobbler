@@ -62,8 +62,8 @@ Windows releases are unsigned, so a SmartScreen warning about "Unknown Publisher
 [![Download AppImage for x64 from GitHub](img/github-appimage-x64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-etd-linux-x64.AppImage)
 [![Download AppImage for arm64 from GitHub](img/github-appimage-arm64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-etd-linux-arm64.AppImage)
 
-[![Download tar.gz for x64 from GitHub](img/github-targz-x64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-etd-linux-x64.tar.gz)
-[![Download tar.gz for arm64 from GitHub](img/github-targz-arm64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-etd-linux-arm64.tar.gz)
+[![Download tar.zst for x64 from GitHub](img/github-tar-zst-x64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-etd-linux-x64.tar.zst)
+[![Download tar.zst for arm64 from GitHub](img/github-tar-zst-arm64.svg)](https://github.com/EtorixDev/pano-scrobbler/releases/latest/download/pano-scrobbler-etd-linux-arm64.tar.zst)
 
 The AppImage runs anywhere, requires no installation, has **automatic updates** and can optionally
 add itself to the **application launcher** for convenience. Just make it executable before running:
