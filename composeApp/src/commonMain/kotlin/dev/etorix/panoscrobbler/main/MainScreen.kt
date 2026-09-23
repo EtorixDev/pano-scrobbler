@@ -469,7 +469,9 @@ fun PanoAppContent(
 
     LaunchedEffect(currentPanoRoute) {
         if (currentPanoRoute is PanoRoute.HasSearch) {
-            if (currentPanoRoute is PanoRoute.SearchRequestsFocus)
+            if (currentPanoRoute is PanoRoute.SearchRequestsFocus ||
+                (PlatformStuff.isDesktop && currentPanoRoute == PanoRoute.Prefs)
+            )
                 searchFieldFocusRequester.requestFocus()
             else
                 searchFieldFocusRequester.freeFocus()

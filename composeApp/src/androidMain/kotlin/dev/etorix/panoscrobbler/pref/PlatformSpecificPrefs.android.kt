@@ -12,6 +12,7 @@ import android.provider.Settings
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import dev.etorix.panoscrobbler.BuildKonfig
 import dev.etorix.panoscrobbler.MasterSwitchQS
 import dev.etorix.panoscrobbler.R
 import dev.etorix.panoscrobbler.navigation.PanoRoute
@@ -19,9 +20,11 @@ import dev.etorix.panoscrobbler.ui.PanoSnackbarVisuals
 import dev.etorix.panoscrobbler.utils.AndroidStuff
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
+import dev.etorix.panoscrobbler.utils.VariantStuff
 import dev.etorix.panoscrobbler.widget.ChartsWidgetConfigActivity
 import dev.etorix.panoscrobbler.widget.ChartsWidgetProvider
 import dev.etorix.panoscrobbler.work.CommonWorkProgress
+import dev.etorix.panoscrobbler.work.UpdaterWork
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
@@ -31,7 +34,9 @@ import pano_scrobbler.composeapp.generated.resources.persistent_noti_fgs
 import pano_scrobbler.composeapp.generated.resources.persistent_noti_hide
 import pano_scrobbler.composeapp.generated.resources.pref_master_qs_add
 import pano_scrobbler.composeapp.generated.resources.pref_master_qs_already_addded
+import pano_scrobbler.composeapp.generated.resources.pref_check_updates
 import pano_scrobbler.composeapp.generated.resources.pref_noti
+import pano_scrobbler.composeapp.generated.resources.pref_notify_updates
 import pano_scrobbler.composeapp.generated.resources.pref_widget_charts
 import pano_scrobbler.composeapp.generated.resources.scrobbler_off
 import pano_scrobbler.composeapp.generated.resources.scrobbler_on
@@ -179,5 +184,39 @@ actual object PlatformSpecificPrefs {
         filteredItem: FilteredItem, enabled: Boolean,
         updateProgress: CommonWorkProgress?
     ) {
+        val updatesAvailable = BuildKonfig.UPDATES_AVAILABLE && VariantStuff.githubApiUrl != null
+        val showAutoUpdatePref = !PlatformStuff.isTv && (updatesAvailable || !BuildKonfig.UPDATES_AVAILABLE)
+        val showManualUpdatePref = updatesAvailable || showAutoUpdatePref
+
+        if (showAutoUpdatePref) {
+            filteredItem(MainPrefs::autoUpdates.name, Res.string.pref_notify_updates, null) { title ->
+                SwitchPref(
+                    text = title,
+                    value = updatesAvailable && enabled,
+                    enabled = updatesAvailable,
+                    copyToSave = {
+                        if (it)
+                            UpdaterWork.schedule(true)
+                        else
+                            UpdaterWork.cancel()
+
+                        copy(autoUpdates = it)
+                    }
+                )
+            }
+        }
+
+        if (showManualUpdatePref) {
+            filteredItem("check_for_updates", Res.string.pref_check_updates, null) { title ->
+                TextPref(
+                    text = if (updatesAvailable) updateProgress?.message ?: title else title,
+                    enabled = updatesAvailable && updateProgress == null,
+                    onClick = {
+                        if (updateProgress == null)
+                            UpdaterWork.schedule(true)
+                    }
+                )
+            }
+        }
     }
 }

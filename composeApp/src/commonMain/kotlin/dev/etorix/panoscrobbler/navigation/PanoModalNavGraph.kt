@@ -154,6 +154,7 @@ fun EntryProviderScope<PanoRoute>.panoModalNavGraph(
                 hasOrigAlbumArtist = false,
             ),
             origScrobbleData = route.origScrobbleData,
+            originalTrack = route.origTrack,
             msid = route.msid,
             hash = route.hash,
             key = route.key,

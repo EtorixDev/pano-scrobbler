@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -138,6 +139,8 @@ fun SimpleEditsAddScreen(
     var forceRecomposed by remember { mutableStateOf(false) }
 
     fun doEdit() {
+        if (verifying) return
+
         if (
         // check if everything is disabled
             !hasOrigTrack && !hasOrigArtist && !hasOrigAlbum && !hasOrigAlbumArtist ||
@@ -220,6 +223,7 @@ fun SimpleEditsAddScreen(
                 label = { Text(labelStr) },
                 enabledOnTv = false,
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = if (isLast) ImeAction.Done else ImeAction.Next),
+                keyboardActions = if (isLast) KeyboardActions(onDone = { doEdit() }) else KeyboardActions.Default,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -380,17 +384,18 @@ fun SimpleEditsAddScreen(
             labelStr = stringResource(Res.string.artist),
         )
 
+        val showAlbumArtistField = isExpanded || !origScrobbleData?.albumArtist.isNullOrEmpty()
+
         TextFieldWrapper(
             enabled = hasAlbum,
             value = if (hasAlbum) album else existingText,
             onValueChange = { album = it },
             onCheckedChange = { hasAlbum = it },
             labelStr = stringResource(Res.string.album),
-            isLast = (isExpanded || !origScrobbleData?.albumArtist.isNullOrEmpty())
+            isLast = !showAlbumArtistField
         )
 
-
-        if (isExpanded || !origScrobbleData?.albumArtist.isNullOrEmpty()) {
+        if (showAlbumArtistField) {
             TextFieldWrapper(
                 enabled = hasAlbumArtist,
                 value = if (hasAlbumArtist) albumArtist else existingText,

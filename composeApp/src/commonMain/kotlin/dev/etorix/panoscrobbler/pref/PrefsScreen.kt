@@ -655,6 +655,15 @@ fun PrefsScreen(
             }
         }
 
+        filteredItem("use_track_progress", Res.string.pref_use_track_progress) { title ->
+            SwitchPref(
+                text = title,
+                summary = stringResource(Res.string.pref_use_track_progress_desc),
+                value = useTrackProgress,
+                copyToSave = { copy(useTrackProgress = it) }
+            )
+        }
+
         filteredHeader("lists", Res.string.simple_edits, Icons.EditNote)
 
         filteredItem("simple_edits", Res.string.simple_edits) { title ->
@@ -681,6 +690,14 @@ fun PrefsScreen(
                 onClick = {
                     onNavigate(PanoRoute.BlockedMetadatas)
                 },
+            )
+        }
+
+        filteredItem("sync_edits_across_services", Res.string.pref_sync_edits_across_services) { title ->
+            SwitchPref(
+                text = title,
+                value = syncEditsAcrossServices,
+                copyToSave = { copy(syncEditsAcrossServices = it) }
             )
         }
 
