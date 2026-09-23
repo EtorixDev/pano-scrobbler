@@ -577,9 +577,15 @@ fun ScrobblesScreen(
             }
 
             PanoTab.Scrobbles.ScrobblesType.RECENTS.ordinal -> {
+                val reselected = selectedType == ScrobblesType.RECENTS && timeJumpMillis == null
                 selectedType = PanoTab.Scrobbles.ScrobblesType.RECENTS
                 timeJumpMillis = null
-                scrollToTopOnLoad = true
+                if (reselected && tracks.loadState.isIdle) {
+                    scrollToTopOnLoad = false
+                    scope.launch { listState.animateScrollToItem(0) }
+                } else {
+                    scrollToTopOnLoad = true
+                }
             }
 
             PanoTab.Scrobbles.ScrobblesType.TIME_JUMP.ordinal -> {
@@ -587,9 +593,15 @@ fun ScrobblesScreen(
             }
 
             PanoTab.Scrobbles.ScrobblesType.LOVED.ordinal -> {
+                val reselected = selectedType == ScrobblesType.LOVED
                 selectedType = PanoTab.Scrobbles.ScrobblesType.LOVED
                 timeJumpMillis = null
-                scrollToTopOnLoad = true
+                if (reselected && tracks.loadState.isIdle) {
+                    scrollToTopOnLoad = false
+                    scope.launch { listState.animateScrollToItem(0) }
+                } else {
+                    scrollToTopOnLoad = true
+                }
             }
 
             PanoTab.Scrobbles.ScrobblesType.RANDOM.ordinal -> {

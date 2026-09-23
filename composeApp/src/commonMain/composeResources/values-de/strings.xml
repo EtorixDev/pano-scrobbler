@@ -371,4 +371,14 @@
 
     <string name="help">Hilfe</string>
 
+    <plurals name="num_hours">
+        <item quantity="one">%1$d Stunde</item>
+        <item quantity="other">%1$d Stunden</item>
+    </plurals>
+    <string name="since_time" formatted="true" comment="%1= date of joining lastfm">Seit %1$s</string>
+    <string name="pref_fetch_missing_album" formatted="true" comment="%1= the name of a service like last.fm, Deezer etc">Fehlendes Album von %1$s abrufen</string>
+    <string name="is_turned_off" formatted="true" comment="%1$s= the name of a web service, e.g. Spotify, %2$s=the section name in settings screen where this setting can be found">%1$s ist in %2$s deaktiviert</string>
+    <string name="available_placeholders" formatted="true" comment="%1 = placeholder strings, e.g. $artist, $title etc.">Verfügbare Platzhalter: %1$s</string>
+    <string name="edit_example">z.B. Um Künstler1 durch Künstler2 zu ersetzen, ohne die übrigen Metadaten zu verändern, aktiviere nur das Künstlerfeld und gib die ursprünglichen sowie die korrigierten Künstlerwerte ein, während die anderen Felder deaktiviert bleiben.</string>
+    <string name="at_least" formatted="true" comment="%1$s=some number">Mindestens %1$s</string>
 </resources>

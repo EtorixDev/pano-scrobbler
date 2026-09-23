@@ -93,6 +93,13 @@ actual object PlatformStuff {
             desktop != null && url.startsWith("file", ignoreCase = true) &&
                     desktop.isSupported(Desktop.Action.OPEN) -> desktop.open(File(URI(url)))
             DesktopStuff.IS_LINUX -> PanoNativeComponents.openUrlLinux(Stuff.localizeLastfmUrl(url))
+            desktop != null && desktop.isSupported(Desktop.Action.BROWSE) -> {
+                try {
+                    desktop.browse(URI(url))
+                } catch (e: Exception) {
+                    Logger.w(e) { "Could not open URL: $url" }
+                }
+            }
             else -> Logger.w { "No desktop handler for URL: $url" }
         }
     }

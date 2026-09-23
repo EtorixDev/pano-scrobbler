@@ -238,6 +238,7 @@ fun PanoToggleButtonGroup(
     colors: ToggleButtonColors = OutlinedToggleButtonDefaults.myColors(),
     border: Boolean = true,
     textStyle: TextStyle? = null,
+    canReClick: Boolean = false,
 ) {
     val interactionSources =
         remember(texts.size) { List(texts.size) { MutableInteractionSource() } }
@@ -267,7 +268,7 @@ fun PanoToggleButtonGroup(
                 buttonGroupContent = {
                     OutlinedToggleButton(
                         onCheckedChange = {
-                            if (!checked && it || chevronAt == index) {
+                            if (!checked && it || chevronAt == index || canReClick) {
                                 onSelected(index)
                             }
                         },
@@ -362,7 +363,7 @@ fun PanoToggleButtonGroup(
                         shape = MenuDefaults.standaloneItemShape,
                         text = { Text(text) },
                         onClick = {
-                            if (!checked || chevronAt == index) {
+                            if (!checked || chevronAt == index || canReClick) {
                                 onSelected(index)
                             }
                         },

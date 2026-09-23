@@ -369,4 +369,15 @@
 
     <string name="help">Aiuto</string>
 
+    <string name="line_n" formatted="true" comment="%1$s is the line number, currently used in the context of Discord Rich Presence">Riga %1$s</string>
+    <string name="album_art_now_playing">Se necessario, recuperare la copertina dell'album dalla sezione "In riproduzione"</string>
+    <string name="is_turned_off" formatted="true" comment="%1$s= the name of a web service, e.g. Spotify, %2$s=the section name in settings screen where this setting can be found">%1$s è disattivato in %2$s</string>
+    <string name="discord_compact_view_line">Mostra come "in riproduzione":</string>
+    <string name="available_placeholders" formatted="true" comment="%1 = placeholder strings, e.g. $artist, $title etc.">Segnaposto disponibili: %1$s</string>
+    <string name="show_paused_for" comment="Show paused media for n minutes, used for discord rich presence">Mostra il media in pausa per</string>
+    <string name="when_using" formatted="true" comment="%1$s is the web service or media player name">Quando si utilizza %1$s</string>
+    <string name="when_not_using" formatted="true" comment="%1$s is the web service or media player name">Quando non si utilizza %1$s</string>
+    <string name="as_text" comment="Like copy as text, but in short">Come testo</string>
+    <string name="automation_cli">Argomenti della riga di comando</string>
+    <string name="spotify_consent">Recuperare le immagini degli artisti da Spotify?</string>
 </resources>

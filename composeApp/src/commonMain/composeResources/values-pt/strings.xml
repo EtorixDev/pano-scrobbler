@@ -402,4 +402,13 @@
 
     <string name="help">Ajuda</string>
 
+    <string name="add_to_app_launcher">Adicionar atalho ao ecrã inicial</string>
+    <string name="persistent_noti_fgs" comment="Actually displays a persistent notification on android when enabled">Manter o scrobbler ativo em segundo plano</string>
+    <string name="empty_apps_list">Apps aparecerão aqui quando reproduzir algo nelas</string>
+    <string name="supports_ambient_apps" formatted="true" comment="%1 = comma-separated list of music recognition apps">Também suporta apps de reconhecimento de música, como %1$s</string>
+    <string name="persistent_noti_desc" formatted="true" comment="%1 = some names of phone manufacturers">Necessário em sistemas que suspendem aplicações em segundo plano, tais como %1$s etc</string>
+    <string name="cache" comment="as a noun">Cache</string>
+    <string name="random_on_start" comment="currently used as a toggle in the themes screen to pick a random theme when the app starts">Aleatório ao abrir a aplicação</string>
+    <string name="edit_continue_simple" comment="a toggle in the normal edits screen">Se encontrado, continue a editar com as regras regex &amp; predefinições</string>
+    <string name="edit_continue_regex" comment="a toggle in the regex edits screen">Se encontrado, continue a editar com outras regras regex &amp; predefinições</string>
 </resources>

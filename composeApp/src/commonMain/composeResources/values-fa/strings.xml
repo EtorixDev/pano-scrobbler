@@ -402,4 +402,23 @@
 
     <string name="help">کمک</string>
 
+    <plurals name="num_hours">
+        <item quantity="one">%1$d ساعت</item>
+        <item quantity="other">%1$d ساعت</item>
+    </plurals>
+    <string name="share_sig">(از طریق Pano Scrobbler ETD)</string>
+    <string name="legend" comment="Chart legend - descriptions of the symbols used">افسانه</string>
+    <string name="item_options" comment="Screen reader text for 3 dots menu button">گزینه‌های این مورد</string>
+    <string name="since_time" formatted="true" comment="%1= date of joining lastfm">از %1$s</string>
+    <string name="time_jump" comment="Time selector dropdown to show scrobbles from a specific time">پرش زمانی</string>
+    <string name="taggings" comment="(total count of) a particular tag">تگ زدن</string>
+    <string name="edit_continue">در صورت یافتن، تطبیق با سایر regexes را ادامه بده</string>
+    <string name="player_actions" comment="music player actions such as skip/mute">اقدامات پخش کننده رسانه</string>
+    <string name="regex_edits_suggestion" formatted="true" comment="%1= the preset name (e.g. Remastered)">آیا می‌خواهید قانون ویرایش الگو را فعال کنید: %1$s؟</string>
+    <string name="pref_master_qs_add">کاشی تنظیمات سریع را اضافه کنید</string>
+    <string name="pref_master_qs_already_addded">کاشی تنظیمات سریع از قبل اضافه شده است</string>
+    <string name="pref_fetch_missing_album" formatted="true" comment="%1= the name of a service like last.fm, Deezer etc">آلبوم گمشده را از %1$s دریافت کنید</string>
+    <string name="open_existing" comment="Append to an existing file">ضمیمه به موارد موجود</string>
+    <string name="pref_tray_icon_theme" comment="like dark/light/auto">تم آیکون سینی</string>
+    <string name="automation" comment="automation apps like Tasker on Android, or commandline on desktop">کنترل Pano Scrobbler ETD از طریق برنامه‌های اتوماسیون</string>
 </resources>

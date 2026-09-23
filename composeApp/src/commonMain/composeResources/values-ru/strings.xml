@@ -383,7 +383,7 @@
     <string name="reload" comment="Reload or refresh">Обновить</string>
     <string name="pref_tray_icon_theme" comment="like dark/light/auto">Тема иконки в трее</string>
     <string name="min_track_duration">Скробблить треки дольше чем</string>
-    <string name="automation">Управление Pano Scrobbler ETD через приложения для автоматизации</string>
+    <string name="automation" comment="automation apps like Tasker on Android, or commandline on desktop">Управлять Pano Scrobbler ETD через приложения для автоматизации</string>
     <string name="country_for_api" formatted="true" comment="%1$s is the name of the streaming service, like Spotify, Apple Music">Страна для метаданных %1$s</string>
     <string name="login_in_browser">Завершите вход в окне браузера</string>
     <string name="edit_no_save" comment="used in the edit dialog to not remember the edit">Это не будет сохранено для будущих скробблов</string>
@@ -435,4 +435,14 @@
 
     <string name="help">Помощь</string>
 
+    <string name="proxy" comment="network proxy">Прокси</string>
+    <string name="system" comment="system default settings">Системный</string>
+    <string name="host" comment="proxy host">Хост</string>
+    <string name="port" comment="proxy port">Порт</string>
+    <string name="scanning" comment="finds other instances of Pano Scrobbler ETD import server on the local network">Сканирование</string>
+    <string name="missing_local_network_permission">Этой функции требуется разрешение на подключение к локальной сети</string>
+    <string name="artist_splitting_exceptions" comment="exceptions for the use first artist feature">Исключения в разделении исполнителей</string>
+    <string name="add_exception" comment="as in adding an exception to a rule or setting">Добавить исключение</string>
+    <string name="empty_apps_list">Приложения появятся здесь, когда вы воспроизведете что-либо в них</string>
+    <string name="cache" comment="as a noun">Кэш</string>
 </resources>

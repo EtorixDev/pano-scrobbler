@@ -400,4 +400,12 @@
 
     <string name="help">Aide</string>
 
+    <string name="add_to_app_launcher">Ajouter un raccourci dans le lanceur d'applications</string>
+    <string name="persistent_noti_fgs" comment="Actually displays a persistent notification on android when enabled">Maintenir le scrobbler actif en arrière-plan</string>
+    <string name="empty_apps_list">Les applications s'afficheront ici dès que vous lancerez une lecture dans l'une d'entre elles</string>
+    <string name="supports_ambient_apps" formatted="true" comment="%1 = comma-separated list of music recognition apps">Prend également en charge les applications de reconnaissance musicale telles que %1$s</string>
+    <string name="persistent_noti_desc" formatted="true" comment="%1 = some names of phone manufacturers">Requis sur les appareils dont les fabricants ferment de manière agressive les applications en arrière-plan, comme %1$s, etc</string>
+    <string name="cache" comment="as a noun">Cache</string>
+    <string name="edit_continue_simple" comment="a toggle in the normal edits screen">Si trouvé, poursuivre la modification à l'aide des règles d'expressions régulières &amp; des préréglages</string>
+    <string name="edit_continue_regex" comment="a toggle in the regex edits screen">Si trouvé, poursuivre la modification à l'aide d'autres règles d'expressions régulières &amp; des préréglages</string>
 </resources>

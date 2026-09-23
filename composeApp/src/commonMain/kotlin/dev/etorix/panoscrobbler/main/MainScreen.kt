@@ -1268,6 +1268,7 @@ private fun PanoTopAppBar(
                                 }
                             },
                             mode = PanoToggleButtonsMode.Icon,
+                            canReClick = true,
                             modifier = Modifier.pointerHoverIcon(PointerIcon.Default)
                         )
                     }
