@@ -11,7 +11,12 @@ on:
         required: false
         default: false
 jobs:
+  checks:
+    name: Check Fork Regressions
+    uses: ./.github/workflows/fork-tests.yml
+
   build:
+    needs: [ checks ]
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:

@@ -134,7 +134,9 @@ abstract class MediaListener(
     private fun promoteNextEligibleTracker() {
         sessionTrackers.values
             .filter {
-                it.trackInfo.isEligibleForScrobble() && !scrobbleQueue.has(it.trackInfo.hash)
+                it.trackInfo.isEligibleForScrobble() &&
+                        it.trackInfo.scrobbledState < PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED &&
+                        !scrobbleQueue.has(it.trackInfo.hash)
             }
             .minByOrNull { it.trackInfo.sessionStartTime }
             ?.scrobble()

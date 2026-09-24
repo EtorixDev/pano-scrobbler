@@ -1,0 +1,53 @@
+name: Fork Regression Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  fork-tests:
+    name: Fork Behavior And Release Metadata
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check Out Full History
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Fetch Upstream History
+        run: git fetch --no-tags https://github.com/kawaiiDango/pano-scrobbler.git main:refs/remotes/upstream/main
+
+      - name: Set Up JDK
+        uses: graalvm/setup-graalvm@v1
+        with:
+          version: '25.2'
+          distribution: 'graalvm-community'
+          github-token: ${{ github.token }}
+
+      - name: Set Up Gradle
+        uses: gradle/actions/setup-gradle@v6.1.0
+
+      - name: Configure Local Test Credentials
+        shell: bash
+        run: |
+          printf '%s\n' 'lastfm.key=local-test-only' 'lastfm.secret=local-test-only' "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Run Fork Regression Checks
+        run: bash scripts/test_fork.sh upstream/main
+
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fork-test-reports
+          path: |
+            composeApp/build/reports/tests/jvmTest
+            composeApp/build/test-results/jvmTest
+          retention-days: 7

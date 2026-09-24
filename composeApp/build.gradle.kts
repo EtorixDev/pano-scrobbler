@@ -126,6 +126,11 @@ kotlin {
             implementation(kotlin("test"))
         }
 
+        jvmTest.dependencies {
+            implementation(compose.desktop.uiTestJUnit4)
+            implementation(compose.desktop.currentOs)
+        }
+
         jvmMain.dependencies {
             implementation(libs.kotlinx.coroutines.swing)
             implementation(projects.extrasNonplay)
