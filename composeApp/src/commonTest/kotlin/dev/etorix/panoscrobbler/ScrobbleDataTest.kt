@@ -2,8 +2,7 @@ package dev.etorix.panoscrobbler
 
 import dev.etorix.panoscrobbler.api.lastfm.Album
 import dev.etorix.panoscrobbler.api.lastfm.Artist
-import dev.etorix.panoscrobbler.api.lastfm.ImageSize
-import dev.etorix.panoscrobbler.api.lastfm.LastFmImage
+import dev.etorix.panoscrobbler.api.lastfm.ImagesUrls
 import dev.etorix.panoscrobbler.api.lastfm.ScrobbleData
 import dev.etorix.panoscrobbler.api.lastfm.Track
 import kotlin.test.Test
@@ -20,11 +19,9 @@ class ScrobbleDataTest {
             album = Album(
                 name = "Album",
                 artist = Artist("Artist"),
-                image = listOf(
-                    LastFmImage(
-                        size = ImageSize.extralarge.name,
-                        url = "https://lastfm.freetls.fastly.net/i/u/300x300/cover.jpg"
-                    )
+                image = ImagesUrls(
+                    medium = "https://lastfm.freetls.fastly.net/i/u/300x300/cover.webp",
+                    large = "https://lastfm.freetls.fastly.net/i/u/600x600/cover.webp",
                 )
             ),
             date = 123L,

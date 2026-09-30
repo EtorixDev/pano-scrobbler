@@ -27,7 +27,7 @@ import dev.etorix.panoscrobbler.media.PlayingTrackNotifyEvent
 import dev.etorix.panoscrobbler.navigation.DeepLinkUtils
 import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.updates.UpdateAction
-import dev.etorix.panoscrobbler.utils.Stuff.format
+import dev.etorix.panoscrobbler.utils.LocaleUtils.format
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map

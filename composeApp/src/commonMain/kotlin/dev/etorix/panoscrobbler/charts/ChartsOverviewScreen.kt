@@ -92,10 +92,10 @@ import dev.etorix.panoscrobbler.ui.backgroundForShimmer
 import dev.etorix.panoscrobbler.ui.getMusicEntryPlaceholderItem
 import dev.etorix.panoscrobbler.ui.panoContentPadding
 import dev.etorix.panoscrobbler.ui.shimmerWindowBounds
+import dev.etorix.panoscrobbler.utils.LocaleUtils.format
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
-import dev.etorix.panoscrobbler.utils.Stuff.format
 import com.kennycason.kumo.WordCloud
 import com.kennycason.kumo.WordFrequency
 import com.kennycason.kumo.bg.CircleBackground

@@ -110,6 +110,7 @@ class PlayingTrackInfo(
         durationMillis: Long,
         normalizedUrlHost: String?,
         artUrl: String?,
+        setPlayStartTime: Boolean = true,
     ) {
         origArtist = artist
         this.artist = artist
@@ -129,8 +130,10 @@ class PlayingTrackInfo(
 
         scrobbledState = ScrobbledState.NONE
         msid = null
-        playStartTime = if (isPlaying) System.currentTimeMillis() else 0L
-        segmentStartTime = playStartTime
+        if (setPlayStartTime) {
+            playStartTime = if (isPlaying) System.currentTimeMillis() else 0L
+            segmentStartTime = playStartTime
+        }
     }
 
     fun setArtUrl(artUrl: String?) {

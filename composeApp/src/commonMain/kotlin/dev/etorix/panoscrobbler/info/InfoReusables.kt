@@ -67,9 +67,9 @@ import dev.etorix.panoscrobbler.ui.rememberClippedPainter
 import dev.etorix.panoscrobbler.ui.shapedClickable
 import dev.etorix.panoscrobbler.ui.shimmerWindowBounds
 import dev.etorix.panoscrobbler.utils.LocaleUtils
+import dev.etorix.panoscrobbler.utils.LocaleUtils.format
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
-import dev.etorix.panoscrobbler.utils.Stuff.format
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import pano_scrobbler.composeapp.generated.resources.Res

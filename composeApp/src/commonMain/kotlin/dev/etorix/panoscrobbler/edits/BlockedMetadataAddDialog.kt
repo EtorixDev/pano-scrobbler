@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.delete
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -12,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -63,19 +67,19 @@ private fun BlockedMetadataAddContent(
     onSave: (BlockedMetadata) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var artist by rememberSaveable(blockedMetadata) { mutableStateOf(blockedMetadata?.artist.orEmpty()) }
+    val artist = key(blockedMetadata) { rememberTextFieldState(blockedMetadata?.artist.orEmpty()) }
     var hasArtist by rememberSaveable(blockedMetadata) {
         mutableStateOf(blockedMetadata?.artist?.isNotEmpty() ?: true)
     }
-    var albumArtist by rememberSaveable(blockedMetadata) { mutableStateOf(blockedMetadata?.albumArtist.orEmpty()) }
+    val albumArtist = key(blockedMetadata) { rememberTextFieldState(blockedMetadata?.albumArtist.orEmpty()) }
     var hasAlbumArtist by rememberSaveable(blockedMetadata) {
         mutableStateOf(blockedMetadata?.albumArtist?.isNotEmpty() ?: false)
     }
-    var album by rememberSaveable(blockedMetadata) { mutableStateOf(blockedMetadata?.album.orEmpty()) }
+    val album = key(blockedMetadata) { rememberTextFieldState(blockedMetadata?.album.orEmpty()) }
     var hasAlbum by rememberSaveable(blockedMetadata) {
         mutableStateOf(blockedMetadata?.album?.isNotEmpty() ?: true)
     }
-    var track by rememberSaveable(blockedMetadata) { mutableStateOf(blockedMetadata?.track.orEmpty()) }
+    val track = key(blockedMetadata) { rememberTextFieldState(blockedMetadata?.track.orEmpty()) }
     var hasTrack by rememberSaveable(blockedMetadata) {
         mutableStateOf(blockedMetadata?.track?.isNotEmpty() ?: true)
     }
@@ -91,11 +95,13 @@ private fun BlockedMetadataAddContent(
 
     LaunchedEffect(useChannel) {
         if (ignoredArtist != null) {
-            artist = if (useChannel) {
-                ignoredArtist
-            } else {
-                blockedMetadata?.artist.orEmpty()
-            }
+            artist.setTextAndPlaceCursorAtEnd(
+                if (useChannel) {
+                    ignoredArtist
+                } else {
+                    blockedMetadata?.artist.orEmpty()
+                }
+            )
         }
     }
 
@@ -104,10 +110,15 @@ private fun BlockedMetadataAddContent(
         modifier = modifier
     ) {
         PanoOutlinedTextField(
-            value = if (hasTrack) track else anythingText,
-            onValueChange = { track = it },
+            track,
+            outputTransformation = if (!hasTrack) {
+                {
+                    delete(0, length)
+                    append(anythingText)
+                }
+            } else null,
             label = { Text(stringResource(Res.string.track)) },
-            isError = hasTrack && track.isEmpty(),
+            isError = hasTrack && track.text.isEmpty(),
             leadingIcon = {
                 InlineCheckButton(
                     checked = hasTrack,
@@ -124,8 +135,13 @@ private fun BlockedMetadataAddContent(
         )
 
         PanoOutlinedTextField(
-            value = if (hasArtist) artist else anythingText,
-            onValueChange = { artist = it },
+            artist,
+            outputTransformation = if (!hasArtist) {
+                {
+                    delete(0, length)
+                    append(anythingText)
+                }
+            } else null,
             label = {
                 Text(
                     stringResource(
@@ -136,7 +152,7 @@ private fun BlockedMetadataAddContent(
                     )
                 )
             },
-            isError = hasArtist && artist.isEmpty(),
+            isError = hasArtist && artist.text.isEmpty(),
             leadingIcon = {
                 InlineCheckButton(
                     checked = hasArtist,
@@ -153,8 +169,13 @@ private fun BlockedMetadataAddContent(
         )
 
         PanoOutlinedTextField(
-            value = if (hasAlbum) album else anythingText,
-            onValueChange = { album = it },
+            album,
+            outputTransformation = if (!hasAlbum) {
+                {
+                    delete(0, length)
+                    append(anythingText)
+                }
+            } else null,
             label = { Text(stringResource(Res.string.album)) },
             leadingIcon = {
                 InlineCheckButton(
@@ -162,7 +183,7 @@ private fun BlockedMetadataAddContent(
                     onCheckedChange = { hasAlbum = it }
                 )
             },
-            isError = hasAlbum && album.isEmpty(),
+            isError = hasAlbum && album.text.isEmpty(),
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Next
             ),
@@ -173,8 +194,13 @@ private fun BlockedMetadataAddContent(
         )
 
         PanoOutlinedTextField(
-            value = if (hasAlbumArtist) albumArtist else anythingText,
-            onValueChange = { albumArtist = it },
+            albumArtist,
+            outputTransformation = if (!hasAlbumArtist) {
+                {
+                    delete(0, length)
+                    append(anythingText)
+                }
+            } else null,
             label = { Text(stringResource(Res.string.album_artist)) },
             leadingIcon = {
                 InlineCheckButton(
@@ -182,7 +208,7 @@ private fun BlockedMetadataAddContent(
                     onCheckedChange = { hasAlbumArtist = it }
                 )
             },
-            isError = hasAlbumArtist && albumArtist.isEmpty(),
+            isError = hasAlbumArtist && albumArtist.text.isEmpty(),
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Done
             ),
@@ -214,17 +240,17 @@ private fun BlockedMetadataAddContent(
             onClick = {
                 val newBlockedMetadata = BlockedMetadata(
                     _id = blockedMetadata?._id ?: 0,
-                    artist = if (hasArtist) artist else "",
-                    albumArtist = if (hasAlbumArtist) albumArtist else "",
-                    album = if (hasAlbum) album else "",
-                    track = if (hasTrack) track else "",
+                    artist = if (hasArtist) artist.text.toString() else "",
+                    albumArtist = if (hasAlbumArtist) albumArtist.text.toString() else "",
+                    album = if (hasAlbum) album.text.toString() else "",
+                    track = if (hasTrack) track.text.toString() else "",
                     blockPlayerAction = blockPlayerAction,
                 )
-                if (listOf(artist, albumArtist, album, track).all { it.isEmpty() } ||
-                    hasArtist && artist.isEmpty() ||
-                    hasAlbumArtist && albumArtist.isEmpty() ||
-                    hasAlbum && album.isEmpty() ||
-                    hasTrack && track.isEmpty()
+                if (listOf(artist, albumArtist, album, track).all { it.text.isEmpty() } ||
+                    hasArtist && artist.text.isEmpty() ||
+                    hasAlbumArtist && albumArtist.text.isEmpty() ||
+                    hasAlbum && album.text.isEmpty() ||
+                    hasTrack && track.text.isEmpty()
                 ) {
                     errorText = emptyText
                 } else {

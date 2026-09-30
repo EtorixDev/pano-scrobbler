@@ -9,7 +9,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import dev.etorix.panoscrobbler.R
 import dev.etorix.panoscrobbler.pref.WidgetPrefs
-import dev.etorix.panoscrobbler.utils.Stuff.format
+import dev.etorix.panoscrobbler.utils.LocaleUtils.format
 
 
 class FakeChartsAdapter(

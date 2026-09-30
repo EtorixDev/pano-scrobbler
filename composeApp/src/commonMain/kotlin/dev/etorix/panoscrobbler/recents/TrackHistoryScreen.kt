@@ -27,10 +27,10 @@ import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.ui.PanoLazyColumn
 import dev.etorix.panoscrobbler.ui.myTransparentCheckableItemColors
+import dev.etorix.panoscrobbler.utils.LocaleUtils.format
 import dev.etorix.panoscrobbler.utils.PanoTimeFormatter
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
-import dev.etorix.panoscrobbler.utils.Stuff.format
 import kotlinx.coroutines.flow.Flow
 import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.stringResource

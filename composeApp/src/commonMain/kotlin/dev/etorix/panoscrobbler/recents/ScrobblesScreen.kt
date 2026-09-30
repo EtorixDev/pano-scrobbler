@@ -70,11 +70,11 @@ import dev.etorix.panoscrobbler.ui.PanoDropdownMenu
 import dev.etorix.panoscrobbler.ui.PanoLazyColumn
 import dev.etorix.panoscrobbler.ui.PanoPullToRefreshStateForTab
 import dev.etorix.panoscrobbler.ui.emptyText
+import dev.etorix.panoscrobbler.utils.LocaleUtils.format
 import dev.etorix.panoscrobbler.utils.PanoTimeFormatter
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
-import dev.etorix.panoscrobbler.utils.Stuff.format
 import dev.etorix.panoscrobbler.utils.Stuff.timeToLocal
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -391,7 +391,7 @@ fun ScrobblesScreen(
 
     ResultEffect<PullToRefreshResult> {
         if (it.tab == PanoTab.Scrobbles || it.tab == PanoTab.ScrobblesNoSubtabs) {
-            if (currentTracks.loadState.refresh is LoadState.NotLoading) {
+            if (currentTracks.loadState.refresh !is LoadState.Loading) {
                 currentTracks.refresh()
             }
         }
@@ -570,7 +570,7 @@ fun ScrobblesScreen(
     ResultEffect<SubTabClickedResult> { res ->
         when (res.id) {
             PanoTab.Scrobbles.ScrobblesType.REFRESH.ordinal -> {
-                if (tracks.loadState.refresh is LoadState.NotLoading) {
+                if (tracks.loadState.refresh !is LoadState.Loading) {
                     tracks.refresh()
                     scrollToTopOnLoad = true
                 }

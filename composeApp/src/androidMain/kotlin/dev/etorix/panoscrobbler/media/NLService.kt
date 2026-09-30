@@ -338,6 +338,7 @@ class NLService : NotificationListenerService() {
             durationMillis = scrobbleData.duration ?: 0L,
             normalizedUrlHost = null,
             artUrl = null,
+            setPlayStartTime = false,
         )
 
         val metadataChanged = !needsDelayAndCooldown ||
@@ -346,6 +347,7 @@ class NLService : NotificationListenerService() {
                 trackInfo.hash != trackInfo.lastScrobbleHash
 
         if (metadataChanged) {
+            trackInfo.resetTimePlayed()
             scrobbleQueue.remove(trackInfo.hash)
 
             if (sessListener?.isAppAllowListed(pkgName) == false){

@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import java.io.File
+import java.text.NumberFormat
 import java.util.Locale
 
 
@@ -73,6 +74,11 @@ object LocaleUtils {
             else
                 null
         )
+
+    fun Number.format(): String {
+        val numberLocale = locale.value?.let(Locale::forLanguageTag) ?: Locale.getDefault()
+        return NumberFormat.getNumberInstance(numberLocale).format(this)
+    }
 }
 
 expect fun LocaleUtils.setAppLocale(lang: String?, activityContext: Any?)

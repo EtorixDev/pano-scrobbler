@@ -67,10 +67,10 @@ import dev.etorix.panoscrobbler.ui.dragContainer
 import dev.etorix.panoscrobbler.ui.panoContentPadding
 import dev.etorix.panoscrobbler.ui.rememberDragDropState
 import dev.etorix.panoscrobbler.ui.shapedClickable
+import dev.etorix.panoscrobbler.utils.LocaleUtils.format
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
-import dev.etorix.panoscrobbler.utils.Stuff.format
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch

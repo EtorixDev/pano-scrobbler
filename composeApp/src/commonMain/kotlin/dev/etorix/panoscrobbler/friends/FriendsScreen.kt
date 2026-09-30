@@ -90,10 +90,10 @@ import dev.etorix.panoscrobbler.ui.getMusicEntryPlaceholderItem
 import dev.etorix.panoscrobbler.ui.myColors
 import dev.etorix.panoscrobbler.ui.rememberDragDropState
 import dev.etorix.panoscrobbler.ui.shimmerWindowBounds
+import dev.etorix.panoscrobbler.utils.LocaleUtils.format
 import dev.etorix.panoscrobbler.utils.PanoTimeFormatter
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
-import dev.etorix.panoscrobbler.utils.Stuff.format
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
@@ -236,7 +236,7 @@ fun FriendsScreen(
 
     ResultEffect<PullToRefreshResult> {
         if (it.tab == PanoTab.Following) {
-            if (currentFriends.loadState.refresh is LoadState.NotLoading) {
+            if (currentFriends.loadState.refresh !is LoadState.Loading) {
                 currentViewModel.markExtraDataAsStale()
                 currentViewModel.clearSortedFriends()
                 currentFriends.refresh()

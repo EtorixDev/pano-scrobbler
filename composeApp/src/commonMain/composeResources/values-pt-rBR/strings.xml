@@ -411,4 +411,12 @@
 
     <string name="help">Ajuda</string>
 
+    <string name="pause_for" comment="Pause scrobbling for a some time">Pausar por</string>
+    <string name="button_url" comment="used for the button in discord rich presence">URL do Botão</string>
+    <string name="websites" comment="websites that user is scrobbling from">Sites</string>
+    <string name="websites_desc">Se aplica a todos os players de mídia habilitados que relatam a URL da página via MPRIS.</string>
+    <string name="forget_checked_websites" comment="Forget enabled/allowlisted websites">Esquecer sites habilitados</string>
+    <string name="last_error" comment="most recent error, used for pending scrobbles as of now">Último erro</string>
+    <string name="rate_limit_warn">Realizar muitos 'scrobbles' em um dia pode fazer com que o serviço de 'scrobbling' os rejeite, aumentando seus 'scrobbles' pendentes.</string>
+    <string name="unsupported_api" comment="currently used for custom ListenBrainz-like and last.fm-like logins. This is displayed when custom ones does not support the full feature set">Esta API pode não ser suportada pelo servidor. Veja na web.</string>
 </resources>

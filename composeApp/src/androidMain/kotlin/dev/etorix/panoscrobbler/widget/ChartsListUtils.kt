@@ -11,8 +11,8 @@ import dev.etorix.panoscrobbler.R
 import dev.etorix.panoscrobbler.navigation.DeepLinkUtils
 import dev.etorix.panoscrobbler.pref.WidgetPrefs
 import dev.etorix.panoscrobbler.utils.AndroidStuff
+import dev.etorix.panoscrobbler.utils.LocaleUtils.format
 import dev.etorix.panoscrobbler.utils.Stuff
-import dev.etorix.panoscrobbler.utils.Stuff.format
 
 object ChartsListUtils {
     const val EXTRA_TAB = "widget_tab"

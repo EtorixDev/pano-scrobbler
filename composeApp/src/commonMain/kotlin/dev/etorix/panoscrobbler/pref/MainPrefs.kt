@@ -56,7 +56,7 @@ data class MainPrefs(
     private val delayPercent: Int = PREF_DELAY_PER_DEFAULT,
     private val minDurationSecs: Int = PREF_MIN_DURATON_SECS_DEFAULT,
     private val useTrackProgress: Boolean = false,
-    private val scrobbleSpotifyRemote: Boolean = false,
+    val scrobbleSpotifyRemote: Boolean = false,
     val linkHeartButtonToRating: Boolean = false,
     val preventDuplicateAmbientScrobbles: Boolean = false,
     val submitNowPlaying: Boolean = true,
@@ -256,9 +256,6 @@ data class MainPrefs(
 
     val itunesCountryP
         get() = itunesCountry ?: LocaleUtils.getSystemCountryCode()
-
-    val scrobbleSpotifyRemoteP
-        get() = PlatformStuff.supportsSpotifyRemote && scrobbleSpotifyRemote
 
     val usePlayFromSearchP
         get() = PlatformStuff.isTv || !PlatformStuff.isDesktop && usePlayFromSearch

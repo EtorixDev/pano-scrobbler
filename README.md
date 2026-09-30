@@ -110,8 +110,8 @@ chmod +x pano-scrobbler-etd-linux-*.AppImage
 
 ### Android only (except TV):
 
-- Scrobble from apps that identify music playing around you: Shazam, Ambient Music Mod and Audile
-- Scrobbling the new Pixel Now Playing app (since the March 2026 Pixel feature drop) is possible only with root and KieronQuinn's Xposed module [Public Compute Services](https://github.com/KieronQuinn/PublicComputeServices) [\[Why?\]](https://github.com/kawaiiDango/pano-scrobbler/issues/876)
+- Scrobble from apps that identify music playing around you: Pixel Now Playing, Shazam, Ambient
+  Music Mod and Audile.
 - Charts as a customizable home-screen widget
 - Get your top scrobbles digests as a notification at the end of every week, month and year
 

@@ -16,6 +16,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.pollSystemTheme
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -51,8 +52,6 @@ import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.stateInWithCache
 import dev.etorix.panoscrobbler.utils.VariantStuff
-import dev.etorix.panoscrobbler.utils.findSkiaLayer
-import dev.etorix.panoscrobbler.utils.hackContentPane
 import dev.etorix.panoscrobbler.utils.setAppLocale
 import dev.etorix.panoscrobbler.work.DesktopWorkManager
 import dev.etorix.panoscrobbler.work.UpdaterWork
@@ -540,10 +539,15 @@ fun main(args: Array<String>) {
             }
 
             val isTranslucentAwtWindow = remember {
-                isTranslucent.value && !isBlur.value ||
-                        isBlur.value && DesktopStuff.IS_LINUX
+                isTranslucent.value || isBlur.value
             }
             val minDim = 480
+
+            fun isDark() = dayNightPref.value == DayNightMode.DARK ||
+                    dayNightPref.value == DayNightMode.SYSTEM &&
+                    PanoNativeComponents.onDarkModeChangeFlow.value == true
+
+            fun isBlur() = isBlur.value
 
             SwingWindow(
                 onCloseRequest = { windowShown = false },
@@ -562,25 +566,14 @@ fun main(args: Array<String>) {
                         window.exceptionHandler = null
                     }
 
-                    val isBlur = isBlur.value
-
-                    if (isBlur && !isTranslucentAwtWindow) {
-                        window.background = java.awt.Color.BLACK
-                        window.findSkiaLayer()?.transparency = true
-                        window.hackContentPane()
-                    }
-
-                    SwingUtilities.invokeLater {
-
-                        val isDark = dayNightPref.value == DayNightMode.DARK ||
-                                dayNightPref.value == DayNightMode.SYSTEM &&
-                                PanoNativeComponents.onDarkModeChangeFlow.value == true
-
-                        PanoNativeComponents.applyWindowEffects(
-                            window.windowHandle,
-                            isDark,
-                            isBlur
-                        )
+                    if (!DesktopStuff.IS_WINDOWS || !isBlur()) {
+                        SwingUtilities.invokeLater {
+                            PanoNativeComponents.applyWindowEffects(
+                                window.windowHandle,
+                                isDark(),
+                                isBlur()
+                            )
+                        }
                     }
                 }
             ) {
@@ -613,6 +606,20 @@ fun main(args: Array<String>) {
                     }
 
                     if (DesktopStuff.IS_WINDOWS) {
+                        var applyBlurFix by remember { mutableStateOf(isBlur()) }
+                        val windowFocused = LocalWindowInfo.current.isWindowFocused
+
+                        LaunchedEffect(windowFocused) {
+                            if (applyBlurFix && windowFocused) {
+                                PanoNativeComponents.applyWindowEffects(
+                                    window.windowHandle,
+                                    isDark(),
+                                    true
+                                )
+                                applyBlurFix = false
+                            }
+                        }
+
                         LaunchedEffect(Unit) {
                             combine(
                                 dayNightPref,
@@ -758,7 +765,7 @@ private suspend fun trayMenuClickListener(
                     }
 
                     PanoTrayUtils.ItemId.Copy -> {
-                        val text = "${scrobbleData.artist} - ${scrobbleData.track}"
+                        val text = "${scrobbleData.artist} ${scrobbleData.track}"
                         PlatformStuff.copyToClipboard(text)
                     }
 

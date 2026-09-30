@@ -95,8 +95,9 @@ class PendingScrobblesWorker(
                 }
             }
 
-            val idsAll = entries.map { it._id }.toSet()
+            val attemptedServices = scrobbleResults.keys.map { it.userAccount.type }.toSet()
             val idsToDelete = mutableSetOf<Long>()
+            val idsToLogFailure = mutableListOf<Long>()
 
             entries.forEach { pendingScrobble ->
                 val services = pendingScrobble.services -
@@ -118,17 +119,20 @@ class PendingScrobblesWorker(
                     val newPendingScrobble = pendingScrobble.copy(services = services)
                     dao.update(newPendingScrobble)
                 }
+
+                if (services.any { it in attemptedServices })
+                    idsToLogFailure += pendingScrobble._id
             }
 
             if (!MOCK && idsToDelete.isNotEmpty())
                 dao.delete(idsToDelete.toList())
 
-            (idsAll - idsToDelete)
+            idsToLogFailure
                 .takeIf { it.isNotEmpty() }
                 ?.let {
                     val exceptions = scrobbleResults.values.mapNotNull { it.exceptionOrNull() }
 
-                    dao.logFailure(it.toList(), exceptions)
+                    dao.logFailure(it, exceptions)
                 }
         }
     }
@@ -198,6 +202,9 @@ class PendingScrobblesWorker(
         scrobblable: Scrobblable,
         pendingScrobbles: List<PendingScrobble>,
     ): List<PendingScrobble> {
+        if (!scrobblable.userAccount.canScrobble)
+            return emptyList()
+
         if (failsMap[scrobblable.userAccount.type]!! > MAX_FAILURES_PER_SERVICE)
             return emptyList()
 

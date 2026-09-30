@@ -154,9 +154,16 @@ class ScrobbleQueue(
             }
 
             // tick every n milliseconds
+            var prevLockedHash: Int? = null
             while (submitAtTime > PlatformStuff.monotonicTimeMs() || hash == lockedHash) {
+                if (hash == lockedHash)
+                    prevLockedHash = lockedHash
+
                 delay(tickEveryMs.milliseconds)
             }
+
+            if (trackInfo.hash == prevLockedHash && !trackInfo.isPlaying)
+                return@coroutineScope
 
             val duplicateProbeData = sd.withTimestampOverride()
             val exactDuplicateSource = duplicateProbeData.appId?.let { appId ->

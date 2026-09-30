@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.byValue
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -19,8 +22,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import dev.etorix.panoscrobbler.ui.PanoOutlinedSecureTextField
 import dev.etorix.panoscrobbler.ui.PanoOutlinedTextField
 import dev.etorix.panoscrobbler.ui.PanoToggleButtonGroup
 import dev.etorix.panoscrobbler.utils.PlatformStuff
@@ -49,22 +52,22 @@ fun ProxyPrefDialog(modifier: Modifier = Modifier) {
         val proxy by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.proxy }
 
         var typeEditable by rememberSaveable { mutableStateOf(proxy.type) }
-        var hostEditable by rememberSaveable { mutableStateOf(proxy.host) }
-        var portEditable by rememberSaveable { mutableStateOf(proxy.port.toString()) }
-        var userEditable by rememberSaveable { mutableStateOf(proxy.user) }
-        var passEditable by rememberSaveable { mutableStateOf(proxy.pass) }
+        val hostEditable = rememberTextFieldState(proxy.host)
+        val portEditable = rememberTextFieldState(proxy.port.toString())
+        val userEditable = rememberTextFieldState(proxy.user)
+        val passEditable = rememberTextFieldState(proxy.pass)
 
         var isValid by remember { mutableStateOf(true) }
         val isEnabled = typeEditable != MainPrefs.ProxySettings.Type.SYSTEM
 
         fun validate(): Boolean {
-            val portInt = portEditable.toIntOrNull() ?: return false
+            val portInt = portEditable.text.toString().toIntOrNull() ?: return false
 
             return try {
                 HttpUrl.Builder()
-                    .host(hostEditable)
-                    .username(userEditable)
-                    .password(passEditable)
+                    .host(hostEditable.text.toString())
+                    .username(userEditable.text.toString())
+                    .password(passEditable.text.toString())
                     .port(portInt)
                     .scheme("http")
                     .build()
@@ -74,9 +77,9 @@ fun ProxyPrefDialog(modifier: Modifier = Modifier) {
             }
         }
 
-        LaunchedEffect(hostEditable, portEditable, userEditable, passEditable) {
+        LaunchedEffect(hostEditable.text, portEditable.text, userEditable.text, passEditable.text) {
             delay(500.milliseconds) // debounce
-            isValid = hostEditable.isNotBlank() && validate()
+            isValid = hostEditable.text.isNotBlank() && validate()
         }
 
         DisposableEffect(Unit) {
@@ -87,10 +90,10 @@ fun ProxyPrefDialog(modifier: Modifier = Modifier) {
                             it.copy(
                                 proxy = MainPrefs.ProxySettings(
                                     type = typeEditable,
-                                    host = hostEditable,
-                                    port = portEditable.toInt(),
-                                    user = userEditable,
-                                    pass = passEditable,
+                                    host = hostEditable.text.toString(),
+                                    port = portEditable.text.toString().toInt(),
+                                    user = userEditable.text.toString(),
+                                    pass = passEditable.text.toString(),
                                 )
                             )
                         }
@@ -124,8 +127,8 @@ fun ProxyPrefDialog(modifier: Modifier = Modifier) {
                 .fillMaxWidth()
         ) {
             PanoOutlinedTextField(
-                value = hostEditable,
-                onValueChange = { hostEditable = it.trim() },
+                hostEditable,
+                inputTransformation = InputTransformation.byValue { _, proposed -> proposed.trim() },
                 label = {
                     Text(stringResource(Res.string.host))
                 },
@@ -138,8 +141,8 @@ fun ProxyPrefDialog(modifier: Modifier = Modifier) {
             )
 
             PanoOutlinedTextField(
-                value = portEditable,
-                onValueChange = { portEditable = it.trim() },
+                portEditable,
+                inputTransformation = InputTransformation.byValue { _, proposed -> proposed.trim() },
                 label = {
                     Text(stringResource(Res.string.port))
                 },
@@ -160,8 +163,7 @@ fun ProxyPrefDialog(modifier: Modifier = Modifier) {
                 .fillMaxWidth()
         ) {
             PanoOutlinedTextField(
-                value = userEditable,
-                onValueChange = { userEditable = it },
+                userEditable,
                 label = {
                     Text(stringResource(Res.string.username))
                 },
@@ -173,15 +175,12 @@ fun ProxyPrefDialog(modifier: Modifier = Modifier) {
                     .padding(end = 8.dp)
             )
 
-            PanoOutlinedTextField(
-                value = passEditable,
-                onValueChange = { passEditable = it },
+            PanoOutlinedSecureTextField(
+                passEditable,
                 label = {
                     Text(stringResource(Res.string.password))
                 },
-                visualTransformation = PasswordVisualTransformation(),
                 enabled = isEnabled,
-                singleLine = true,
                 isError = !isValid,
                 modifier = Modifier
                     .weight(1f)

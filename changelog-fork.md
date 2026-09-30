@@ -1,1 +1,1 @@
-- Fixed saved edits being applied twice to a track when switching between players.
+- Merge upstream.

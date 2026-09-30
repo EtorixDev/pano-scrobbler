@@ -188,7 +188,7 @@ private fun TrackDropdownMenu(
             if (!PlatformStuff.isTv) {
                 item(
                     onClick = {
-                        PlatformStuff.copyToClipboard(track.artist.name + " - " + track.name)
+                        PlatformStuff.copyToClipboard(track.artist.name + " " + track.name)
                         onDismissRequest()
                     },
                     text = {

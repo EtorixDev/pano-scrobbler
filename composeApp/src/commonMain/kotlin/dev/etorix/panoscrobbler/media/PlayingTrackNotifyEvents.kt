@@ -193,7 +193,6 @@ suspend fun listenForPlayingTrackEvents(
                         }
 
                         PlayingTrackNotifyEvent.TrackScrobbleLocked.LockState.SCROBBLED -> {
-                            scrobbleQueue.setLockedHash(null)
                             scrobbleQueue.remove(event.hash)
                             val trackInfo = mediaListener.findTrackerByHash(event.hash)?.trackInfo
 
@@ -201,7 +200,7 @@ suspend fun listenForPlayingTrackEvents(
                                 trackInfo.scrobbled()
                                 PanoNotifications.removeNotificationByKey(trackInfo.notiKey)
                             }
-
+                            scrobbleQueue.setLockedHash(null)
                         }
                     }
                 }

@@ -10,7 +10,6 @@ import coil3.request.allowHardware
 import coil3.toBitmap
 import dev.etorix.panoscrobbler.BuildKonfig
 import dev.etorix.panoscrobbler.api.lastfm.Track
-import dev.etorix.panoscrobbler.api.lastfm.webp300
 import dev.etorix.panoscrobbler.imageloader.StarMapper
 import dev.etorix.panoscrobbler.utils.AndroidStuff
 import dev.etorix.panoscrobbler.utils.PanoTimeFormatter
@@ -63,22 +62,22 @@ actual fun ScrobblesVM.shareTrack(track: Track, shareSig: String?) {
         }
 
         withContext(Dispatchers.IO) {
-            val shareAlbumArt = if (track.album?.webp300 == null ||
-                track.album.webp300?.contains(StarMapper.STAR_PATTERN) == true
-            ) {
-                null
-            } else {
-                try {
-                    ImageLoader(context).execute(
-                        ImageRequest.Builder(context)
-                            .data(track.album.webp300)
-                            .allowHardware(false)
-                            .build()
-                    ).image?.toBitmap()
-                } catch (e: Exception) {
+            val shareAlbumArt =
+                if (track.album?.image == null || track.album.image.medium.contains(StarMapper.STAR_PATTERN)
+                ) {
                     null
+                } else {
+                    try {
+                        ImageLoader(context).execute(
+                            ImageRequest.Builder(context)
+                                .data(track.album.image.medium)
+                                .allowHardware(false)
+                                .build()
+                        ).image?.toBitmap()
+                    } catch (e: Exception) {
+                        null
+                    }
                 }
-            }
 
             if (shareAlbumArt != null) {
                 val albumArtFile = File(context.cacheDir, "share/album_art.jpg")

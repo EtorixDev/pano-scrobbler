@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowDecorationDefaults
 import dev.etorix.panoscrobbler.PanoNativeComponents
 import dev.etorix.panoscrobbler.utils.DesktopStuff
-import dev.etorix.panoscrobbler.utils.isUndecorated
 import kotlinx.coroutines.flow.filterNotNull
 
 @Composable
@@ -62,7 +61,7 @@ actual fun AddAdditionalProviders(content: @Composable () -> Unit) {
         }
     }
 
-    val isUndecorated = LocalAwtWindow.current?.isUndecorated == true
+    val isUndecorated = (LocalAwtWindow.current as? java.awt.Frame)?.isUndecorated == true
 
     CompositionLocalProvider(
         LocalScrollbarStyle provides defaultScrollbarStyle.copy(

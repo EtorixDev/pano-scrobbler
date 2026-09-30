@@ -85,6 +85,13 @@ actual object PlatformStuff {
     actual fun openInBrowser(url: String) {
         val desktop = if (Desktop.isDesktopSupported()) Desktop.getDesktop() else null
         when {
+            DesktopStuff.IS_LINUX -> {
+                val localizedUrl = if (url.startsWith("http", ignoreCase = true))
+                    Stuff.localizeLastfmUrl(url)
+                else
+                    url
+                PanoNativeComponents.openUrlLinux(localizedUrl)
+            }
             desktop != null && url.startsWith("mailto:", ignoreCase = true) &&
                     desktop.isSupported(Desktop.Action.MAIL) -> desktop.mail(URI(url))
             desktop != null && url.startsWith("http", ignoreCase = true) &&
@@ -92,7 +99,6 @@ actual object PlatformStuff {
                 desktop.browse(URI(Stuff.localizeLastfmUrl(url)))
             desktop != null && url.startsWith("file", ignoreCase = true) &&
                     desktop.isSupported(Desktop.Action.OPEN) -> desktop.open(File(URI(url)))
-            DesktopStuff.IS_LINUX -> PanoNativeComponents.openUrlLinux(Stuff.localizeLastfmUrl(url))
             desktop != null && desktop.isSupported(Desktop.Action.BROWSE) -> {
                 try {
                     desktop.browse(URI(url))

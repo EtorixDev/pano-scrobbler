@@ -26,11 +26,9 @@ import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.api.Scrobblables
 import dev.etorix.panoscrobbler.api.lastfm.Album
 import dev.etorix.panoscrobbler.api.lastfm.Artist
-import dev.etorix.panoscrobbler.api.lastfm.ImageSize
-import dev.etorix.panoscrobbler.api.lastfm.LastFmImage
+import dev.etorix.panoscrobbler.api.lastfm.ImagesUrls
 import dev.etorix.panoscrobbler.api.lastfm.MusicEntry
 import dev.etorix.panoscrobbler.api.lastfm.Track
-import dev.etorix.panoscrobbler.api.lastfm.webp300
 import dev.etorix.panoscrobbler.charts.TimePeriod
 import dev.etorix.panoscrobbler.imageloader.MusicEntryImageReq
 import dev.etorix.panoscrobbler.imageloader.PanoImageLoader
@@ -242,8 +240,8 @@ class ChartsWidgetUpdaterWorker(appContext: Context, workerParams: WorkerParamet
                             }
 
                             val imgUrl =
-                                if (entry is Album && entry.webp300?.contains(StarMapper.STAR_PATTERN) == false)
-                                    entry.webp300
+                                if (entry is Album && entry.image?.medium?.contains(StarMapper.STAR_PATTERN) == false)
+                                    entry.image.medium
                                 else
                                     null
 
@@ -349,9 +347,9 @@ class ChartsWidgetUpdaterWorker(appContext: Context, workerParams: WorkerParamet
             name = title,
             artist = Artist(subtitle!!),
             image = if (!imageUrl.isNullOrBlank())
-                listOf(LastFmImage(ImageSize.extralarge.name, imageUrl))
+                ImagesUrls(imageUrl, imageUrl)
             else
-                emptyList()
+                null
         )
 
         Stuff.TYPE_TRACKS -> Track(

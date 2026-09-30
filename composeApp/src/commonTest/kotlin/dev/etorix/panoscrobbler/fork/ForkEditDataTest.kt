@@ -2,8 +2,7 @@ package dev.etorix.panoscrobbler.fork
 
 import dev.etorix.panoscrobbler.api.lastfm.Album
 import dev.etorix.panoscrobbler.api.lastfm.Artist
-import dev.etorix.panoscrobbler.api.lastfm.ImageSize
-import dev.etorix.panoscrobbler.api.lastfm.LastFmImage
+import dev.etorix.panoscrobbler.api.lastfm.ImagesUrls
 import dev.etorix.panoscrobbler.api.lastfm.ScrobbleData
 import dev.etorix.panoscrobbler.api.lastfm.Track
 import kotlin.test.Test
@@ -19,7 +18,7 @@ class ForkEditDataTest {
             name = "Original Album",
             artist = Artist("Original Album Artist"),
             url = "https://example.test/albums/original",
-            image = listOf(LastFmImage(ImageSize.extralarge.name, "https://example.test/cover.jpg")),
+            image = ImagesUrls("https://example.test/cover.jpg", "https://example.test/cover-large.jpg"),
             listeners = 42,
         ),
         url = "https://example.test/tracks/original",

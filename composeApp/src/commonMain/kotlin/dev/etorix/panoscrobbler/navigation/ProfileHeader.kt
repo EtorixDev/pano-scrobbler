@@ -75,10 +75,10 @@ import dev.etorix.panoscrobbler.ui.accountTypeLabel
 import dev.etorix.panoscrobbler.ui.drawSnowflake
 import dev.etorix.panoscrobbler.ui.generateRandomSnowflake
 import dev.etorix.panoscrobbler.ui.shapedClickable
+import dev.etorix.panoscrobbler.utils.LocaleUtils.format
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
-import dev.etorix.panoscrobbler.utils.Stuff.format
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource

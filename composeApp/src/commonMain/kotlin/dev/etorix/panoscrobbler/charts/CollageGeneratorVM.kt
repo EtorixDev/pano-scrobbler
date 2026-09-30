@@ -44,7 +44,6 @@ import dev.etorix.panoscrobbler.api.lastfm.Artist
 import dev.etorix.panoscrobbler.api.lastfm.MusicEntry
 import dev.etorix.panoscrobbler.api.lastfm.PageResult
 import dev.etorix.panoscrobbler.api.lastfm.Track
-import dev.etorix.panoscrobbler.api.lastfm.webp300
 import dev.etorix.panoscrobbler.imageloader.MusicEntryImageReq
 import dev.etorix.panoscrobbler.ui.colorSeed
 import dev.etorix.panoscrobbler.utils.PlatformFile
@@ -308,7 +307,7 @@ class CollageGeneratorVM : ViewModel() {
                     data(
                         MusicEntryImageReq(
                             entry,
-                            fetchAlbumInfoIfMissing = (entry is Album && entry.webp300 == null) || (entry is Track && entry.album == null),
+                            fetchAlbumInfoIfMissing = (entry is Album && entry.image == null) || (entry is Track && entry.album == null),
                             accountType = accountType
                         )
                     )

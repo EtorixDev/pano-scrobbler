@@ -63,9 +63,9 @@ import dev.etorix.panoscrobbler.navigation.TimePeriodTypeClickedResult
 import dev.etorix.panoscrobbler.ui.PanoDropdownMenu
 import dev.etorix.panoscrobbler.ui.myColors
 import dev.etorix.panoscrobbler.ui.rememberClippedPainter
+import dev.etorix.panoscrobbler.utils.LocaleUtils.format
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.collectAsStateWithInitialValue
-import dev.etorix.panoscrobbler.utils.Stuff.format
 import dev.etorix.panoscrobbler.utils.Stuff.setMidnight
 import dev.etorix.panoscrobbler.utils.Stuff.timeToLocal
 import dev.etorix.panoscrobbler.utils.Stuff.timeToUTC

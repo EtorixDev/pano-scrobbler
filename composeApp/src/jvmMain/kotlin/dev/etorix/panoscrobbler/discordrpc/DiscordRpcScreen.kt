@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -14,7 +16,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.etorix.panoscrobbler.BuildKonfig
@@ -24,7 +25,7 @@ import dev.etorix.panoscrobbler.pref.DropdownPref
 import dev.etorix.panoscrobbler.pref.MainPrefs
 import dev.etorix.panoscrobbler.pref.SliderPref
 import dev.etorix.panoscrobbler.pref.SwitchPref
-import dev.etorix.panoscrobbler.ui.HighlighterVisualTransformation
+import dev.etorix.panoscrobbler.ui.HighlighterOutputTransformation
 import dev.etorix.panoscrobbler.ui.PanoOutlinedTextField
 import dev.etorix.panoscrobbler.ui.horizontalOverscanPadding
 import dev.etorix.panoscrobbler.utils.PlatformStuff
@@ -60,10 +61,10 @@ fun DiscordRpcScreen(
 ) {
     val settings by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue { it.discordRpc }
     val defaultSettings = remember { MainPrefs.DiscordRpcSettings() }
-    var line1Format by remember(settings.line1Format) { mutableStateOf(settings.line1Format) }
-    var line2Format by remember(settings.line2Format) { mutableStateOf(settings.line2Format) }
-    var line3Format by remember(settings.line3Format) { mutableStateOf(settings.line3Format) }
-    var nameFormat by remember(settings.nameFormat) { mutableStateOf(settings.nameFormat) }
+    val line1Format = rememberTextFieldState(settings.line1Format)
+    val line2Format = rememberTextFieldState(settings.line2Format)
+    val line3Format = rememberTextFieldState(settings.line3Format)
+    val nameFormat = rememberTextFieldState(settings.nameFormat)
     val buttonType by remember(settings.buttonType) {
         mutableStateOf(
             MainPrefs.DiscordRpcSettings.ButtonType.entries.find { it.name == settings.buttonType }
@@ -81,8 +82,8 @@ fun DiscordRpcScreen(
     }
 
     val tertiaryColor = MaterialTheme.colorScheme.tertiary
-    val visualTransformation = remember {
-        HighlighterVisualTransformation(
+    val outputTransformation = remember(tertiaryColor) {
+        HighlighterOutputTransformation(
             stringsToHighlight = DiscordRpcPlaceholder.entries.map { "\$" + it.name },
             highlightColor = tertiaryColor
         )
@@ -94,12 +95,12 @@ fun DiscordRpcScreen(
                 PlatformStuff.mainPrefs.updateData {
                     it.copy(
                         discordRpc = it.discordRpc.copy(
-                            line1Format = line1Format.trim()
+                            line1Format = line1Format.text.trim().toString()
                                 .ifEmpty { defaultSettings.line1Format },
-                            line2Format = line2Format.trim()
+                            line2Format = line2Format.text.trim().toString()
                                 .ifEmpty { defaultSettings.line2Format },
-                            line3Format = line3Format.trim(), // line 3 can be empty
-                            nameFormat = nameFormat.trim(), // name can be empty
+                            line3Format = line3Format.text.trim().toString(), // line 3 can be empty
+                            nameFormat = nameFormat.text.trim().toString(), // name can be empty
                         )
                     )
                 }
@@ -167,7 +168,7 @@ fun DiscordRpcScreen(
         )
 
         Text(
-            visualTransformation.highlight(
+            outputTransformation.highlightToAnnotatedString(
                 stringResource(
                     Res.string.available_placeholders,
                     DiscordRpcPlaceholder.entries.joinToString { "\$" + it.name }
@@ -179,19 +180,16 @@ fun DiscordRpcScreen(
         )
 
         PanoOutlinedTextField(
+            line1Format,
             label = { Text(stringResource(Res.string.line_n, 1)) },
-            value = line1Format,
-            onValueChange = {
-                line1Format = it
-            },
-            visualTransformation = visualTransformation,
-            isError = line1Format.trim().isEmpty(),
+            outputTransformation = outputTransformation,
+            isError = line1Format.text.trim().isEmpty(),
             trailingIcon = {
                 IconButton(
                     shapes = IconButtonDefaults.shapes(),
-                    enabled = line1Format != defaultSettings.line1Format,
+                    enabled = line1Format.text != defaultSettings.line1Format,
                     onClick = {
-                        line1Format = defaultSettings.line1Format
+                        line1Format.setTextAndPlaceCursorAtEnd(defaultSettings.line1Format)
                     }
                 ) {
                     Icon(
@@ -207,19 +205,16 @@ fun DiscordRpcScreen(
         )
 
         PanoOutlinedTextField(
+            line2Format,
             label = { Text(stringResource(Res.string.line_n, 2)) },
-            value = line2Format,
-            onValueChange = {
-                line2Format = it
-            },
-            visualTransformation = visualTransformation,
-            isError = line2Format.trim().isEmpty(),
+            outputTransformation = outputTransformation,
+            isError = line2Format.text.trim().isEmpty(),
             trailingIcon = {
                 IconButton(
                     shapes = IconButtonDefaults.shapes(),
-                    enabled = line2Format != defaultSettings.line2Format,
+                    enabled = line2Format.text != defaultSettings.line2Format,
                     onClick = {
-                        line2Format = defaultSettings.line2Format
+                        line2Format.setTextAndPlaceCursorAtEnd(defaultSettings.line2Format)
                     }
                 ) {
                     Icon(
@@ -235,18 +230,15 @@ fun DiscordRpcScreen(
         )
 
         PanoOutlinedTextField(
+            line3Format,
             label = { Text(stringResource(Res.string.line_n, 3)) },
-            value = line3Format,
-            onValueChange = {
-                line3Format = it
-            },
-            visualTransformation = visualTransformation,
+            outputTransformation = outputTransformation,
             trailingIcon = {
                 IconButton(
                     shapes = IconButtonDefaults.shapes(),
-                    enabled = line3Format != defaultSettings.line3Format,
+                    enabled = line3Format.text != defaultSettings.line3Format,
                     onClick = {
-                        line3Format = defaultSettings.line3Format
+                        line3Format.setTextAndPlaceCursorAtEnd(defaultSettings.line3Format)
                     }
                 ) {
                     Icon(
@@ -262,18 +254,15 @@ fun DiscordRpcScreen(
         )
 
         PanoOutlinedTextField(
+            nameFormat,
             label = { Text(stringResource(Res.string.discord_app_name)) },
-            value = nameFormat,
-            onValueChange = {
-                nameFormat = it
-            },
-            visualTransformation = visualTransformation,
+            outputTransformation = outputTransformation,
             trailingIcon = {
                 IconButton(
                     shapes = IconButtonDefaults.shapes(),
-                    enabled = nameFormat != defaultSettings.nameFormat,
+                    enabled = nameFormat.text != defaultSettings.nameFormat,
                     onClick = {
-                        nameFormat = defaultSettings.nameFormat
+                        nameFormat.setTextAndPlaceCursorAtEnd(defaultSettings.nameFormat)
                     }
                 ) {
                     Icon(
