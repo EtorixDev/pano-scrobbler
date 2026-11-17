@@ -16,15 +16,18 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.etorix.panoscrobbler.BuildKonfig
+import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.icons.Icons
 import dev.etorix.panoscrobbler.icons.ResetSettings
 import dev.etorix.panoscrobbler.pref.DropdownPref
 import dev.etorix.panoscrobbler.pref.MainPrefs
 import dev.etorix.panoscrobbler.pref.SliderPref
 import dev.etorix.panoscrobbler.pref.SwitchPref
+import dev.etorix.panoscrobbler.ui.ErrorText
 import dev.etorix.panoscrobbler.ui.HighlighterOutputTransformation
 import dev.etorix.panoscrobbler.ui.PanoOutlinedTextField
 import dev.etorix.panoscrobbler.ui.horizontalOverscanPadding
@@ -49,6 +52,7 @@ import pano_scrobbler.composeapp.generated.resources.librefm
 import pano_scrobbler.composeapp.generated.resources.line_n
 import pano_scrobbler.composeapp.generated.resources.listenbrainz
 import pano_scrobbler.composeapp.generated.resources.loved
+import pano_scrobbler.composeapp.generated.resources.not_found
 import pano_scrobbler.composeapp.generated.resources.profile
 import pano_scrobbler.composeapp.generated.resources.reset
 import pano_scrobbler.composeapp.generated.resources.show_paused_for
@@ -81,6 +85,10 @@ fun DiscordRpcScreen(
         )
     }
 
+    val accountTypes by PlatformStuff.mainPrefs.data.collectAsStateWithInitialValue {
+        it.scrobbleAccounts.map { it.type }.toSet()
+    }
+
     val tertiaryColor = MaterialTheme.colorScheme.tertiary
     val outputTransformation = remember(tertiaryColor) {
         HighlighterOutputTransformation(
@@ -88,6 +96,13 @@ fun DiscordRpcScreen(
             highlightColor = tertiaryColor
         )
     }
+
+    val discordAndroidInstalled by rememberSaveable {
+        mutableStateOf(
+            PlatformStuff.isDesktop || PlatformStuff.doesAppExist(Stuff.PACKAGE_DISCORD)
+        )
+    }
+    val enabled = settings.enabled && discordAndroidInstalled
 
     DisposableEffect(Unit) {
         onDispose {
@@ -112,9 +127,19 @@ fun DiscordRpcScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
     ) {
+        if (!discordAndroidInstalled) {
+            ErrorText(
+                stringResource(Res.string.not_found) + ": " + "Discord app",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = horizontalOverscanPadding())
+            )
+        }
+
         SwitchPref(
             text = stringResource(Res.string.enable),
             value = settings.enabled,
+            enabled = discordAndroidInstalled,
             copyToSave = {
                 copy(
                     discordRpc = settings.copy(enabled = it)
@@ -125,7 +150,7 @@ fun DiscordRpcScreen(
         SwitchPref(
             text = stringResource(Res.string.album_art),
             value = settings.albumArt,
-            enabled = settings.enabled,
+            enabled = enabled,
             copyToSave = {
                 copy(
                     discordRpc = settings.copy(albumArt = it)
@@ -137,7 +162,7 @@ fun DiscordRpcScreen(
             text = stringResource(Res.string.album_art_now_playing),
             summary = stringResource(Res.string.album_art_now_playing_desc),
             value = settings.albumArtFromNowPlaying,
-            enabled = settings.enabled && settings.albumArt,
+            enabled = enabled && settings.albumArt,
             copyToSave = {
                 copy(
                     discordRpc = settings.copy(albumArtFromNowPlaying = it)
@@ -148,7 +173,7 @@ fun DiscordRpcScreen(
         SwitchPref(
             text = stringResource(Res.string.show_track_url),
             value = settings.detailsUrl,
-            enabled = settings.enabled,
+            enabled = enabled,
             copyToSave = {
                 copy(
                     discordRpc = settings.copy(detailsUrl = it)
@@ -159,7 +184,7 @@ fun DiscordRpcScreen(
         SwitchPref(
             text = stringResource(Res.string.appwidget_show) + ": " + stringResource(Res.string.loved),
             value = settings.lovedState,
-            enabled = settings.enabled,
+            enabled = enabled,
             copyToSave = {
                 copy(
                     discordRpc = settings.copy(lovedState = it)
@@ -198,7 +223,7 @@ fun DiscordRpcScreen(
                     )
                 }
             },
-            enabled = settings.enabled,
+            enabled = enabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = horizontalOverscanPadding())
@@ -223,7 +248,7 @@ fun DiscordRpcScreen(
                     )
                 }
             },
-            enabled = settings.enabled,
+            enabled = enabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = horizontalOverscanPadding())
@@ -247,7 +272,7 @@ fun DiscordRpcScreen(
                     )
                 }
             },
-            enabled = settings.enabled,
+            enabled = enabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = horizontalOverscanPadding())
@@ -271,7 +296,7 @@ fun DiscordRpcScreen(
                     )
                 }
             },
-            enabled = settings.enabled,
+            enabled = enabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = horizontalOverscanPadding())
@@ -295,13 +320,20 @@ fun DiscordRpcScreen(
                     )
                 )
             },
-            enabled = settings.enabled,
+            enabled = enabled,
         )
 
         DropdownPref(
             text = stringResource(Res.string.button_url),
             selectedValue = buttonType,
-            values = MainPrefs.DiscordRpcSettings.ButtonType.entries,
+            values = MainPrefs.DiscordRpcSettings.ButtonType.entries.filter {
+                when (it) {
+                    MainPrefs.DiscordRpcSettings.ButtonType.LASTFM_PROFILE -> AccountType.LASTFM in accountTypes
+                    MainPrefs.DiscordRpcSettings.ButtonType.LISTENBRAINZ_PROFILE -> AccountType.LISTENBRAINZ in accountTypes
+                    MainPrefs.DiscordRpcSettings.ButtonType.LIBREFM_PROFILE -> AccountType.LIBREFM in accountTypes
+                    else -> true
+                } || it == buttonType
+            },
             toLabel = {
                 when (it) {
                     MainPrefs.DiscordRpcSettings.ButtonType.PANO_SCROBBLER -> BuildKonfig.APP_NAME
@@ -325,13 +357,13 @@ fun DiscordRpcScreen(
                     )
                 )
             },
-            enabled = settings.enabled,
+            enabled = enabled,
         )
 
         SliderPref(
             text = stringResource(Res.string.show_paused_for),
             value = settings.showPausedForSecs.toFloat(),
-            enabled = settings.enabled,
+            enabled = enabled,
             min = 0,
             max = 600,
             default = defaultSettings.showPausedForSecs,

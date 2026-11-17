@@ -15,7 +15,6 @@ import androidx.compose.ui.platform.LocalContext
 import dev.etorix.panoscrobbler.BuildKonfig
 import dev.etorix.panoscrobbler.MasterSwitchQS
 import dev.etorix.panoscrobbler.R
-import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.ui.PanoSnackbarVisuals
 import dev.etorix.panoscrobbler.utils.AndroidStuff
 import dev.etorix.panoscrobbler.utils.PlatformStuff
@@ -158,10 +157,6 @@ actual object PlatformSpecificPrefs {
     actual fun prefAutostart(filteredItem: FilteredItem) {}
 
     actual fun prefAddToAppLauncher(filteredItem: FilteredItem) {}
-
-    actual fun discordRpc(filteredItem: FilteredItem, onNavigate: (PanoRoute) -> Unit) {
-        // no-op
-    }
 
     actual fun tidalSteelSeries(filteredItem: FilteredItem, enabled: Boolean) {
     }

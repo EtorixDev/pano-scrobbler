@@ -195,4 +195,96 @@
     <string name="listening_activity" comment="Shows a bar chart of the number of scrobbles each day/week/month/year">Hoạt động nghe</string>
     <string name="charts_continuous" comment="Continuous date ranges, but in short, like last 7 days, last 30 days, etc">Liên tục</string>
     <string name="tag" comment="last.fm tag">Tag</string>
+    <plurals name="num_scrobbles_noti">
+        <item quantity="other">%1$s lượt scrobble</item>
+    </plurals>
+    <plurals name="num_hours">
+        <item quantity="other">%1$d giờ</item>
+    </plurals>
+    <string name="scrobble_ignored" comment="Will be prefixed by Lastfm: (e.g. Lastfm: Scrobble ignored)">Bỏ qua lượt scrobble</string>
+    <string name="scrobble_ignored_save_edit">Lastfm đã bỏ qua chỉnh sửa của bạn vì lượt scrobble quá cũ. Bạn có muốn lưu lại cho những lượt scrobble sau?</string>
+    <string name="album_artist">Album của nghệ sĩ</string>
+    <string name="state_scrobbling">Đang scrobble...</string>
+    <string name="state_unscrobbled">Đã ngưng scrobble</string>
+    <string name="first_scrobbled_on" formatted="true" comment="%1= date">Lượt scrobble đầu tại %1$s</string>
+    <string name="grid" comment="Grid view">Lưới</string>
+    <string name="unhate" comment="Undo a hate/dislike and make it neutral. This is not the same as Like">Bỏ ghét</string>
+    <string name="unlove" comment="Undo a love/like and make it neutral. This is not the same as Dislike">Bỏ yêu thích</string>
+    <string name="unloved" comment="Its a noun">Đã bỏ thích</string>
+    <string name="charts" comment="User's top artists, albums, tracks, line chart of daily scrobble counts and tag cloud">Biểu đồ</string>
+    <string name="tag_cloud" comment="https://www.google.com/search?&amp;q=tag+cloud">Thẻ đám mây</string>
+    <string name="quit" comment="A stronger word than close, used to completely quit the app and stop scrobbling on desktop">Thoát</string>
+    <string name="user_tags_hint" comment="To add a new tag">Thẻ mới</string>
+    <string name="user_tags_empty">Bạn chưa thêm thẻ nào</string>
+    <string name="appwidget_alpha" comment="app window background opacity">Độ trong suốt nền</string>
+    <string name="appwidget_refresh_every" formatted="true" comment="%1= 'n minutes'; n is &gt;= 45">Widget sẽ làm mới mỗi %1$s</string>
+    <string name="edit_name" comment="name for regex pattern">Tên hiển thị</string>
+    <string name="edit_regex">Mẫu regex</string>
+    <string name="edit_regex_invalid" formatted="true" comment="%1= the regex error message">Regex không hợp lệ: %1$s</string>
+    <string name="skip" comment="skip to next track">Bỏ qua</string>
+    <string name="do_nothing" comment="do nothing on the media player">Không làm gì</string>
+    <string name="copy" comment="copy to clipboard">Sao chép</string>
+    <string name="hidden_tags" comment="Tags that should not be shown to the user">Thẻ ẩn</string>
+    <string name="pin_limit_reached" formatted="true" comment="%1= the max limit">Đã chạm giới hạn ghim (%1$d)</string>
+    <string name="pin_help">Giữ mục được ghim để thay đổi thứ tự</string>
+    <string name="use_channel" comment="(Use youtube channel name)">Dùng tên của kênh</string>
+    <string name="persistent_noti_text">Bấm để ẩn</string>
+    <string name="scrobbler_off">Đã vô hiệu hoá trình scrobble</string>
+    <string name="scrobbler_on">Trình Scrobble đang hoạt động</string>
+    <string name="disable" comment="To disable some feature">Vô hiệu hoá</string>
+    <string name="remove" formatted="true" comment="%1= the text to remove. For example, Remove: Remastered">Loại bỏ: %1$s</string>
+    <string name="size" comment="Collage size such as 3x3, 4x4 etc">Kích cỡ</string>
+    <string name="skip_missing_images" comment="(while generating a collage)">Bỏ qua những ảnh bị thiếu</string>
+    <string name="create_collage">Tạo ảnh ghép</string>
+    <string name="captions" comment="Collage image captions such as artist names, play counts">Chú thích ảnh</string>
+    <string name="pref_scrobble_from" comment="Scrobble from (these apps)">Scrobble từ</string>
+    <string name="sure_tap_again" comment="tap again to confirm">Bạn chắc chứ? Bấm lại lần nữa</string>
+    <string name="listenbrainz_info" formatted="true" comment="%1 = the link to page containing the token">Bạn có thể tìm thấy token xác thực tại: %1$s</string>
+    <string name="pref_fetch_missing_album" formatted="true" comment="%1= the name of a service like last.fm, Deezer etc">Thu thập album bị thiếu từ %1$s</string>
+    <string name="pref_imexport" comment="As in backup or restore the settings">Nhập &amp; xuất</string>
+    <string name="pref_imexport_network" comment="As in backup or restore the settings over network">Mạng</string>
+    <string name="pref_imexport_code" comment="A code shown on the screen to be entered on the other device">Mã</string>
+    <string name="pref_search_in_source_desc" comment="This is a continuation of the string: Search &amp; play on the app you scrobbled from">Ứng dụng được hỗ trợ</string>
+    <string name="pref_translate_credits">Dịch giả</string>
+    <string name="no_updates">Không có bản cập nhật mới</string>
+    <string name="pref_notify_updates">Tự động cập nhật</string>
+    <string name="update_downloaded" comment="app update">Đã tải xuống cập nhật</string>
+    <string name="downloading">Đang tải xuống</string>
+    <string name="import_hey_wtf">Đó có lẽ không phải là 1 file export từ Pano Scrobbler ETD</string>
+    <string name="import_options">Tùy chọn nhập</string>
+    <string name="import_settings">Nhập thiết lập</string>
+    <string name="bar_chart">Biểu đồ cột</string>
+    <string name="open_existing" comment="Append to an existing file">Nối vào hiện có</string>
+    <string name="scan_qr">Quét cái này để đăng nhập</string>
+    <string name="copy_from" comment="Copy from another edit field, used in regex edits screen">Sao chép từ</string>
+    <string name="nothing" comment="select nothing/none">Không gì cả</string>
+    <string name="borders" comment="Borders between images in the generated collage">Viền</string>
+    <string name="reload" comment="Reload or refresh">Tải lại</string>
+    <string name="automation" comment="automation apps like Tasker on Android, or commandline on desktop">Điều khiển Pano Scrobbler ETD từ những ứng dụng tự động hoá</string>
+    <string name="login_in_browser">Hoàn thiện đăng nhập từ cửa sổ trình duyệt</string>
+    <string name="edit_no_save" comment="used in the edit dialog to not remember the edit">Sẽ không được lưu cho những lần scrobble tới</string>
+    <string name="also_available_on" formatted="true" comment="%1$s is the platform name, like Android, PC">Tải ứng dụng này tại %1$s</string>
+    <string name="external_metadata" comment="Used to supplement partially missing metadata. Sources are Spotify, Deezer etc">Nguồn dữ liệu ngoài</string>
+    <string name="line_n" formatted="true" comment="%1$s is the line number, currently used in the context of Discord Rich Presence">Dòng %1$s</string>
+    <string name="available_placeholders" formatted="true" comment="%1 = placeholder strings, e.g. $artist, $title etc.">Các trường có thể sử dụng: %1$s</string>
+    <string name="when_using" formatted="true" comment="%1$s is the web service or media player name">Khi dùng %1$s</string>
+    <string name="when_not_using" formatted="true" comment="%1$s is the web service or media player name">Khi không dùng %1$s</string>
+    <string name="as_text" comment="Like copy as text, but in short">Dưới dạng văn bản</string>
+    <string name="spotify_consent">Lấy ảnh nghệ sĩ từ Spotify?</string>
+    <string name="show_track_url" comment="Toggle to put the URL of the currently playing track, used for Discord Rich Presence">URL bài hát</string>
+    <string name="search_in_media_player" comment="This launches and searches in the media player app directly instead of opening a browser">Tìm kiếm trực tiếp từ trình nghe nhạc</string>
+    <string name="discord_app_name" comment="usually the media player app name, shown in discord rich presence">Tên ứng dụng</string>
+    <string name="convert_file" formatted="true" comment="%1$s is the file extension, used in the context of converting from one file format to another">Chuyển đổi từ %1$s</string>
+    <string name="move_up" comment="Screen reader text for drag and drop reordering">Di chuyển lên</string>
+    <string name="move_down" comment="Screen reader text for drag and drop reordering">Di chuyển xuống</string>
+    <string name="at_least" formatted="true" comment="%1$s=some number">Ít nhất %1$s</string>
+    <string name="proxy" comment="network proxy">Proxy</string>
+    <string name="system" comment="system default settings">Hệ thống</string>
+    <string name="port" comment="proxy port">Cổng</string>
+    <string name="scanning" comment="finds other instances of Pano Scrobbler ETD import server on the local network">Đang quét</string>
+    <string name="upto_n" formatted="true" comment="%1 is a number">Lên tới %1$d</string>
+    <string name="cache" comment="as a noun">Bộ nhớ đệm</string>
+    <string name="pause_for" comment="Pause scrobbling for a some time">Tạm dừng trong</string>
+    <string name="websites" comment="websites that user is scrobbling from">Những trang web</string>
+    <string name="last_error" comment="most recent error, used for pending scrobbles as of now">Lỗi gần nhất</string>
 </resources>

@@ -32,46 +32,73 @@ import kotlin.time.Duration.Companion.milliseconds
 class ScrobbleQueue(
     private val scope: CoroutineScope,
 ) {
-    // delays scrobbling this hash until it becomes null again
-    private var lockedHash: Int? = null
+    private data class TrackOccurrence(val hash: Int, val timestamp: Long)
+    private data class QueuedScrobble(val occurrence: TrackOccurrence, val job: Job)
+
+    // An editor holds only the playback occurrence it opened.
+    private var lockedTrack: TrackOccurrence? = null
 
     private val tickEveryMs = 500L
 
-    private val scrobbleTasks = mutableMapOf<Int, Job>()
+    private val scrobbleTasks = mutableMapOf<Int, QueuedScrobble>()
 
     // ticker, only handles empty messages and messagePQ
     // required because uptimeMillis pauses / slows down in deep sleep
 
     private fun prune() {
-        scrobbleTasks.entries.removeAll { (hash, job) ->
-            job.isCancelled || job.isCompleted
+        scrobbleTasks.entries.removeAll { (_, task) ->
+            task.job.isCancelled || task.job.isCompleted
         }
     }
 
     fun shutdown() {
-        scrobbleTasks.forEach { (_, job) ->
-            job.cancel()
+        scrobbleTasks.forEach { (_, task) ->
+            task.job.cancel()
         }
 
         scrobbleTasks.clear()
     }
 
-    fun has(hash: Int) =
-        scrobbleTasks[hash]?.let { !(it.isCancelled || it.isCompleted) } == true
+    fun has(hash: Int, timestamp: Long? = null) =
+        scrobbleTasks[hash]?.let {
+            !it.job.isCancelled && !it.job.isCompleted &&
+                    (timestamp == null || it.occurrence.timestamp == timestamp)
+        } == true
 
-    fun setLockedHash(hash: Int?) {
-        lockedHash = hash
+    fun has(trackInfo: PlayingTrackInfo) = has(trackInfo.hash, trackInfo.toScrobbleData(false).timestamp)
+
+    fun lock(hash: Int, timestamp: Long) {
+        lockedTrack = TrackOccurrence(hash, timestamp)
+    }
+
+    fun unlock(hash: Int, timestamp: Long) {
+        if (lockedTrack == TrackOccurrence(hash, timestamp)) {
+            lockedTrack = null
+        }
+    }
+
+    fun completeEdit(hash: Int, timestamp: Long) {
+        if (scrobbleTasks[hash]?.occurrence == TrackOccurrence(hash, timestamp)) {
+            scrobbleTasks.remove(hash)?.job?.cancel()
+        }
+        unlock(hash, timestamp)
     }
 
     fun scrobble(
         trackInfo: PlayingTrackInfo,
         delay: Long,
         timestampOverride: Long? = null,
+        reschedule: Boolean = false,
     ) {
-        if (trackInfo.title.isEmpty() || has(trackInfo.hash)) {
+        if (trackInfo.title.isEmpty() || has(trackInfo) && !reschedule) {
             return
         }
 
+        val effectiveTimestampOverride = if (reschedule) {
+            trackInfo.toScrobbleData(false).timestamp.takeIf { it > 0L } ?: timestampOverride
+        } else {
+            timestampOverride
+        }
         val submitAtTime = PlatformStuff.monotonicTimeMs() + delay
         val hash = trackInfo.hash
         val wasScrobbledBeforePrepare =
@@ -88,9 +115,9 @@ class ScrobbleQueue(
         )
         val shouldEmitNowPlayingEvent =
             previousNowPlayingExpired || wasScrobbledBeforePrepare
-        trackInfo.prepareForScrobbling()
+        trackInfo.prepareForScrobbling(effectiveTimestampOverride)
         fun ScrobbleData.withTimestampOverride() =
-            if (timestampOverride != null) copy(timestamp = timestampOverride) else this
+            if (effectiveTimestampOverride != null) copy(timestamp = effectiveTimestampOverride) else this
 
         fun PlayingTrackNotifyEvent.TrackPlaying.withScrobbleData(
             scrobbleData: ScrobbleData,
@@ -102,6 +129,7 @@ class ScrobbleQueue(
 
         val scrobbleData = trackInfo.toScrobbleData(useOriginals = false).withTimestampOverride()
         val origScrobbleData = trackInfo.toScrobbleData(useOriginals = true).withTimestampOverride()
+        val occurrence = TrackOccurrence(hash, scrobbleData.timestamp)
         val duplicateWindowStartMillis = timestampOverride ?: trackInfo.timelineStartTime.takeIf { it > 0L }
 
         suspend fun nowPlayingAndSubmit(
@@ -154,15 +182,15 @@ class ScrobbleQueue(
             }
 
             // tick every n milliseconds
-            var prevLockedHash: Int? = null
-            while (submitAtTime > PlatformStuff.monotonicTimeMs() || hash == lockedHash) {
-                if (hash == lockedHash)
-                    prevLockedHash = lockedHash
+            var wasLocked = false
+            while (submitAtTime > PlatformStuff.monotonicTimeMs() || occurrence == lockedTrack) {
+                if (occurrence == lockedTrack)
+                    wasLocked = true
 
                 delay(tickEveryMs.milliseconds)
             }
 
-            if (trackInfo.hash == prevLockedHash && !trackInfo.isPlaying)
+            if (wasLocked && trackInfo.hash == hash && !trackInfo.isPlaying)
                 return@coroutineScope
 
             val duplicateProbeData = sd.withTimestampOverride()
@@ -200,29 +228,35 @@ class ScrobbleQueue(
                 null
             }
             val duplicateSource = exactDuplicateSource ?: sameTrackDuplicateSource
-            if (duplicateSource != null) {
-                trackInfo.scrobbled()
-                return@coroutineScope
+            val submissionData = if (trackInfo.hash == hash) {
+                sd.copy(extraTags = trackInfo.toScrobbleData(false).extraTags)
+            } else {
+                sd
             }
 
-            // launch it in a separate scope, so that it does not get cancelled
-            scope.launch(Dispatchers.IO) {
-                val scrobbleSd = (if (fetchAdditionalMetadata) {
-                    val additionalMetadata = ScrobbleEverywhere.fetchMissingMetadata(scrobbleData) { true }
+            if (duplicateSource == null) {
+                // launch it in a separate scope, so that it does not get cancelled
+                scope.launch(Dispatchers.IO) {
+                    val scrobbleSd = (if (fetchAdditionalMetadata) {
+                        val additionalMetadata = ScrobbleEverywhere.fetchMissingMetadata(scrobbleData)
 
-                    ScrobbleEverywhere.preprocessMetadata(
-                        additionalMetadata.scrobbleData ?: scrobbleData,
-                        trackInfo.normalizedUrlHost
-                    ).scrobbleData
-                } else {
-                    sd
-                }).withTimestampOverride()
+                        ScrobbleEverywhere.preprocessMetadata(
+                            additionalMetadata.scrobbleData ?: scrobbleData,
+                            trackInfo.normalizedUrlHost
+                        ).scrobbleData
+                    } else {
+                        sd
+                    }).copy(extraTags = submissionData.extraTags).withTimestampOverride()
 
-                ScrobbleEverywhere.scrobble(scrobbleSd)
+                    ScrobbleEverywhere.scrobble(scrobbleSd)
+                }
             }
 
             trackInfo.scrobbled()
-            val scrobbledEvent = trackInfo.toTrackPlayingEvent().withScrobbleData(sd, origScrobbleData)
+            val scrobbledEvent = trackInfo.toTrackPlayingEvent().withScrobbleData(
+                submissionData,
+                origScrobbleData.copy(extraTags = submissionData.extraTags),
+            )
 
             notifyPlayingTrackEvent(
                 scrobbledEvent
@@ -239,8 +273,8 @@ class ScrobbleQueue(
         }
 
         prune()
-        scrobbleTasks[trackInfo.hash]?.cancel()
-        scrobbleTasks[trackInfo.hash] = scope.launch(Dispatchers.IO) {
+        scrobbleTasks[trackInfo.hash]?.job?.cancel()
+        val job = scope.launch(Dispatchers.IO) {
             // some players put the previous song and then switch to the current song in like 150ms
             // potentially wasting an api call. sleep and throw cancellation exception in that case
             delay(Stuff.META_WAIT.milliseconds)
@@ -334,6 +368,7 @@ class ScrobbleQueue(
                 }
             }
         }
+        scrobbleTasks[hash] = QueuedScrobble(occurrence, job)
     }
 
 
@@ -381,12 +416,12 @@ class ScrobbleQueue(
     }
 
     fun remove(hash: Int) {
-        if (hash == lockedHash) {
+        if (scrobbleTasks[hash]?.occurrence?.let { it == lockedTrack } == true) {
             Logger.d { "${hash.toHexString()} locked" }
             return
         }
 
-        if (scrobbleTasks.remove(hash)?.cancel() != null) {
+        if (scrobbleTasks.remove(hash)?.job?.cancel() != null) {
             Logger.d { "${hash.toHexString()} cancelled" }
         }
     }

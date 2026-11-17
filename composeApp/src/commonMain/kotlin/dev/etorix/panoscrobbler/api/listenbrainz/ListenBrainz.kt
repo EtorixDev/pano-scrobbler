@@ -35,8 +35,11 @@ import dev.etorix.panoscrobbler.db.PanoDb
 import dev.etorix.panoscrobbler.db.PendingListenBrainzMutation
 import dev.etorix.panoscrobbler.db.PendingListenBrainzMutationKind
 import dev.etorix.panoscrobbler.db.SeenTrackAlbumAssociation
+import dev.etorix.panoscrobbler.pref.AppItem
+import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
 import dev.etorix.panoscrobbler.utils.Stuff.cacheStrategy
+import dev.etorix.panoscrobbler.utils.VariantStuff
 import dev.etorix.panoscrobbler.utils.determineLocalNetworkPermissionException
 import dev.etorix.panoscrobbler.utils.wrapLocalNetworkHandshakeException
 import io.ktor.client.request.HttpRequestBuilder
@@ -77,6 +80,21 @@ class ListenBrainz(userAccount: UserAccountSerializable) : Scrobblable(userAccou
         )
     }
 
+    private fun extractMbids(raw: String?): List<String>? =
+        if (raw.isNullOrEmpty()) null
+        else MBID_REGEX.findAll(raw)
+            .map { it.value }
+            .distinct()
+            .toList()
+            .ifEmpty { null }
+
+    private fun appIdToName(appId: String?): String? =
+        if (appId == null || !VariantStuff.isNonPlay)
+            null
+        else
+            AppItem(appId, label = PlatformStuff.loadApplicationLabel(appId))
+                .friendlyLabel
+
     private suspend fun submitListens(
         scrobbleDatas: List<ScrobbleData>,
         listenType: ListenBrainzListenType,
@@ -88,8 +106,6 @@ class ListenBrainz(userAccount: UserAccountSerializable) : Scrobblable(userAccou
             listenType,
             scrobbleDatas.map { scrobbleData ->
 
-//                val pkgName = scrobbleData.pkgName?.let { PackageName(it) }
-
                 ListenBrainzPayload(
                     scrobbleData.timestamp.takeIf { listenType != ListenBrainzListenType.playing_now },
                     ListenBrainzTrackMetadata(
@@ -98,6 +114,14 @@ class ListenBrainz(userAccount: UserAccountSerializable) : Scrobblable(userAccou
                         track_name = scrobbleData.track,
                         additional_info = ListenBrainzAdditionalInfo(
                             duration_ms = scrobbleData.safeDuration(),
+                            recording_mbid = scrobbleData.extraTags[MUSICBRAINZ_TRACKID],
+                            release_mbid = scrobbleData.extraTags[MUSICBRAINZ_ALBUMID],
+                            // is multi-value
+                            artist_mbids = extractMbids(scrobbleData.extraTags[MUSICBRAINZ_ARTISTID]),
+                            release_group_mbid = scrobbleData.extraTags[MUSICBRAINZ_RELEASEGROUPID],
+                            track_mbid = scrobbleData.extraTags[MUSICBRAINZ_RELEASETRACKID],
+                            isrc = scrobbleData.extraTags[ISRC],
+                            media_player = appIdToName(scrobbleData.appId),
                             submission_client = BuildKonfig.APP_NAME,
                             submission_client_version = BuildKonfig.VER_NAME,
                         )
@@ -851,5 +875,35 @@ class ListenBrainz(userAccount: UserAccountSerializable) : Scrobblable(userAccou
 
             return profileUrl
         }
+
+        // MBIDs are UUIDs: 8-4-4-4-12 hex, lookarounds stop matching inside a longer hex run, but still allow any non-hex delimiter
+        private val MBID_REGEX = Regex(
+            "(?<![0-9a-fA-F])" +
+                    "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" +
+                    "(?![0-9a-fA-F])"
+        )
+
+//        https://github.com/OxygenCobalt/Auxio/issues/1268#issuecomment-6152376651
+
+        const val MUSICBRAINZ_TRACKID = "org.musicbrainz.MUSICBRAINZ_TRACKID"
+        const val MUSICBRAINZ_RELEASETRACKID = "org.musicbrainz.MUSICBRAINZ_RELEASETRACKID"
+        const val MUSICBRAINZ_ALBUMID = "org.musicbrainz.MUSICBRAINZ_ALBUMID"
+        const val MUSICBRAINZ_ALBUMARTISTID = "org.musicbrainz.MUSICBRAINZ_ALBUMARTISTID"
+        const val MUSICBRAINZ_ARTISTID = "org.musicbrainz.MUSICBRAINZ_ARTISTID"
+        const val MUSICBRAINZ_RELEASEGROUPID = "org.musicbrainz.MUSICBRAINZ_RELEASEGROUPID"
+        const val ACOUSTID_ID = "org.musicbrainz.ACOUSTID_ID"
+        const val ISRC = "org.musicbrainz.ISRC"
+        const val BARCODE = "org.musicbrainz.BARCODE"
+        const val CATALOGNUMBER = "org.musicbrainz.CATALOGNUMBER"
+
+        val MUSICBRAINZ_KEY_SET = setOf(
+            MUSICBRAINZ_TRACKID,
+            MUSICBRAINZ_RELEASETRACKID,
+            MUSICBRAINZ_ALBUMID,
+            MUSICBRAINZ_ALBUMARTISTID,
+            MUSICBRAINZ_ARTISTID,
+            MUSICBRAINZ_RELEASEGROUPID,
+            ISRC,
+        )
     }
 }

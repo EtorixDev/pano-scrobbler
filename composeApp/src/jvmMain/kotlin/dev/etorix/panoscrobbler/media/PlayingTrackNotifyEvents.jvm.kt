@@ -11,7 +11,7 @@ actual fun notifyPlayingTrackEvent(event: PlayingTrackNotifyEvent) {
 
 
 actual fun getNowPlayingFromMainProcess(): PlayingTrackNotifyEvent.TrackPlaying? {
-    val playingEvent = PanoNotifications.playingTrackTrayInfo.value.values
+    val playingEvent = PanoNotifications.playingTrackStates.value.values
         .filterIsInstance<PlayingTrackNotifyEvent.TrackPlaying>()
         .firstOrNull { it.nowPlaying }
     return playingEvent

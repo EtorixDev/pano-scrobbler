@@ -21,6 +21,10 @@
         android:required="false" />
 
     <queries>
+        <package android:name="com.discord" />
+        <intent>
+            <action android:name="com.discord.socialsdk.rpc.IDiscordRpcService" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.MAIN" />
         </intent>

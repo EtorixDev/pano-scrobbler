@@ -97,7 +97,9 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
                             notifyPlayingTrackEvent(
                                 PlayingTrackNotifyEvent.TrackScrobbleLocked(
                                     hash = hash,
-                                    state = PlayingTrackNotifyEvent.TrackScrobbleLocked.LockState.SCROBBLED
+                                    state = PlayingTrackNotifyEvent.TrackScrobbleLocked.LockState.SCROBBLED,
+                                    originalTimestamp = origScrobbleData.timestamp,
+                                    editedScrobbleData = editedSd,
                                 ),
                             )
                         }
@@ -162,14 +164,12 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
                 (track.equals(origTrack, ignoreCase = true) &&
                         artist.equals(origArtist, ignoreCase = true)
                         && (album != origAlbum || !albumArtist.isNullOrEmpty())))
-        var scrobbleData = ScrobbleData(
+        var scrobbleData = origScrobbleData.copy(
             artist = artist,
             track = track,
             timestamp = if (timeMillis > 0) timeMillis else System.currentTimeMillis(),
             album = album,
             albumArtist = albumArtist,
-            duration = origScrobbleData.duration,
-            appId = origScrobbleData.appId,
         )
         val origTrackObj = Track(
             origTrack,
@@ -264,6 +264,8 @@ class EditScrobbleUtils(private val viewModelScope: CoroutineScope) {
             AccountType.GNUFM,
             AccountType.LISTENBRAINZ,
             AccountType.CUSTOM_LISTENBRAINZ,
+            AccountType.CUSTOM_LISTENBRAINZ_2,
+            AccountType.CUSTOM_LISTENBRAINZ_3,
         )
     }
 

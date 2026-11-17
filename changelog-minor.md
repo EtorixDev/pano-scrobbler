@@ -1,3 +1,0 @@
-- Can disable scrobbling per-service
-- Bug fixes
-- Translation updates by the translators on Crowdin

@@ -1,1 +1,5 @@
 - Merge upstream.
+- Keep edited track details and scrobble timestamps correct through playback changes.
+- Clear completed recognition activity from Discord and handle stalled Android Discord connections.
+- Fix edits in additional custom ListenBrainz accounts.
+- Restore the Linux tray when its host starts late or restarts.

@@ -21,7 +21,7 @@ import dev.etorix.panoscrobbler.utils.PlatformStuff
         SeenTrackAlbumAssociation::class,
         PendingListenBrainzMutation::class
     ],
-    version = 22,
+    version = 23,
     autoMigrations = [
         AutoMigration(from = 9, to = 10),
         AutoMigration(from = 10, to = 11, spec = Spec_10_11::class),
@@ -32,6 +32,7 @@ import dev.etorix.panoscrobbler.utils.PlatformStuff
         AutoMigration(from = 16, to = 17, spec = Spec_16_17::class),
         AutoMigration(from = 17, to = 18),
         AutoMigration(from = 18, to = 19, spec = Spec_18_19::class),
+        AutoMigration(from = 22, to = 23),
     ],
 )
 @ConstructedBy(PanoDbConstructor::class)

@@ -243,21 +243,23 @@ fun SimpleEditsAddScreen(
     }
 
     DisposableEffect(Unit) {
-        if (hash != null) {
+        if (hash != null && origScrobbleData != null) {
             notifyPlayingTrackEvent(
                 PlayingTrackNotifyEvent.TrackScrobbleLocked(
                     hash = hash,
-                    state = PlayingTrackNotifyEvent.TrackScrobbleLocked.LockState.LOCKED
+                    state = PlayingTrackNotifyEvent.TrackScrobbleLocked.LockState.LOCKED,
+                    originalTimestamp = origScrobbleData.timestamp,
                 ),
             )
         }
 
         onDispose {
-            if (hash != null) {
+            if (hash != null && origScrobbleData != null) {
                 notifyPlayingTrackEvent(
                     PlayingTrackNotifyEvent.TrackScrobbleLocked(
                         hash = hash,
-                        state = PlayingTrackNotifyEvent.TrackScrobbleLocked.LockState.UNLOCKED
+                        state = PlayingTrackNotifyEvent.TrackScrobbleLocked.LockState.UNLOCKED,
+                        originalTimestamp = origScrobbleData.timestamp,
                     ),
                 )
             }

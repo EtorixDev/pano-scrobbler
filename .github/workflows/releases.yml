@@ -10,13 +10,49 @@ on:
         description: 'Upload to GitHub Releases?'
         required: false
         default: false
+      native-run-id:
+        type: string
+        description: 'Successful native build run for the approved commit.'
+        required: true
+      native-commit:
+        type: string
+        description: 'Full SHA of the approved native commit.'
+        required: true
 jobs:
   checks:
     name: Check Fork Regressions
     uses: ./.github/workflows/fork-tests.yml
 
+  native-artifacts:
+    name: Verify Native Artifacts
+    runs-on: ubuntu-24.04
+    outputs:
+      run-id: ${{ steps.native.outputs.run_id }}
+      commit: ${{ steps.native.outputs.commit }}
+    steps:
+      - name: Check Out Repository
+        uses: actions/checkout@v7
+      - name: Verify Approved Native Build
+        id: native
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NATIVE_RUN_ID: ${{ inputs.native-run-id }}
+          NATIVE_COMMIT: ${{ inputs.native-commit }}
+        run: |
+          [[ "$NATIVE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$NATIVE_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          gh api "repos/EtorixDev/pano-native-components/actions/runs/$NATIVE_RUN_ID" > "$RUNNER_TEMP/native-run.json"
+          gh api "repos/EtorixDev/pano-native-components/actions/runs/$NATIVE_RUN_ID/artifacts?per_page=100" > "$RUNNER_TEMP/native-artifacts.json"
+          python3 scripts/verify_native_artifacts.py \
+            --run-json "$RUNNER_TEMP/native-run.json" \
+            --artifacts-json "$RUNNER_TEMP/native-artifacts.json" \
+            --run-id "$NATIVE_RUN_ID" \
+            --commit "$NATIVE_COMMIT" >> "$GITHUB_OUTPUT"
+          printf 'Native Build: https://github.com/EtorixDev/pano-native-components/actions/runs/%s\n\nNative Commit: `%s`\n' "$NATIVE_RUN_ID" "$NATIVE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+
   build:
-    needs: [ checks ]
+    needs: [ checks, native-artifacts ]
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -75,7 +111,7 @@ jobs:
       - name: Install GraalVM CE
         uses: graalvm/setup-graalvm@v1
         with:
-          version: '25.4'
+          version: '25.5'
           distribution: 'graalvm-community'
           github-token: ${{ github.token }}
 
@@ -83,20 +119,19 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          NATIVE_RUN_ID: ${{ needs.native-artifacts.outputs.run-id }}
+          NATIVE_COMMIT: ${{ needs.native-artifacts.outputs.commit }}
         run: |
-          RUN_ID=$(gh run list \
-            -R "EtorixDev/pano-native-components" \
-            -L 20 \
-            --json databaseId,workflowName,headBranch,status,conclusion \
-            -q 'map(select(.workflowName == "Build" and .headBranch == "main" and .status == "completed" and .conclusion == "success"))[0].databaseId')
-
-          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
-            echo "No successful runs found" >&2
-            exit 1
+          gh run download "$NATIVE_RUN_ID" -R "EtorixDev/pano-native-components" -n "libs-${{ matrix.resources-dir }}" -D desktopApp/resources/${{ matrix.resources-dir }}
+          if [ "${{ matrix.resources-dir }}" = "windows-x64" ]; then
+            requiredFiles=(pano_native_components.dll native_webview.dll WebView2Loader.dll)
+          else
+            requiredFiles=(libpano_native_components.so libnative_webview.so)
           fi
-
-          # Download artifacts from that run (filter by name if provided)
-          gh run download "$RUN_ID" -R "EtorixDev/pano-native-components" -n "libs-${{ matrix.resources-dir }}" -D desktopApp/resources/${{ matrix.resources-dir }}
+          for nativeFile in "${requiredFiles[@]}"; do
+            test -s "desktopApp/resources/${{ matrix.resources-dir }}/$nativeFile"
+          done
+          printf 'Native Build: https://github.com/EtorixDev/pano-native-components/actions/runs/%s\n\nNative Commit: `%s`\n' "$NATIVE_RUN_ID" "$NATIVE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Download AppImageTool
         if: matrix.resources-dir != 'windows-x64'

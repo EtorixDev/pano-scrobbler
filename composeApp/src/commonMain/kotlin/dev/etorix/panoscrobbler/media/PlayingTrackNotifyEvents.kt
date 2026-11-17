@@ -53,6 +53,7 @@ sealed interface PlayingTrackNotifyEvent {
         val artUrlState: PlayingTrackInfo.ArtUrlState,
         val timelineStartTime: Long,
         val preprocessed: Boolean,
+        val hasMediaSession: Boolean = true,
     ) : PlayingTrackNotifyEvent, PlayingTrackState {
         val artUrl: String? get() = artUrlState.url
     }
@@ -68,6 +69,8 @@ sealed interface PlayingTrackNotifyEvent {
     data class TrackScrobbleLocked(
         val hash: Int,
         val state: LockState,
+        val originalTimestamp: Long,
+        val editedScrobbleData: ScrobbleData? = null,
     ) : PlayingTrackNotifyEvent {
         enum class LockState {
             LOCKED, UNLOCKED, SCROBBLED
@@ -185,22 +188,34 @@ suspend fun listenForPlayingTrackEvents(
                 if (event.hash != -1) {
                     when (event.state) {
                         PlayingTrackNotifyEvent.TrackScrobbleLocked.LockState.LOCKED -> {
-                            scrobbleQueue.setLockedHash(event.hash)
+                            scrobbleQueue.lock(event.hash, event.originalTimestamp)
                         }
 
                         PlayingTrackNotifyEvent.TrackScrobbleLocked.LockState.UNLOCKED -> {
-                            scrobbleQueue.setLockedHash(null)
+                            scrobbleQueue.unlock(event.hash, event.originalTimestamp)
                         }
 
                         PlayingTrackNotifyEvent.TrackScrobbleLocked.LockState.SCROBBLED -> {
-                            scrobbleQueue.remove(event.hash)
+                            scrobbleQueue.completeEdit(event.hash, event.originalTimestamp)
                             val trackInfo = mediaListener.findTrackerByHash(event.hash)?.trackInfo
 
-                            if (trackInfo != null) {
-                                trackInfo.scrobbled()
+                            if (trackInfo != null &&
+                                trackInfo.toScrobbleData(false).timestamp == event.originalTimestamp
+                            ) {
+                                if (event.editedScrobbleData != null) {
+                                    trackInfo.applySubmittedEdit(event.editedScrobbleData)
+                                } else {
+                                    trackInfo.scrobbled()
+                                }
                                 PanoNotifications.removeNotificationByKey(trackInfo.notiKey)
+                            } else {
+                                PanoNotifications.playingTrackStates.value.values
+                                    .filterIsInstance<PlayingTrackNotifyEvent.TrackPlaying>()
+                                    .firstOrNull {
+                                        it.hash == event.hash && it.scrobbleData.timestamp == event.originalTimestamp
+                                    }
+                                    ?.let { PanoNotifications.removeNotificationByKey(it.notiKey) }
                             }
-                            scrobbleQueue.setLockedHash(null)
                         }
                     }
                 }

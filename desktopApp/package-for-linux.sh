@@ -15,6 +15,7 @@ packagingRoot="$(mktemp -d "${TMPDIR:-/tmp}/pano-scrobbler-etd-package.XXXXXX")"
 appDir="$packagingRoot/PanoScrobblerETD.AppDir"
 libExecDir="$appDir/usr/libexec/$appNameWithoutSpaces"
 distDir="$scriptDir/../dist"
+pngIconPath="$scriptDir/../fastlane/metadata/android/en-US/images/icon.png"
 
 # Read version code from version.txt
 upstreamVerCode=$(cat "$scriptDir/../version.txt")
@@ -33,6 +34,7 @@ install -Dm644 -t "${libExecDir}/icons/hicolor/" "${nativeImageDir}/icons/hicolo
 install -Dm644 -t "${libExecDir}/" "${nativeImageDir}"/LICENSE
 install -Dm644 -t "${libExecDir}/" "${nativeImageDir}"/${appNameWithoutSpaces}.desktop
 install -Dm755 -t "${libExecDir}/" "${nativeImageDir}/${appNameWithoutSpaces}"
+touch "${libExecDir}/do not install index.theme file.txt"
 
 # Create tarball
 tarFile="$distDir/$appNameWithoutSpaces-$resourcesDirName.tar.zst"
@@ -61,6 +63,7 @@ for f in "$appDir/usr/share/icons/hicolor/scalable/apps/"*.svg; do
 done
 
 cp "$appDir/usr/share/icons/hicolor/scalable/apps/"*.svg "$appDir/"
+cp "$pngIconPath" "$appDir/.DirIcon"
 
 # Desktop file
 desktopFile="$libExecDir/$appNameWithoutSpaces.desktop"

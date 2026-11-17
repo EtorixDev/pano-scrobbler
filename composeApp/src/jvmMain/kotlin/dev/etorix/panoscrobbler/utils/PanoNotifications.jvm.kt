@@ -8,6 +8,7 @@ import dev.etorix.panoscrobbler.media.PlayingTrackNotifyEvent
 import dev.etorix.panoscrobbler.updates.UpdateAction
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import org.jetbrains.compose.resources.getString
 import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.new_player
@@ -17,15 +18,23 @@ import pano_scrobbler.composeapp.generated.resources.update_downloaded
 actual object PanoNotifications {
     actual val forcePersistentNoti = false
 
-    private val _playingTrackTrayInfo =
+    private val _playingTrackStates =
         MutableStateFlow<Map<String, PlayingTrackNotifyEvent.PlayingTrackState>>(emptyMap())
-    val playingTrackTrayInfo = _playingTrackTrayInfo.asStateFlow()
+    actual val playingTrackStates = _playingTrackStates.asStateFlow()
+    actual fun updatePlayingTrackState(event: PlayingTrackNotifyEvent.TrackPlaying) {
+        _playingTrackStates.putPlayingTrack(event)
+    }
+
+    actual fun clearPlayingTrackStates() {
+        _playingTrackStates.value = emptyMap()
+    }
+
     actual suspend fun notifyScrobble(event: PlayingTrackNotifyEvent.TrackPlaying) {
-        _playingTrackTrayInfo.value += event.notiKey to event
+        updatePlayingTrackState(event)
     }
 
     actual suspend fun notifyError(event: PlayingTrackNotifyEvent.Error) {
-        _playingTrackTrayInfo.value += event.notiKey to event
+        _playingTrackStates.update { it + (event.notiKey to event) }
     }
 
     actual suspend fun notifyAppDetected(appId: String, appLabel: String) {
@@ -69,6 +78,6 @@ actual object PanoNotifications {
 
 
     actual fun removeNotificationByKey(key: String) {
-        _playingTrackTrayInfo.value -= key
+        _playingTrackStates.update { it - key }
     }
 }

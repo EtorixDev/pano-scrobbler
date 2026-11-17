@@ -241,14 +241,13 @@ object ScrobbleEverywhere {
 
     suspend fun fetchMissingMetadata(
         scrobbleData: ScrobbleData,
-        canRequest: suspend () -> Boolean = ::throttledRequest,
     ): AdditionalMetadataResult {
         if (PlatformStuff.mainPrefs.data.map { it.deezerApi }.first() && (
                 scrobbleData.appId == Stuff.PACKAGE_DEEZER_WIN ||
                         scrobbleData.appId == Stuff.PACKAGE_DEEZER_WIN_EXE ||
                         scrobbleData.appId.equals(Stuff.PACKAGE_DEEZER_WIN_STORE, ignoreCase = true)
                 )) {
-            return fetchFromDeezer(scrobbleData, canRequest)
+            return fetchFromDeezer(scrobbleData)
         }
 
         if (PlatformStuff.mainPrefs.data.map { it.tidalSteelSeriesApi }.first() && (
@@ -535,13 +534,11 @@ object ScrobbleEverywhere {
 
     private suspend fun fetchFromDeezer(
         scrobbleData: ScrobbleData,
-        canRequest: suspend () -> Boolean,
     ): AdditionalMetadataResult {
         val cacheKey = createCacheKey(scrobbleData.artist, scrobbleData.track)
         var track = deezerTracksCache[cacheKey]
 
         if (track == null) {
-            if (!canRequest()) return AdditionalMetadataResult.FetchAgain
             Requesters.deezerRequester.searchTrack(
                 scrobbleData.artist,
                 scrobbleData.track,

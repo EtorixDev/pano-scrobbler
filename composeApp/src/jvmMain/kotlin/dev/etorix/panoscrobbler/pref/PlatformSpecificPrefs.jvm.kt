@@ -1,7 +1,6 @@
 package dev.etorix.panoscrobbler.pref
 
 import dev.etorix.panoscrobbler.PanoNativeComponents
-import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.ui.PanoSnackbarVisuals
 import dev.etorix.panoscrobbler.utils.DesktopStuff
 import dev.etorix.panoscrobbler.utils.Stuff
@@ -12,7 +11,6 @@ import pano_scrobbler.composeapp.generated.resources.Res
 import pano_scrobbler.composeapp.generated.resources.add_to_app_launcher
 import pano_scrobbler.composeapp.generated.resources.deezer
 import pano_scrobbler.composeapp.generated.resources.disable
-import pano_scrobbler.composeapp.generated.resources.discord_rich_presence
 import pano_scrobbler.composeapp.generated.resources.done
 import pano_scrobbler.composeapp.generated.resources.enable
 import pano_scrobbler.composeapp.generated.resources.linux_install_icons
@@ -89,16 +87,6 @@ actual object PlatformSpecificPrefs {
             }
         }
     }
-
-    actual fun discordRpc(filteredItem: FilteredItem, onNavigate: (PanoRoute) -> Unit) {
-        filteredItem("discord_rich_presence", Res.string.discord_rich_presence, null) { title ->
-            TextPref(
-                text = title,
-                onClick = { onNavigate(PanoRoute.DiscordRpcSettings) }
-            )
-        }
-    }
-
 
     actual fun tidalSteelSeries(filteredItem: FilteredItem, enabled: Boolean) {
         if (DesktopStuff.IS_WINDOWS) {

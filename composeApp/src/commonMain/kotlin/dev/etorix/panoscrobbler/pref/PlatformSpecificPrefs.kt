@@ -1,6 +1,5 @@
 package dev.etorix.panoscrobbler.pref
 
-import dev.etorix.panoscrobbler.navigation.PanoRoute
 import dev.etorix.panoscrobbler.work.CommonWorkProgress
 
 expect object PlatformSpecificPrefs {
@@ -16,7 +15,6 @@ expect object PlatformSpecificPrefs {
 
     fun prefAutostart(filteredItem: FilteredItem)
     fun prefAddToAppLauncher(filteredItem: FilteredItem)
-    fun discordRpc(filteredItem: FilteredItem, onNavigate: (PanoRoute) -> Unit)
     fun tidalSteelSeries(filteredItem: FilteredItem, enabled: Boolean)
 
     fun deezerApi(filteredItem: FilteredItem, enabled: Boolean)

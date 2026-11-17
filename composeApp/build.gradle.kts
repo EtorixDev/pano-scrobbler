@@ -71,7 +71,7 @@ kotlin {
     sourceSets {
 
         androidMain.dependencies {
-//            implementation(libs.core)
+            implementation(libs.core)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.activity.compose)
             implementation(libs.work.runtime)

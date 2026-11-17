@@ -81,6 +81,7 @@ object PendingScrobblesWorkerScenario {
             albumArtist = "Album Artist",
             duration = 180_000,
             appId = null,
+            extraTags = mapOf("org.musicbrainz.MUSICBRAINZ_TRACKID" to "recording-one"),
         )
         val loved = scrobble.copy(track = "Loved Track")
         val queued = PendingScrobble(

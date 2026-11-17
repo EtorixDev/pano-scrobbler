@@ -14,6 +14,7 @@ import dev.etorix.panoscrobbler.api.AccountType
 import dev.etorix.panoscrobbler.api.lastfm.LastfmPeriod
 import dev.etorix.panoscrobbler.charts.ChartsPagerScreen
 import dev.etorix.panoscrobbler.charts.RandomScreen
+import dev.etorix.panoscrobbler.discordrpc.DiscordRpcScreen
 import dev.etorix.panoscrobbler.edits.ArtistsWithDelimitersScreen
 import dev.etorix.panoscrobbler.edits.BlockedMetadatasScreen
 import dev.etorix.panoscrobbler.edits.RegexEditsAddScreen
@@ -66,6 +67,7 @@ import pano_scrobbler.composeapp.generated.resources.automation_cp
 import pano_scrobbler.composeapp.generated.resources.choose_an_app
 import pano_scrobbler.composeapp.generated.resources.choose_apps
 import pano_scrobbler.composeapp.generated.resources.delete_account
+import pano_scrobbler.composeapp.generated.resources.discord_rich_presence
 import pano_scrobbler.composeapp.generated.resources.edit
 import pano_scrobbler.composeapp.generated.resources.edit_regex
 import pano_scrobbler.composeapp.generated.resources.edit_regex_test
@@ -614,6 +616,13 @@ object PanoNavGraph {
             ArtistsWithDelimitersScreen(
                 searchFieldState = searchFieldState,
                 modifier = Modifier.navColumn().padding(panoContentPadding())
+            )
+        }
+
+        entry<PanoRoute.DiscordRpcSettings> { route ->
+            onSetTitleRes(route, Res.string.discord_rich_presence)
+            DiscordRpcScreen(
+                modifier = Modifier.navScrollableColumn()
             )
         }
 

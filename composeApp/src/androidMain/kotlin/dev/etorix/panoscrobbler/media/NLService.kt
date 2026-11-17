@@ -12,6 +12,7 @@ import co.touchlab.kermit.Logger
 import dev.etorix.panoscrobbler.BuildKonfig
 import dev.etorix.panoscrobbler.R
 import dev.etorix.panoscrobbler.api.lastfm.ScrobbleData
+import dev.etorix.panoscrobbler.discordrpc.DiscordRpc
 import dev.etorix.panoscrobbler.logger.JavaUtilFileLogger
 import dev.etorix.panoscrobbler.utils.AndroidStuff
 import dev.etorix.panoscrobbler.utils.AndroidStuff.toast
@@ -19,6 +20,7 @@ import dev.etorix.panoscrobbler.utils.MetadataUtils
 import dev.etorix.panoscrobbler.utils.PanoNotifications
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff
+import dev.etorix.panoscrobbler.utils.VariantStuff
 import dev.etorix.panoscrobbler.utils.applyAndroidLocaleLegacy
 import dev.etorix.panoscrobbler.utils.getStringInDeviceLocale
 import kotlinx.coroutines.CoroutineScope
@@ -162,11 +164,15 @@ class NLService : NotificationListenerService() {
             listenForPlayingTrackEvents(scrobbleQueue, sessListener!!)
         }
 
+        if (VariantStuff.isNonPlay)
+            DiscordRpc.start()
+
         Logger.i { "init" }
     }
 
     private fun destroy() {
         inited = false
+        DiscordRpc.stop()
 
         Logger.i { "destroy" }
 
@@ -178,6 +184,7 @@ class NLService : NotificationListenerService() {
             scrobbleQueue.shutdown()
         }
         job?.cancel()
+        PanoNotifications.clearPlayingTrackStates()
     }
 
     override fun onDestroy() {
@@ -311,6 +318,7 @@ class NLService : NotificationListenerService() {
         val trackInfo = sessListener?.createTrackInfo(
             appId = pkgName,
             notiKey = "$pkgName|$TAG_NOTI",
+            hasMediaSession = false,
         ) ?: return
 
         scrobbleQueue.remove(trackInfo.lastScrobbleHash)
@@ -327,6 +335,7 @@ class NLService : NotificationListenerService() {
         val trackInfo = sessListener?.createTrackInfo(
             appId = pkgName,
             notiKey = "$pkgName|$TAG_NOTI",
+            hasMediaSession = false,
         ) ?: return
 
         trackInfo.putOriginals(
@@ -338,6 +347,7 @@ class NLService : NotificationListenerService() {
             durationMillis = scrobbleData.duration ?: 0L,
             normalizedUrlHost = null,
             artUrl = null,
+            extraTags = emptyMap(),
             setPlayStartTime = false,
         )
 

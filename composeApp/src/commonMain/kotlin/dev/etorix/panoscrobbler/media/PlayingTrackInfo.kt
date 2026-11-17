@@ -11,6 +11,7 @@ class PlayingTrackInfo(
     val appId: String, // normalized app id
     val notiKey: String,
     cachedTrackInfo: PlayingTrackInfo?,
+    val hasMediaSession: Boolean = true,
 ) {
     enum class ScrobbledState {
         NONE,
@@ -61,6 +62,7 @@ class PlayingTrackInfo(
     var artUrlState: ArtUrlState = ArtUrlState.None
         private set
     val artUrl: String? get() = artUrlState.url
+    private var originalArtworkBeforeEdit: ArtUrlState? = null
 
     var normalizedUrlHost: String? = null
         private set
@@ -70,11 +72,14 @@ class PlayingTrackInfo(
     var durationMillis: Long = 0
         private set
 
+    private var extraTags: Map<String, String> = emptyMap()
+
     var hash: Int = 0
         private set
 
     var isPlaying: Boolean = false
         private set
+    private var isBuffering: Boolean = false
 
     var userPlayCount: Int = 0
         private set
@@ -86,8 +91,12 @@ class PlayingTrackInfo(
     var timelineStartTime: Long = cachedTrackInfo?.timelineStartTime ?: 0L
         private set
     private var playbackPositionMillis: Long = cachedTrackInfo?.playbackPositionMillis ?: -1L
+    // Retained through unknown samples only while playback is continuous.
+    var lastKnownPlaybackPositionMillis: Long = -1L
+        private set
     var playStartTime: Long = cachedTrackInfo?.playStartTime ?: 0L
         private set
+    private var scrobbleTimestamp: Long? = cachedTrackInfo?.scrobbleTimestamp
 
     // baseline for timePlayed; unlike playStartTime, advances on every resume,
     // so pause gaps don't count as played time
@@ -110,6 +119,7 @@ class PlayingTrackInfo(
         durationMillis: Long,
         normalizedUrlHost: String?,
         artUrl: String?,
+        extraTags: Map<String, String>,
         setPlayStartTime: Boolean = true,
     ) {
         origArtist = artist
@@ -127,12 +137,17 @@ class PlayingTrackInfo(
         this.normalizedUrlHost = normalizedUrlHost
 
         this.artUrlState = ArtUrlState(artUrl)
+        originalArtworkBeforeEdit = null
+
+        this.extraTags = extraTags.toMap()
 
         scrobbledState = ScrobbledState.NONE
+        scrobbleTimestamp = null
+        lastKnownPlaybackPositionMillis = -1L
         msid = null
         if (setPlayStartTime) {
             playStartTime = if (isPlaying) System.currentTimeMillis() else 0L
-            segmentStartTime = playStartTime
+            segmentStartTime = if (isBuffering) 0L else playStartTime
         }
     }
 
@@ -144,9 +159,28 @@ class PlayingTrackInfo(
         artUrlState = state
     }
 
+    fun updateDuration(durationMillis: Long) {
+        this.durationMillis = durationMillis
+    }
+
+    fun updateAdditionalMetadata(extraTags: Map<String, String>, artUrl: String?): Boolean {
+        val updatedTags = this.extraTags + extraTags
+        val tagsChanged = updatedTags != this.extraTags
+        if (originalArtworkBeforeEdit != null && !artUrl.isNullOrEmpty()) {
+            originalArtworkBeforeEdit = ArtUrlState(artUrl)
+        }
+        val artChanged = originalArtworkBeforeEdit == null && !artUrl.isNullOrEmpty() && artUrl != this.artUrl
+        this.extraTags = updatedTags
+        if (artChanged) {
+            setArtUrl(artUrl)
+        }
+        return tagsChanged || artChanged
+    }
+
     fun resetPlaybackProgress() {
         timelineStartTime = 0L
         playbackPositionMillis = -1L
+        lastKnownPlaybackPositionMillis = -1L
         timePlayed = 0L
     }
 
@@ -154,10 +188,15 @@ class PlayingTrackInfo(
     fun setTimelineStartTime(seekPosition: Long): Boolean {
         if (seekPosition == -1L) {
             playbackPositionMillis = -1L
+            if ((isBuffering || !isPlaying) && timelineStartTime != 0L) {
+                timelineStartTime = 0L
+                return true
+            }
             return false
         }
 
         playbackPositionMillis = seekPosition
+        lastKnownPlaybackPositionMillis = seekPosition
 
         if (durationMillis <= 0) {
             if (timelineStartTime != 0L) {
@@ -178,7 +217,7 @@ class PlayingTrackInfo(
         return false
     }
 
-    fun prepareForScrobbling() {
+    fun prepareForScrobbling(timestampOverride: Long? = null) {
         lastScrobbleHash = hash
 
         if (scrobbledState < ScrobbledState.PREPROCESSED) {
@@ -194,8 +233,9 @@ class PlayingTrackInfo(
 
         if (playStartTime <= 0L)
             playStartTime = System.currentTimeMillis()
-        if (segmentStartTime <= 0L)
+        if (segmentStartTime <= 0L && !isBuffering)
             segmentStartTime = System.currentTimeMillis()
+        scrobbleTimestamp = timestampOverride ?: scrobbleTimestamp ?: playStartTime
     }
 
     fun updateUserProps(
@@ -209,7 +249,21 @@ class PlayingTrackInfo(
     fun resetTimePlayed() {
         timePlayed = 0L
         playStartTime = System.currentTimeMillis()
-        segmentStartTime = playStartTime
+        segmentStartTime = if (isBuffering) 0L else playStartTime
+    }
+
+    fun resetMetadata() {
+        putOriginals(
+            artist = origArtist,
+            title = origTitle,
+            album = origAlbum,
+            albumArtist = origAlbumArtist,
+            trackNumber = trackNumber,
+            durationMillis = durationMillis,
+            normalizedUrlHost = normalizedUrlHost,
+            artUrl = (originalArtworkBeforeEdit ?: artUrlState).url,
+            extraTags = extraTags,
+        )
     }
 
     fun addTimePlayed() {
@@ -218,20 +272,32 @@ class PlayingTrackInfo(
         segmentStartTime = 0L
     }
 
+    fun elapsedPlaybackMillis(now: Long = System.currentTimeMillis()): Long = timePlayed +
+            if (isPlaying && !isBuffering && segmentStartTime > 0L) (now - segmentStartTime).coerceAtLeast(0L) else 0L
+
     fun effectiveProgressMillis(now: Long = System.currentTimeMillis()): Long {
         return when {
             playbackPositionMillis >= 0L -> playbackPositionMillis
-            timelineStartTime > 0L && isPlaying -> (now - timelineStartTime).coerceAtLeast(0L)
+            timelineStartTime > 0L && isPlaying && !isBuffering -> (now - timelineStartTime).coerceAtLeast(0L)
             else -> timePlayed
         }
     }
 
     fun paused() {
         isPlaying = false
+        segmentStartTime = 0L
+        lastKnownPlaybackPositionMillis = -1L
+    }
+
+    fun buffering() {
+        addTimePlayed()
+        isBuffering = true
+        lastKnownPlaybackPositionMillis = -1L
     }
 
     fun resumed() {
         isPlaying = true
+        isBuffering = false
         if (playStartTime <= 0L)
             playStartTime = System.currentTimeMillis()
         if (segmentStartTime <= 0L)
@@ -243,9 +309,10 @@ class PlayingTrackInfo(
         artist = if (useOriginals) origArtist else artist,
         album = (if (useOriginals) origAlbum else album).ifEmpty { null },
         albumArtist = (if (useOriginals) origAlbumArtist else albumArtist).ifEmpty { null },
-        timestamp = playStartTime,
+        timestamp = scrobbleTimestamp ?: playStartTime,
         duration = durationMillis.takeIf { it > 0 },
         appId = appId,
+        extraTags = extraTags,
     )
 
     fun toTrackPlayingEvent() = PlayingTrackNotifyEvent.TrackPlaying(
@@ -260,7 +327,23 @@ class PlayingTrackInfo(
         artUrlState = artUrlState,
         timelineStartTime = timelineStartTime,
         preprocessed = scrobbledState >= ScrobbledState.PREPROCESSED,
+        hasMediaSession = hasMediaSession,
     )
+
+    fun applySubmittedEdit(scrobbleData: ScrobbleData) {
+        if (album != scrobbleData.album.orEmpty()) {
+            if (originalArtworkBeforeEdit == null) originalArtworkBeforeEdit = artUrlState
+            artUrlState = ArtUrlState.None
+        }
+        title = scrobbleData.track
+        artist = scrobbleData.artist
+        album = scrobbleData.album.orEmpty()
+        albumArtist = scrobbleData.albumArtist.orEmpty()
+        scrobbleTimestamp = scrobbleData.timestamp
+        extraTags = scrobbleData.extraTags.toMap()
+        msid = null
+        scrobbled()
+    }
 
     fun putPreprocessedData(
         sd: ScrobbleData,

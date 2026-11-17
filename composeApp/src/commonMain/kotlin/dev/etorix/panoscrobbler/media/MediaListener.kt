@@ -3,6 +3,7 @@ package dev.etorix.panoscrobbler.media
 
 import co.touchlab.kermit.Logger
 import dev.etorix.panoscrobbler.BuildKonfig
+import dev.etorix.panoscrobbler.discordrpc.DiscordRpc
 import dev.etorix.panoscrobbler.utils.PanoNotifications
 import dev.etorix.panoscrobbler.utils.PlatformStuff
 import dev.etorix.panoscrobbler.utils.Stuff.stateInWithCache
@@ -138,7 +139,7 @@ abstract class MediaListener(
             .filter {
                 it.trackInfo.isEligibleForScrobble() &&
                         it.trackInfo.scrobbledState < PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED &&
-                        !scrobbleQueue.has(it.trackInfo.hash)
+                        !scrobbleQueue.has(it.trackInfo)
             }
             .minByOrNull { it.trackInfo.sessionStartTime }
             ?.scrobble()
@@ -152,11 +153,12 @@ abstract class MediaListener(
     fun findPlayingTracker() =
         sessionTrackers.values.find { it.trackInfo.isPlaying }
 
-    fun createTrackInfo(appId: String, notiKey: String): PlayingTrackInfo {
+    fun createTrackInfo(appId: String, notiKey: String, hasMediaSession: Boolean = true): PlayingTrackInfo {
         val trackInfo = PlayingTrackInfo(
             appId,
             notiKey,
-            cachedInfos[appId]
+            cachedInfos[appId],
+            hasMediaSession = hasMediaSession,
         )
 
         cachedInfos[appId] = trackInfo
@@ -203,7 +205,7 @@ abstract class MediaListener(
             private set
 //        private var lastPosition = 0L
 
-        fun scrobble() {
+        fun scrobble(reschedule: Boolean = false) {
             Logger.d { "playing: timePlayed=${trackInfo.timePlayed} title=${trackInfo.title} hash=${trackInfo.hash.toHexString()}" }
 
             scrobbleQueue.remove(trackInfo.lastScrobbleHash)
@@ -223,8 +225,12 @@ abstract class MediaListener(
                 30.seconds.inWholeMilliseconds
             }
 
-            finalDelay = (finalDelay - if (scrobbleTimingPrefs.value.useTrackProgress)
-                trackInfo.effectiveProgressMillis() else trackInfo.timePlayed)
+            val progress = when {
+                scrobbleTimingPrefs.value.useTrackProgress -> trackInfo.effectiveProgressMillis()
+                reschedule -> trackInfo.elapsedPlaybackMillis()
+                else -> trackInfo.timePlayed
+            }
+            finalDelay = (finalDelay - progress)
                 .coerceAtLeast(2000)// deal with negative or 0 delay
 
             val inferredStartTimestamp =
@@ -242,6 +248,7 @@ abstract class MediaListener(
                         trackInfo = trackInfo,
                         delay = finalDelay,
                         timestampOverride = inferredStartTimestamp,
+                        reschedule = reschedule,
                     )
                 },
                 onLost = { winnerTrackInfo ->
@@ -269,34 +276,55 @@ abstract class MediaListener(
                 Logger.i { "$metadata $lastPlaybackState ${hashCode().toHexString()}" }
 
             if (!sameAsOld || (onlyDurationUpdated && metadata.duration > 0)) {
-                trackInfo.putOriginals(
-                    artist = metadata.artist,
-                    title = metadata.title,
-                    album = metadata.album,
-                    albumArtist = metadata.albumArtist,
-                    trackNumber = metadata.trackNumber,
-                    durationMillis = metadata.duration,
-                    normalizedUrlHost = metadata.normalizedUrlHost,
-                    artUrl = if (onlyDurationUpdated) trackInfo.artUrl else metadata.artUrl,
-                )
-
-                if (!sameAsOld) {
+                if (sameAsOld) {
+                    trackInfo.updateDuration(metadata.duration)
+                    trackInfo.updateAdditionalMetadata(metadata.extraTags, metadata.artUrl)
+                } else {
+                    trackInfo.putOriginals(
+                        artist = metadata.artist,
+                        title = metadata.title,
+                        album = metadata.album,
+                        albumArtist = metadata.albumArtist,
+                        trackNumber = metadata.trackNumber,
+                        durationMillis = metadata.duration,
+                        normalizedUrlHost = metadata.normalizedUrlHost,
+                        artUrl = metadata.artUrl,
+                        extraTags = metadata.extraTags,
+                    )
                     trackInfo.resetPlaybackProgress()
                 }
 
                 if (mutedHash != null && trackInfo.hash != mutedHash && lastPlaybackState == CommonPlaybackState.Playing)
                     unmute(clearMutedHash = isMuted)
 
+                if (System.currentTimeMillis() < scrobblerPausedTill)
+                    return
+
                 if (ignoreScrobble || metadata.artist.isEmpty() || metadata.title.isEmpty()) {
                     ignoreScrobble()
-                } else if ((!scrobbleQueue.has(trackInfo.hash) || onlyDurationUpdated) &&
-                    lastPlaybackState == CommonPlaybackState.Playing
+                } else if ((!scrobbleQueue.has(trackInfo) || onlyDurationUpdated) &&
+                    (lastPlaybackState == CommonPlaybackState.Playing ||
+                            lastPlaybackState == CommonPlaybackState.Waiting && trackInfo.isPlaying) &&
+                    trackInfo.scrobbledState < PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED
                 ) {
                     // for cases:
                     // - meta is sent after play
                     // - "gapless playback", where playback state never changes
-                    scrobble()
+                    scrobble(reschedule = onlyDurationUpdated)
                 }
+
+                if (sameAsOld && trackInfo.isPlaying &&
+                    trackInfo.scrobbledState in PlayingTrackInfo.ScrobbledState.PREPROCESSED..
+                            PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED
+                ) {
+                    PanoNotifications.updatePlayingTrackState(trackInfo.toTrackPlayingEvent())
+                }
+            } else if (trackInfo.updateAdditionalMetadata(metadata.extraTags, metadata.artUrl) &&
+                trackInfo.isPlaying &&
+                trackInfo.scrobbledState in PlayingTrackInfo.ScrobbledState.PREPROCESSED..
+                        PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED
+            ) {
+                PanoNotifications.updatePlayingTrackState(trackInfo.toTrackPlayingEvent())
             }
 
             lastDuration = metadata.duration
@@ -335,10 +363,16 @@ abstract class MediaListener(
 //                        trackInfo.durationMillis > 0 && positionDelta < trackInfo.durationMillis * 0.5
 //                        )
 
+            val previousPosition = trackInfo.lastKnownPlaybackPositionMillis
             val timelineChanged = playbackInfo.state == CommonPlaybackState.Playing &&
                     trackInfo.setTimelineStartTime(playbackInfo.position)
 
             val playbackStateChanged = lastPlaybackState != playbackInfo.state
+            val restarted = isPossiblyAtStart && timelineChanged &&
+                    trackInfo.hash == trackInfo.lastScrobbleHash &&
+                    (previousPosition > START_POS_LIMIT ||
+                            trackInfo.elapsedPlaybackMillis() >=
+                            (trackInfo.durationMillis - START_POS_LIMIT).coerceAtLeast(START_POS_LIMIT * 2))
 
             if (!playbackStateChanged /* bandcamp does this */ &&
                 !(playbackInfo.state == CommonPlaybackState.Playing && isPossiblyAtStart) &&
@@ -366,9 +400,11 @@ abstract class MediaListener(
                     if (trackInfo.scrobbledState < PlayingTrackInfo.ScrobbledState.CANCELLED) {
                         trackInfo.resumed()
 
-                        if (trackInfo.hash != trackInfo.lastScrobbleHash ||
-                            (isPossiblyAtStart && (!notifyTimelineUpdates || timelineChanged))
-                        )
+                        if (restarted) {
+                            trackInfo.resetMetadata()
+                        }
+
+                        if (trackInfo.hash != trackInfo.lastScrobbleHash || restarted)
                             trackInfo.resetTimePlayed()
 
                         if (timelineChanged &&
@@ -377,9 +413,9 @@ abstract class MediaListener(
                         ) {
                             scrobbleQueue.remove(trackInfo.lastScrobbleHash)
                             scrobble()
-                        } else if (!scrobbleQueue.has(trackInfo.hash) &&
-                            (isPossiblyAtStart ||
-                                    trackInfo.scrobbledState < PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED &&
+                        } else if (!scrobbleQueue.has(trackInfo) &&
+                            trackInfo.scrobbledState < PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED &&
+                            (restarted ||
                                     // ignore state=playing, pos=lowValue spam
                                     !(!playbackStateChanged &&
                                             trackInfo.lastScrobbleHash == trackInfo.hash &&
@@ -387,47 +423,34 @@ abstract class MediaListener(
                                             )
                                     )
                         ) {
-                            if (isPossiblyAtStart &&
-                                trackInfo.lastScrobbleHash == trackInfo.hash &&
-                                trackInfo.scrobbledState == PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED
-                            ) {
-                                trackInfo.putOriginals(
-                                    artist = trackInfo.origArtist,
-                                    title = trackInfo.origTitle,
-                                    album = trackInfo.origAlbum,
-                                    albumArtist = trackInfo.origAlbumArtist,
-                                    trackNumber = trackInfo.trackNumber,
-                                    durationMillis = trackInfo.durationMillis,
-                                    normalizedUrlHost = trackInfo.normalizedUrlHost,
-                                    artUrl = trackInfo.artUrl,
-                                )
-                            }
                             scrobble()
                         } else if ((timelineChanged && notifyTimelineUpdates || playbackStateChanged) &&
                             trackInfo.scrobbledState < PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED
                         ) {
                             // update notification
                             notifyPlayingTrackEvent(trackInfo.toTrackPlayingEvent())
+                        } else if ((timelineChanged && notifyTimelineUpdates || playbackStateChanged) &&
+                            trackInfo.scrobbledState == PlayingTrackInfo.ScrobbledState.SCROBBLE_SUBMITTED
+                        ) {
+                            // Resume presence without restarting scrobbling or restoring edit actions.
+                            PanoNotifications.updatePlayingTrackState(trackInfo.toTrackPlayingEvent())
                         }
                     }
                 }
 
-                CommonPlaybackState.Waiting,
+                CommonPlaybackState.Waiting -> trackInfo.buffering()
+
                 CommonPlaybackState.Other -> {
                 }
             }
 
-            if (playbackInfo.state != CommonPlaybackState.Waiting)
-                lastPlaybackState = playbackInfo.state
+            lastPlaybackState = playbackInfo.state
 
         }
 
         open fun pause() {
             if (lastPlaybackState == CommonPlaybackState.Playing) {
-                if (scrobbleQueue.has(trackInfo.lastScrobbleHash))
-                    trackInfo.addTimePlayed()
-                else
-                    trackInfo.resetTimePlayed()
+                trackInfo.addTimePlayed()
             }
             trackInfo.paused()
 
@@ -437,13 +460,17 @@ abstract class MediaListener(
                 unmute(clearMutedHash = false)
 
             releaseScrobbleLockIfHeldBy(key)
+
+            DiscordRpc.paused(trackInfo.hash)
+        }
+
+        open fun stop() {
+            DiscordRpc.paused(trackInfo.hash)
         }
 
         abstract fun love()
-
         abstract fun unlove()
         abstract fun skip()
-        abstract fun stop()
         abstract fun onBeforeScrobble()
     }
 

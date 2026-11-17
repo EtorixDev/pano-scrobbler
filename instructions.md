@@ -132,11 +132,13 @@ Currently, the builds skip this step.
   default. Set `updates.enabled=false` in `local.properties` if you want to suppress that for a
   self-built package.
 
-### GitHub Actions release workflow
+### GitHub Actions Release Workflow
 
-The workflow downloads the latest matching native desktop library artifacts from
-`EtorixDev/pano-native-components`, so CI releases do not depend on locally copied `.so` or `.dll`
-files from this repo checkout.
+The workflow downloads native desktop library artifacts from one verified build in
+`EtorixDev/pano-native-components`. Supply its numeric Actions run ID as `native-run-id` and
+the full approved commit SHA as `native-commit`. The build must have completed successfully
+on `main`, with unexpired artifacts for Linux x64, Linux ARM64, and Windows x64.
+Every platform uses that run, and its run ID and commit are recorded in the job summaries.
 
 If you want the `Build binaries` workflow to create release artifacts on GitHub Actions, configure
 these repository secrets first:
@@ -223,6 +225,7 @@ value.
 
 4. Run the `Build binaries` workflow.
 
+- Set `native-run-id` and `native-commit` to the verified native build and its full commit SHA.
 - If you want build artifacts only, leave `Upload to GitHub Releases?` unchecked.
 - If you want an actual GitHub release page with downloadable files, check it.
 
